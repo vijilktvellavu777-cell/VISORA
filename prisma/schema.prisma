@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys    ApiKey[]
+  customers  Customer[]
+  events     Event[]
+  segments   Segment[]
+  campaigns  Campaign[]
+  canvases   Canvas[]
+  templates  MessageTemplate[]
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  key         String    @unique
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  externalId   String
+  email        String?
+  phone        String?
+  firstName    String?
+  lastName     String?
+  country      String?
+  timezone     String?
+  /// JSON object of custom attributes
+  attributes   String    @default("{}")
+  /// JSON object of subscription groups: { email: true, push: true, sms: false }
+  subscriptions String   @default("{\"email\":true,\"push\":true,\"sms\":true,\"in_app\":true}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastSeenAt   DateTime?
+
+  events   Event[]
+  sends    CampaignSend[]
+  entries  CanvasEntry[]
+
+  @@unique([workspaceId, externalId])
+  @@index([workspaceId, email])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name        String
+  /// JSON payload
+  properties  String    @default("{}")
+  occurredAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, name, occurredAt])
+  @@index([customerId, occurredAt])
+}
+
+model Segment {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  /// JSON rule tree — see src/lib/segments.ts
+  rules       String    @default("{\"op\":\"and\",\"filters\":[]}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  campaigns Campaign[]
+  canvases  Canvas[]
+}
+
+model MessageTemplate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  channel     String
+  subject     String?
+  body        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  campaigns Campaign[]
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  channel     String
+  status      String    @default("draft")
+  subject     String?
+  body        String
+  segmentId   String?
+  segment     Segment?  @relation(fields: [segmentId], references: [id])
+  templateId  String?
+  template    MessageTemplate? @relation(fields: [templateId], references: [id])
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sends CampaignSend[]
+}
+
+model CampaignSend {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status     String   @default("queued")
+  channel    String
+  subject    String?
+  body       String
+  sentAt     DateTime?
+  openedAt   DateTime?
+  clickedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([campaignId, status])
+}
+
+model Canvas {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  status      String    @default("draft")
+  segmentId   String?
+  segment     Segment?  @relation(fields: [segmentId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  steps   CanvasStep[]
+  entries CanvasEntry[]
+}
+
+model CanvasStep {
+  id        String @id @default(cuid())
+  canvasId  String
+  canvas    Canvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  order     Int
+  type      String
+  name      String
+  /// JSON config: delay hours, channel, message body, etc.
+  config    String @default("{}")
+
+  @@index([canvasId, order])
+}
+
+model CanvasEntry {
+  id         String   @id @default(cuid())
+  canvasId   String
+  canvas     Canvas   @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  stepIndex  Int      @default(0)
+  status     String   @default("active")
+  enteredAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([canvasId, customerId])
+}
