@@ -23,6 +23,8 @@ model Workspace {
   templates         MessageTemplate[]
   contentTemplates  ContentTemplate[]
   planProjects      PlanProject[]
+  listExtensions    ListExtension[]
+  suppressionLists  SuppressionList[]
 }
 
 model ApiKey {
@@ -229,4 +231,40 @@ model PlanTask {
   updatedAt   DateTime    @updatedAt
 
   @@index([projectId, status])
+}
+
+model ListExtension {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  /// email | sms | custom
+  type        String
+  description String?
+  status      String    @default("active")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SuppressionList {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  /// email | sms | push | all
+  channel     String    @default("all")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  entries SuppressionEntry[]
+}
+
+model SuppressionEntry {
+  id        String          @id @default(cuid())
+  listId    String
+  list      SuppressionList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  email     String?
+  phone     String?
+  externalId String?
+  createdAt DateTime        @default(now())
 }

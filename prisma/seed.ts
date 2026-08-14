@@ -3,6 +3,9 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.suppressionEntry.deleteMany();
+  await prisma.suppressionList.deleteMany();
+  await prisma.listExtension.deleteMany();
   await prisma.planTask.deleteMany();
   await prisma.planProject.deleteMany();
   await prisma.contentTemplate.deleteMany();
