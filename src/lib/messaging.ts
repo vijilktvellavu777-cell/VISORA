@@ -17,5 +17,13 @@ export function renderMessage(body: string, customer: Customer, extra: Record<st
 }
 
 export function channelLabel(channel: string) {
-  return { email: "Email", push: "Push", sms: "SMS", in_app: "In-app" }[channel] ?? channel;
+  return (
+    {
+      email: "Email",
+      push: "Push",
+      sms: "SMS",
+      in_app: "In-app",
+      content_card: "Content card",
+    }[channel] ?? channel
+  );
 }
