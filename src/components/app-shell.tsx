@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Home,
   Users,
   Filter,
   Megaphone,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/", label: "Home", icon: Home },
   { href: "/audience", label: "Audience", icon: Users },
   { href: "/segments", label: "Segments", icon: Filter },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
