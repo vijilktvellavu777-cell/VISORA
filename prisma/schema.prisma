@@ -20,7 +20,9 @@ model Workspace {
   segments   Segment[]
   campaigns  Campaign[]
   canvases   Canvas[]
-  templates  MessageTemplate[]
+  templates         MessageTemplate[]
+  contentTemplates  ContentTemplate[]
+  planProjects      PlanProject[]
 }
 
 model ApiKey {
@@ -186,4 +188,45 @@ model CanvasEntry {
   updatedAt  DateTime @updatedAt
 
   @@unique([canvasId, customerId])
+}
+
+model ContentTemplate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /// push | in_app | content_card
+  kind        String
+  name        String
+  title       String?
+  body        String
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId, kind])
+}
+
+model PlanProject {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tasks PlanTask[]
+}
+
+model PlanTask {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     PlanProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  /// todo | in_progress | done
+  status      String      @default("todo")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([projectId, status])
 }

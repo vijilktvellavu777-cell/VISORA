@@ -10,6 +10,10 @@ import {
   GitBranch,
   FileText,
   KeyRound,
+  PanelsTopLeft,
+  BarChart3,
+  KanbanSquare,
+  Sparkles,
 } from "lucide-react";
 
 const NAV = [
@@ -20,6 +24,10 @@ const NAV = [
   { href: "/canvas", label: "Canvas", icon: GitBranch },
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/developer", label: "Developer", icon: KeyRound },
+  { href: "/content", label: "Content", icon: PanelsTopLeft },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/planly", label: "Planly", icon: KanbanSquare },
+  { href: "/bubu", label: "Bubu", icon: Sparkles },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -43,7 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
                   active
                     ? "bg-primary text-white"
-                    : "text-muted hover:bg-background hover:text-foreground"
+                    : "text-foreground hover:bg-background"
                 }`}
               >
                 <Icon size={16} />
