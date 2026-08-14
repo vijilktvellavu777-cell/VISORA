@@ -27,8 +27,8 @@ export default async function TemplatesPage() {
               <div className="font-medium">{template.name}</div>
               <Badge tone="accent">{channelLabel(template.channel)}</Badge>
             </div>
-            {template.subject ? <div className="mt-2 text-sm text-[#c5cbd8]">{template.subject}</div> : null}
-            <pre className="mt-3 whitespace-pre-wrap font-mono text-xs text-[#8b95a8]">{template.body}</pre>
+            {template.subject ? <div className="mt-2 text-sm text-muted">{template.subject}</div> : null}
+            <pre className="mt-3 whitespace-pre-wrap font-mono text-xs text-muted">{template.body}</pre>
           </Card>
         ))
         )}

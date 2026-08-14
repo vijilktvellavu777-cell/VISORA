@@ -33,8 +33,8 @@ export default async function CampaignsPage() {
             <EmptyState title="No campaigns yet" body="Create a campaign to message a segment." />
           ) : (
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-[#8b95a8]">
-              <tr className="border-b border-[#262c3a]">
+            <thead className="text-xs uppercase text-muted">
+              <tr className="border-b border-border">
                 <th className="px-5 py-3 font-medium">Campaign</th>
                 <th className="px-5 py-3 font-medium">Channel</th>
                 <th className="px-5 py-3 font-medium">Segment</th>
@@ -44,12 +44,12 @@ export default async function CampaignsPage() {
             </thead>
             <tbody>
               {campaigns.map((campaign) => (
-                <tr key={campaign.id} className="border-b border-[#262c3a] last:border-0">
+                <tr key={campaign.id} className="border-b border-border last:border-0">
                   <td className="px-5 py-3">
-                    <Link href={`/campaigns/${campaign.id}`} className="font-medium hover:text-[#8b7dff]">
+                    <Link href={`/campaigns/${campaign.id}`} className="font-medium hover:text-accent">
                       {campaign.name}
                     </Link>
-                    <div className="text-xs text-[#8b95a8]">{campaign.description}</div>
+                    <div className="text-xs text-muted">{campaign.description}</div>
                   </td>
                   <td className="px-5 py-3">{channelLabel(campaign.channel)}</td>
                   <td className="px-5 py-3">{campaign.segment?.name ?? "All profiles"}</td>

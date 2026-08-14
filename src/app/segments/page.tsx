@@ -37,10 +37,10 @@ export default async function SegmentsPage() {
           <Card key={segment.id} className="px-5 py-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <Link href={`/segments/${segment.id}`} className="text-base font-medium hover:text-[#8b7dff]">
+                <Link href={`/segments/${segment.id}`} className="text-base font-medium hover:text-accent">
                   {segment.name}
                 </Link>
-                <p className="mt-1 text-sm text-[#8b95a8]">{segment.description}</p>
+                <p className="mt-1 text-sm text-muted">{segment.description}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {segment.rules.filters.map((filter, index) => (
                     <Badge key={index} tone="accent">
@@ -53,7 +53,7 @@ export default async function SegmentsPage() {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-semibold">{segment.count}</div>
-                <div className="text-xs text-[#8b95a8]">profiles</div>
+                <div className="text-xs text-muted">profiles</div>
               </div>
             </div>
           </Card>

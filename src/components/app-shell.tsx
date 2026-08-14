@@ -26,11 +26,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen grid grid-cols-[240px_1fr]">
-      <aside className="border-r border-[#262c3a] bg-[#0e1118] px-4 py-6 flex flex-col gap-8">
+    <div className="min-h-screen grid grid-cols-[240px_1fr] bg-background">
+      <aside className="border-r border-border bg-surface px-4 py-6 flex flex-col gap-8">
         <Link href="/" className="px-2">
-          <div className="text-[11px] tracking-[0.28em] text-[#8b7dff] font-semibold">VISORA</div>
-          <div className="text-lg font-semibold leading-tight">Engagement</div>
+          <div className="text-[11px] tracking-[0.28em] text-accent font-semibold">VISORA</div>
+          <div className="text-lg font-semibold leading-tight text-foreground">Engagement</div>
         </Link>
         <nav className="flex flex-col gap-1">
           {NAV.map((item) => {
@@ -41,7 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
-                  active ? "bg-[#6d5efc] text-white" : "text-[#c5cbd8] hover:bg-[#181c26]"
+                  active
+                    ? "bg-primary text-white"
+                    : "text-muted hover:bg-background hover:text-foreground"
                 }`}
               >
                 <Icon size={16} />
@@ -50,9 +52,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-xl border border-[#262c3a] bg-[#12151c] p-3 text-xs text-[#8b95a8]">
+        <div className="mt-auto rounded-xl border border-border bg-background p-3 text-xs text-muted">
           Workspace
-          <div className="mt-1 text-sm text-[#e8ecf4] font-medium">VISORA</div>
+          <div className="mt-1 text-sm text-foreground font-medium">VISORA</div>
         </div>
       </aside>
       <main className="min-h-screen">{children}</main>

@@ -33,7 +33,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <dl className="mt-3 space-y-2 text-sm">
             {Object.entries(attributes).map(([key, value]) => (
               <div key={key} className="flex justify-between gap-4">
-                <dt className="text-[#8b95a8]">{key}</dt>
+                <dt className="text-muted">{key}</dt>
                 <dd className="font-mono text-xs">{String(value)}</dd>
               </div>
             ))}
@@ -48,7 +48,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               </Badge>
             ))}
           </div>
-          <div className="mt-4 text-xs text-[#8b95a8]">
+          <div className="mt-4 text-xs text-muted">
             Created {format(customer.createdAt, "MMM d, yyyy")}
           </div>
         </Card>
@@ -56,7 +56,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <div className="text-sm font-medium">Message history</div>
           <ul className="mt-3 space-y-2 text-sm">
             {customer.sends.length === 0 ? (
-              <li className="text-[#8b95a8]">No sends yet</li>
+              <li className="text-muted">No sends yet</li>
             ) : (
               customer.sends.map((send) => (
                 <li key={send.id} className="flex items-center justify-between">
@@ -70,10 +70,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       </div>
       <div className="px-8 pb-8">
         <Card>
-          <div className="border-b border-[#262c3a] px-5 py-3 text-sm font-medium">Event stream</div>
+          <div className="border-b border-border px-5 py-3 text-sm font-medium">Event stream</div>
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-[#8b95a8]">
-              <tr className="border-b border-[#262c3a]">
+            <thead className="text-xs uppercase text-muted">
+              <tr className="border-b border-border">
                 <th className="px-5 py-2 font-medium">Event</th>
                 <th className="px-5 py-2 font-medium">Properties</th>
                 <th className="px-5 py-2 font-medium">When</th>
@@ -81,10 +81,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </thead>
             <tbody>
               {customer.events.map((event) => (
-                <tr key={event.id} className="border-b border-[#262c3a] last:border-0">
-                  <td className="px-5 py-2 font-mono text-[#b7afff]">{event.name}</td>
-                  <td className="px-5 py-2 font-mono text-xs text-[#8b95a8]">{event.properties}</td>
-                  <td className="px-5 py-2 text-[#8b95a8]">{format(event.occurredAt, "MMM d, HH:mm")}</td>
+                <tr key={event.id} className="border-b border-border last:border-0">
+                  <td className="px-5 py-2 font-mono text-accent">{event.name}</td>
+                  <td className="px-5 py-2 font-mono text-xs text-muted">{event.properties}</td>
+                  <td className="px-5 py-2 text-muted">{format(event.occurredAt, "MMM d, HH:mm")}</td>
                 </tr>
               ))}
             </tbody>

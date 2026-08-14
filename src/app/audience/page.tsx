@@ -29,8 +29,8 @@ export default async function AudiencePage() {
             />
           ) : (
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-[#8b95a8]">
-              <tr className="border-b border-[#262c3a]">
+            <thead className="text-xs uppercase tracking-wide text-muted">
+              <tr className="border-b border-border">
                 <th className="px-5 py-3 font-medium">Profile</th>
                 <th className="px-5 py-3 font-medium">External ID</th>
                 <th className="px-5 py-3 font-medium">Country</th>
@@ -40,19 +40,19 @@ export default async function AudiencePage() {
             </thead>
             <tbody>
               {customers.map((customer) => (
-                <tr key={customer.id} className="border-b border-[#262c3a] last:border-0">
+                <tr key={customer.id} className="border-b border-border last:border-0">
                   <td className="px-5 py-3">
-                    <Link href={`/audience/${customer.id}`} className="font-medium hover:text-[#8b7dff]">
+                    <Link href={`/audience/${customer.id}`} className="font-medium hover:text-accent">
                       {customerDisplayName(customer)}
                     </Link>
-                    <div className="text-xs text-[#8b95a8]">{customer.email}</div>
+                    <div className="text-xs text-muted">{customer.email}</div>
                   </td>
-                  <td className="px-5 py-3 font-mono text-xs text-[#b7afff]">{customer.externalId}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-accent">{customer.externalId}</td>
                   <td className="px-5 py-3">{customer.country ?? "—"}</td>
                   <td className="px-5 py-3">
                     <Badge>{customer._count.events}</Badge>
                   </td>
-                  <td className="px-5 py-3 text-[#8b95a8]">
+                  <td className="px-5 py-3 text-muted">
                     {customer.lastSeenAt
                       ? formatDistanceToNow(customer.lastSeenAt, { addSuffix: true })
                       : "—"}

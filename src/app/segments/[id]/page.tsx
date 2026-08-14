@@ -29,16 +29,16 @@ export default async function SegmentDetailPage({ params }: { params: Promise<{ 
           ))}
         </div>
         <Card>
-          <div className="border-b border-[#262c3a] px-5 py-3 text-sm font-medium">
+          <div className="border-b border-border px-5 py-3 text-sm font-medium">
             {members.length} matching profiles
           </div>
-          <ul className="divide-y divide-[#262c3a]">
+          <ul className="divide-y divide-border">
             {members.map((customer) => (
               <li key={customer.id} className="px-5 py-3 text-sm">
-                <Link href={`/audience/${customer.id}`} className="hover:text-[#8b7dff]">
+                <Link href={`/audience/${customer.id}`} className="hover:text-accent">
                   {customerDisplayName(customer)}
                 </Link>
-                <span className="ml-2 text-[#8b95a8]">{customer.email}</span>
+                <span className="ml-2 text-muted">{customer.email}</span>
               </li>
             ))}
           </ul>

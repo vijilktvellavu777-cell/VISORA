@@ -152,7 +152,7 @@ export default function NewSegmentPage() {
           </Button>
           <Button type="submit">Save segment</Button>
         </div>
-        {error ? <p className="text-sm text-[#f5c14a]">{error}</p> : null}
+        {error ? <p className="text-sm text-error">{error}</p> : null}
       </form>
     </div>
   );

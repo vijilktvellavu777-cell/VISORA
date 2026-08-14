@@ -8,10 +8,10 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#262c3a] px-8 py-6">
+    <div className="flex items-start justify-between gap-4 border-b border-border bg-surface px-8 py-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle ? <p className="mt-1 text-sm text-[#8b95a8]">{subtitle}</p> : null}
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
+        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {action}
     </div>
@@ -20,16 +20,22 @@ export function PageHeader({
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl border border-[#262c3a] bg-[#12151c] ${className}`}>{children}</div>
+    <div className={`rounded-xl border border-border bg-surface shadow-sm ${className}`}>{children}</div>
   );
 }
 
-export function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "ok" | "warn" | "accent" }) {
+export function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "ok" | "warn" | "accent";
+}) {
   const colors = {
-    neutral: "bg-[#181c26] text-[#c5cbd8]",
-    ok: "bg-[#143322] text-[#3dd68c]",
-    warn: "bg-[#332a12] text-[#f5c14a]",
-    accent: "bg-[#2a2450] text-[#b7afff]",
+    neutral: "bg-background text-muted",
+    ok: "bg-success/10 text-success",
+    warn: "bg-warning/10 text-warning",
+    accent: "bg-primary/10 text-primary",
   };
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide ${colors[tone]}`}>
@@ -53,8 +59,8 @@ export function Button({
 }) {
   const cls =
     variant === "primary"
-      ? "inline-flex items-center rounded-lg bg-[#6d5efc] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#7d70ff]"
-      : "inline-flex items-center rounded-lg border border-[#262c3a] px-3.5 py-2 text-sm text-[#c5cbd8] hover:bg-[#181c26]";
+      ? "inline-flex items-center rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+      : "inline-flex items-center rounded-lg border border-border bg-surface px-3.5 py-2 text-sm text-foreground hover:bg-background";
   if (href) {
     return (
       <a className={cls} href={href}>
@@ -78,20 +84,20 @@ export function Field({
 }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1.5 block text-[#8b95a8]">{label}</span>
+      <span className="mb-1.5 block text-muted">{label}</span>
       {children}
     </label>
   );
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-[#262c3a] bg-[#0b0d12] px-3 py-2 text-sm text-[#e8ecf4] outline-none focus:border-[#6d5efc]";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-primary";
 
 export function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className="px-5 py-10 text-center">
-      <div className="text-sm font-medium">{title}</div>
-      <p className="mt-1 text-sm text-[#8b95a8]">{body}</p>
+      <div className="text-sm font-medium text-foreground">{title}</div>
+      <p className="mt-1 text-sm text-muted">{body}</p>
     </div>
   );
 }

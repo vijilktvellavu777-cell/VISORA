@@ -34,7 +34,7 @@ export default async function CanvasPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-lg font-medium">{canvas.name}</div>
-                <p className="mt-1 text-sm text-[#8b95a8]">{canvas.description}</p>
+                <p className="mt-1 text-sm text-muted">{canvas.description}</p>
                 <div className="mt-2 flex gap-2">
                   <Badge tone={canvas.status === "active" ? "ok" : "neutral"}>{canvas.status}</Badge>
                   <Badge>{canvas.segment?.name ?? "All profiles"}</Badge>
@@ -47,13 +47,13 @@ export default async function CanvasPage() {
               {canvas.steps.map((step) => (
                 <li
                   key={step.id}
-                  className="flex items-center gap-3 rounded-lg border border-[#262c3a] bg-[#0b0d12] px-4 py-3 text-sm"
+                  className="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm"
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2a2450] text-xs text-[#b7afff]">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-accent">
                     {step.order + 1}
                   </span>
                   <span className="font-medium">{step.name}</span>
-                  <span className="text-[#8b95a8]">{step.type}</span>
+                  <span className="text-muted">{step.type}</span>
                 </li>
               ))}
             </ol>
