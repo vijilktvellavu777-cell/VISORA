@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Columns3,
   Info,
-  Lock,
   MessageSquare,
   Search,
   SlidersHorizontal,
@@ -55,12 +54,8 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
     <div className="min-h-screen bg-surface">
       <div className="border-b border-border px-8 py-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Campaigns</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-              <Lock size={12} />
-              Limited access
-            </span>
           </div>
           <div className="flex items-center gap-2">
             <button
