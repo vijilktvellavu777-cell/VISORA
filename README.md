@@ -14,10 +14,21 @@ This is the first vertical slice: a working dashboard plus REST identify/track A
 
 ```bash
 npm install
+cp .env.example .env
+npx prisma generate
 npx prisma db push
 npx tsx prisma/seed.ts
 npm run dev
 ```
+
+If you already cloned the repo, create `.env` in the project root (same folder as `package.json`):
+
+```
+DATABASE_URL="file:./dev.db"
+NEXT_PUBLIC_APP_NAME="VISORA"
+```
+
+Then stop `npm run dev` (Ctrl+C), run `npx prisma db push` and `npx tsx prisma/seed.ts`, and start it again.
 
 Open [http://localhost:3000](http://localhost:3000).
 
