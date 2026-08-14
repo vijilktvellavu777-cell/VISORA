@@ -2,6 +2,7 @@ node_modules
 .next
 .DS_Store
 *.log
+tsconfig.tsbuildinfo
 .env
 .env*.local
 prisma/dev.db
