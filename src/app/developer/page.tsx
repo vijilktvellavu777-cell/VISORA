@@ -32,14 +32,14 @@ export default async function DeveloperPage() {
         <Card className="p-5 text-sm">
           <div className="font-medium">Identify a user</div>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-[#0b0d12] p-4 font-mono text-xs text-[#c5cbd8]">{`curl -X POST http://localhost:3000/api/v1/users/identify \\
-  -H "Authorization: Bearer visora_demo_sk_live_replace_me" \\
+  -H "Authorization: Bearer visora_sk_local" \\
   -H "Content-Type: application/json" \\
-  -d '{"external_id":"usr_maya","email":"maya@northwind.example","first_name":"Maya","attributes":{"plan":"pro"}}'`}</pre>
+  -d '{"external_id":"user_001","email":"user@example.com","first_name":"Alex","attributes":{"plan":"pro"}}'`}</pre>
           <div className="mt-6 font-medium">Track events</div>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-[#0b0d12] p-4 font-mono text-xs text-[#c5cbd8]">{`curl -X POST http://localhost:3000/api/v1/users/track \\
-  -H "Authorization: Bearer visora_demo_sk_live_replace_me" \\
+  -H "Authorization: Bearer visora_sk_local" \\
   -H "Content-Type: application/json" \\
-  -d '{"external_id":"usr_maya","events":[{"name":"purchase","properties":{"amount":49}}]}'`}</pre>
+  -d '{"external_id":"user_001","events":[{"name":"purchase","properties":{"amount":49}}]}'`}</pre>
         </Card>
       </div>
     </div>

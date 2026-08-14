@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getDefaultWorkspace } from "@/lib/workspace";
 import { channelLabel } from "@/lib/messaging";
-import { Badge, Button, Card, PageHeader } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +29,9 @@ export default async function CampaignsPage() {
       />
       <div className="p-8">
         <Card>
+          {campaigns.length === 0 ? (
+            <EmptyState title="No campaigns yet" body="Create a campaign to message a segment." />
+          ) : (
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-[#8b95a8]">
               <tr className="border-b border-[#262c3a]">
@@ -58,6 +61,7 @@ export default async function CampaignsPage() {
               ))}
             </tbody>
           </table>
+          )}
         </Card>
       </div>
     </div>

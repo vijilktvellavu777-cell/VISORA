@@ -5,7 +5,7 @@ export async function getDefaultWorkspace() {
   const existing = await prisma.workspace.findFirst({ orderBy: { createdAt: "asc" } });
   if (existing) return existing;
   return prisma.workspace.create({
-    data: { name: "VISORA Demo", slug: "demo" },
+    data: { name: "VISORA", slug: "default" },
   });
 }
 

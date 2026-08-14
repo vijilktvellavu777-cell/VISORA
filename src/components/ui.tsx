@@ -86,3 +86,12 @@ export function Field({
 
 export const inputClass =
   "w-full rounded-lg border border-[#262c3a] bg-[#0b0d12] px-3 py-2 text-sm text-[#e8ecf4] outline-none focus:border-[#6d5efc]";
+
+export function EmptyState({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="px-5 py-10 text-center">
+      <div className="text-sm font-medium">{title}</div>
+      <p className="mt-1 text-sm text-[#8b95a8]">{body}</p>
+    </div>
+  );
+}

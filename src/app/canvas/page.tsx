@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getDefaultWorkspace } from "@/lib/workspace";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { LaunchCanvasButton } from "@/components/launch-canvas";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,12 @@ export default async function CanvasPage() {
         subtitle="Multi-step journeys. Launch enrolls the target segment and records entries."
       />
       <div className="space-y-4 p-8">
-        {canvases.map((canvas) => (
+        {canvases.length === 0 ? (
+          <Card>
+            <EmptyState title="No canvases yet" body="Journeys you create will appear here." />
+          </Card>
+        ) : (
+        canvases.map((canvas) => (
           <Card key={canvas.id} className="p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -53,7 +58,8 @@ export default async function CanvasPage() {
               ))}
             </ol>
           </Card>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

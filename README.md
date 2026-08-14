@@ -21,7 +21,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Demo API key (seeded): `visora_demo_sk_live_replace_me`
+Local API key (seeded): `visora_sk_local`
 
 ## What is in this slice
 
@@ -45,9 +45,9 @@ Identify body:
 
 ```json
 {
-  "external_id": "usr_maya",
-  "email": "maya@northwind.example",
-  "first_name": "Maya",
+  "external_id": "user_001",
+  "email": "user@example.com",
+  "first_name": "Alex",
   "attributes": { "plan": "pro", "ltv": 840 }
 }
 ```
@@ -56,7 +56,7 @@ Track body:
 
 ```json
 {
-  "external_id": "usr_maya",
+  "external_id": "user_001",
   "events": [{ "name": "purchase", "properties": { "amount": 49 } }]
 }
 ```

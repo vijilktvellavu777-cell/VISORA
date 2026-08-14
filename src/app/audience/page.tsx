@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { customerDisplayName, getDefaultWorkspace } from "@/lib/workspace";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { formatDistanceToNow } from "date-fns";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +22,12 @@ export default async function AudiencePage() {
       />
       <div className="p-8">
         <Card>
+          {customers.length === 0 ? (
+            <EmptyState
+              title="No profiles yet"
+              body="Identify a user through the REST API to add the first profile."
+            />
+          ) : (
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-[#8b95a8]">
               <tr className="border-b border-[#262c3a]">
@@ -55,6 +61,7 @@ export default async function AudiencePage() {
               ))}
             </tbody>
           </table>
+          )}
         </Card>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getDefaultWorkspace } from "@/lib/workspace";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { formatDistanceToNow } from "date-fns";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +43,7 @@ export default async function OverviewPage() {
     <div>
       <PageHeader
         title="Overview"
-        subtitle="Live snapshot of the demo workspace — profiles, events, and campaign activity."
+        subtitle="Live snapshot of your workspace — profiles, events, and campaign activity."
       />
       <div className="grid grid-cols-5 gap-3 p-8">
         {stats.map((stat) => (
@@ -56,33 +56,41 @@ export default async function OverviewPage() {
       <div className="grid grid-cols-2 gap-4 px-8 pb-8">
         <Card>
           <div className="border-b border-[#262c3a] px-5 py-3 text-sm font-medium">Top events</div>
-          <ul className="divide-y divide-[#262c3a]">
-            {eventCounts.map((row) => (
-              <li key={row.name} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="font-mono text-[#b7afff]">{row.name}</span>
-                <span className="text-[#8b95a8]">{row._count.name}</span>
-              </li>
-            ))}
-          </ul>
+          {eventCounts.length === 0 ? (
+            <EmptyState title="No events yet" body="Events appear here after you send track calls." />
+          ) : (
+            <ul className="divide-y divide-[#262c3a]">
+              {eventCounts.map((row) => (
+                <li key={row.name} className="flex items-center justify-between px-5 py-3 text-sm">
+                  <span className="font-mono text-[#b7afff]">{row.name}</span>
+                  <span className="text-[#8b95a8]">{row._count.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
         <Card>
           <div className="border-b border-[#262c3a] px-5 py-3 text-sm font-medium">Recent activity</div>
-          <ul className="divide-y divide-[#262c3a]">
-            {recentEvents.map((event) => (
-              <li key={event.id} className="px-5 py-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {[event.customer.firstName, event.customer.lastName].filter(Boolean).join(" ") ||
-                      event.customer.externalId}
-                  </span>
-                  <Badge tone="accent">{event.name}</Badge>
-                </div>
-                <div className="mt-1 text-xs text-[#8b95a8]">
-                  {formatDistanceToNow(event.occurredAt, { addSuffix: true })}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {recentEvents.length === 0 ? (
+            <EmptyState title="No activity yet" body="Profile events will show up in this feed." />
+          ) : (
+            <ul className="divide-y divide-[#262c3a]">
+              {recentEvents.map((event) => (
+                <li key={event.id} className="px-5 py-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">
+                      {[event.customer.firstName, event.customer.lastName].filter(Boolean).join(" ") ||
+                        event.customer.externalId}
+                    </span>
+                    <Badge tone="accent">{event.name}</Badge>
+                  </div>
+                  <div className="mt-1 text-xs text-[#8b95a8]">
+                    {formatDistanceToNow(event.occurredAt, { addSuffix: true })}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
     </div>

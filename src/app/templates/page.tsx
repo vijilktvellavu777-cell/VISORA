@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getDefaultWorkspace } from "@/lib/workspace";
 import { channelLabel } from "@/lib/messaging";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,12 @@ export default async function TemplatesPage() {
     <div>
       <PageHeader title="Templates" subtitle="Reusable copy for campaigns. Liquid-style {{ first_name }} tokens." />
       <div className="grid gap-3 p-8 md:grid-cols-2">
-        {templates.map((template) => (
+        {templates.length === 0 ? (
+          <Card className="md:col-span-2">
+            <EmptyState title="No templates yet" body="Saved message copy will show up here." />
+          </Card>
+        ) : (
+        templates.map((template) => (
           <Card key={template.id} className="p-5">
             <div className="flex items-center justify-between">
               <div className="font-medium">{template.name}</div>
@@ -25,7 +30,8 @@ export default async function TemplatesPage() {
             {template.subject ? <div className="mt-2 text-sm text-[#c5cbd8]">{template.subject}</div> : null}
             <pre className="mt-3 whitespace-pre-wrap font-mono text-xs text-[#8b95a8]">{template.body}</pre>
           </Card>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

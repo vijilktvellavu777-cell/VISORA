@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { parseRules } from "@/lib/segments";
 import { getDefaultWorkspace, resolveSegmentMembers } from "@/lib/workspace";
-import { Badge, Button, Card, PageHeader } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,12 @@ export default async function SegmentsPage() {
         action={<Button href="/segments/new">New segment</Button>}
       />
       <div className="grid gap-3 p-8">
-        {withCounts.map((segment) => (
+        {withCounts.length === 0 ? (
+          <Card>
+            <EmptyState title="No segments yet" body="Create a segment to build a live audience from attributes and events." />
+          </Card>
+        ) : (
+        withCounts.map((segment) => (
           <Card key={segment.id} className="px-5 py-4">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -52,7 +57,8 @@ export default async function SegmentsPage() {
               </div>
             </div>
           </Card>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="mt-auto rounded-xl border border-[#262c3a] bg-[#12151c] p-3 text-xs text-[#8b95a8]">
           Workspace
-          <div className="mt-1 text-sm text-[#e8ecf4] font-medium">VISORA Demo</div>
+          <div className="mt-1 text-sm text-[#e8ecf4] font-medium">VISORA</div>
         </div>
       </aside>
       <main className="min-h-screen">{children}</main>
