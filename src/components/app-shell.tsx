@@ -13,6 +13,7 @@ import {
   KanbanSquare,
   Sparkles,
 } from "lucide-react";
+import { WorkspaceTopBar } from "@/components/workspace-top-bar";
 
 const NAV = [
   { href: "/", label: "Home", icon: Home },
@@ -61,7 +62,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mt-1 text-sm text-foreground font-medium">VISORA</div>
         </div>
       </aside>
-      <main className="min-h-screen">{children}</main>
+      <div className="flex min-h-screen min-w-0 flex-col">
+        <WorkspaceTopBar />
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }
