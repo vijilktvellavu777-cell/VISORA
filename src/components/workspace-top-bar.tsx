@@ -26,7 +26,7 @@ function IconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
     >
       {children}
     </button>
@@ -57,17 +57,17 @@ export function WorkspaceTopBar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar px-6 py-3 text-white">
+    <header className="sticky top-0 z-30 border-b border-border bg-surface px-6 py-3">
       <div className="flex items-center justify-between gap-4">
         <label className="relative block w-full max-w-md">
-          <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/60" />
+          <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
           <input
             id="workspace-search"
             type="search"
             placeholder="Search workspace"
-            className="w-full rounded-full border border-transparent bg-white/5 py-2.5 pl-11 pr-16 text-sm text-white outline-none transition placeholder:text-white/50 focus:border-primary/40 focus:bg-white/10 focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-full border border-transparent bg-primary/5 py-2.5 pl-11 pr-16 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-primary/20 focus:bg-surface focus:ring-2 focus:ring-primary/10"
           />
-          <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-sidebar-border bg-white/5 px-1.5 py-0.5 text-[11px] font-medium text-white/60 sm:inline-block">
+          <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-medium text-muted sm:inline-block">
             ⌘+K
           </kbd>
         </label>
@@ -91,12 +91,12 @@ export function WorkspaceTopBar() {
               type="button"
               aria-label="Profile menu"
               onClick={() => setProfileOpen((open) => !open)}
-              className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/5"
+              className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-background"
             >
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-sm">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#d1d5db] text-sm">
                 🙂
               </span>
-              <ChevronDown size={14} className="text-white/60" />
+              <ChevronDown size={14} className="text-muted" />
             </button>
             {profileOpen ? (
               <div className="absolute right-0 top-full z-20 mt-2 min-w-[180px] overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg">
