@@ -34,8 +34,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen grid grid-cols-[240px_1fr] bg-background">
-      <aside className="sticky top-0 flex h-screen flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 text-white">
+    <div className="grid min-h-screen w-full grid-cols-[240px_minmax(0,1fr)] overflow-x-hidden bg-background">
+      <aside className="sticky top-0 flex h-screen w-[240px] shrink-0 flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 text-white">
         <Link href="/" className="shrink-0 px-2">
           <div className="text-[11px] font-semibold tracking-[0.28em] text-accent">VISORA</div>
           <div className="text-lg font-semibold leading-tight text-white">Engagement</div>
@@ -75,9 +75,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </aside>
-      <div className="flex min-h-screen min-w-0 flex-col">
+      <div className="flex min-h-screen min-w-0 w-full flex-col overflow-x-hidden">
         <WorkspaceTopBar />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 w-full flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

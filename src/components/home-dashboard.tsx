@@ -65,9 +65,9 @@ export function HomeDashboard({ data }: { data: HomeData }) {
   const compareLabel = `${formatShort(data.priorFrom)} - ${formatShort(data.priorTo)}`;
 
   return (
-    <div>
+    <div className="w-full max-w-full overflow-x-hidden">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border bg-surface px-8 py-6">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
           <p className="mt-1 text-sm text-muted">Monitor key metrics and recent activity across your platform.</p>
         </div>

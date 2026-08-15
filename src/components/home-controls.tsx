@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { Calendar } from "lucide-react";
-import { inputClass } from "@/components/ui";
 
-const dateInputClass =
-  `${inputClass} w-[9.5rem] shrink-0 border-0 bg-transparent px-1 py-0 shadow-none [color-scheme:light] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none`;
+const dateFieldClass =
+  "h-8 min-w-[10.5rem] cursor-pointer border-0 bg-transparent p-0 text-sm text-foreground outline-none [color-scheme:light]";
 
 export function DateRangePicker({ from, to, grain }: { from: string; to: string; grain: string }) {
   const router = useRouter();
@@ -19,19 +18,19 @@ export function DateRangePicker({ from, to, grain }: { from: string; to: string;
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 shadow-sm">
-      <Calendar size={20} strokeWidth={1.75} className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+    <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 shadow-sm">
+      <Calendar size={18} strokeWidth={1.75} className="h-[18px] w-[18px] shrink-0 text-muted" aria-hidden />
       <input
         type="date"
-        className={dateInputClass}
+        className={dateFieldClass}
         value={from}
         onChange={(e) => update({ from: e.target.value })}
         aria-label="Start date"
       />
-      <span className="text-muted">-</span>
+      <span className="shrink-0 text-sm text-muted">-</span>
       <input
         type="date"
-        className={dateInputClass}
+        className={dateFieldClass}
         value={to}
         onChange={(e) => update({ to: e.target.value })}
         aria-label="End date"
