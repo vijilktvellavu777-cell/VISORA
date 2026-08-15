@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   Users,
-  Filter,
   Megaphone,
   GitBranch,
   FileText,
@@ -19,7 +18,6 @@ import {
 const NAV = [
   { href: "/", label: "Home", icon: Home },
   { href: "/audience", label: "Audience", icon: Users },
-  { href: "/audience/segments", label: "Segments", icon: Filter },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/canvas", label: "Canvas", icon: GitBranch },
   { href: "/templates", label: "Templates", icon: FileText },
