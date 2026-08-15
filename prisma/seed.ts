@@ -9,6 +9,7 @@ async function main() {
   await prisma.planTask.deleteMany();
   await prisma.planProject.deleteMany();
   await prisma.contentTemplate.deleteMany();
+  await prisma.contentFile.deleteMany();
   await prisma.campaignSend.deleteMany();
   await prisma.canvasEntry.deleteMany();
   await prisma.canvasStep.deleteMany();

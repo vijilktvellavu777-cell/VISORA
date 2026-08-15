@@ -25,8 +25,8 @@ function replyFor(message: string) {
   if (text.includes("planly") || text.includes("task") || text.includes("project")) {
     return "Planly is the project board. Create a project, add tasks, and move them from To do → In progress → Done.";
   }
-  if (text.includes("content") || text.includes("card") || text.includes("in-app") || text.includes("inapp")) {
-    return "Content holds reusable templates for push, in-app, and content cards. Pick a type, add a title and body, then save.";
+  if (text.includes("content") || text.includes("template") || text.includes("card") || text.includes("in-app") || text.includes("inapp")) {
+    return "Content holds reusable templates (Canvas, Content blocks, Email, Push) and files (Image, HTML). Open Content in the sidebar and pick a section.";
   }
   if (text.includes("analytic")) {
     return "Analytics summarizes profiles, events, sends, opens, and clicks from this workspace. Numbers stay at zero until you track events and send campaigns.";

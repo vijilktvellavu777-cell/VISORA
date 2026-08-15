@@ -22,6 +22,7 @@ model Workspace {
   canvases   Canvas[]
   templates         MessageTemplate[]
   contentTemplates  ContentTemplate[]
+  contentFiles      ContentFile[]
   planProjects      PlanProject[]
   listExtensions    ListExtension[]
   suppressionLists  SuppressionList[]
@@ -202,6 +203,21 @@ model ContentTemplate {
   title       String?
   body        String
   imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId, kind])
+}
+
+model ContentFile {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /// image | html
+  kind        String
+  name        String
+  /// Public URL for images; raw HTML for html files
+  content     String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
