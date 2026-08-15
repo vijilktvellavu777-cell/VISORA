@@ -28,8 +28,8 @@ function replyFor(message: string) {
   if (text.includes("content") || text.includes("template") || text.includes("card") || text.includes("in-app") || text.includes("inapp")) {
     return "Content holds reusable templates (Canvas, Content blocks, Email, Push) and files (Image, HTML). Open Content in the sidebar and pick a section.";
   }
-  if (text.includes("analytic")) {
-    return "Analytics summarizes profiles, events, sends, opens, and clicks from this workspace. Numbers stay at zero until you track events and send campaigns.";
+  if (text.includes("analytic") || text.includes("report")) {
+    return "Analytics has Reports (Report builder, Custom event report, Engagement report) and an Analytics dashboard. Open Analytics in the sidebar and pick a section.";
   }
   return "I am Bubu, the VISORA assistant. I can help with Content templates, Analytics, Planly projects, campaigns, segments, and Canvas. Ask about any of those.";
 }
