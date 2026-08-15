@@ -12,20 +12,22 @@ import {
   BarChart3,
   KanbanSquare,
   Sparkles,
+  Settings,
   ChevronDown,
 } from "lucide-react";
 import { WorkspaceTopBar } from "@/components/workspace-top-bar";
 
 const NAV = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/audience", label: "Audience", icon: Users },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/audience", label: "Audience", icon: Users },
   { href: "/canvas", label: "Canvas", icon: GitBranch },
   { href: "/content", label: "Content", icon: PanelsTopLeft },
-  { href: "/developer", label: "Developer", icon: KeyRound },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/planly", label: "Planly", icon: KanbanSquare },
+  { href: "/developer", label: "Developer", icon: KeyRound },
+  { href: "/planly", label: "Planny", icon: KanbanSquare },
   { href: "/bubu", label: "Bubu", icon: Sparkles },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -52,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     : "text-white hover:bg-white/10"
                 }`}
               >
-                <Icon size={16} className={active ? "text-white" : "text-white"} />
+                <Icon size={16} />
                 {item.label}
               </Link>
             );
