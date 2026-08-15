@@ -4,9 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  DollarSign,
+  Filter,
   Hammer,
+  LayoutTemplate,
   LineChart,
+  Megaphone,
   MousePointerClick,
+  Target,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -16,11 +21,23 @@ const SECTIONS = [
       { href: "/analytics/reports/report-builder", label: "Report builder", icon: Hammer },
       { href: "/analytics/reports/custom-event-report", label: "Custom event report", icon: MousePointerClick },
       { href: "/analytics/reports/engagement-report", label: "Engagement report", icon: LineChart },
+      { href: "/analytics/reports/revenue-report", label: "Revenue report", icon: DollarSign },
+      { href: "/analytics/reports/segment-report", label: "Segment report", icon: Filter },
     ],
   },
   {
     title: "Analytics",
-    items: [{ href: "/analytics/dashboard", label: "Analytics", icon: BarChart3 }],
+    items: [
+      { href: "/analytics/performance/campaign-performance", label: "Campaign performance", icon: Megaphone },
+      { href: "/analytics/performance/conversions", label: "Conversions", icon: Target },
+    ],
+  },
+  {
+    title: "Data build",
+    items: [
+      { href: "/analytics/data-build/custom-report", label: "Custom report", icon: BarChart3 },
+      { href: "/analytics/data-build/designs", label: "Designs", icon: LayoutTemplate },
+    ],
   },
 ] as const;
 

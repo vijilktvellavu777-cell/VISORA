@@ -29,7 +29,7 @@ function replyFor(message: string) {
     return "Content holds reusable templates (Canvas, Content blocks, Email, Push) and files (Image, HTML). Open Content in the sidebar and pick a section.";
   }
   if (text.includes("analytic") || text.includes("report")) {
-    return "Analytics has Reports (Report builder, Custom event report, Engagement report) and an Analytics dashboard. Open Analytics in the sidebar and pick a section.";
+    return "Analytics has Reports (Report builder, Custom event, Engagement, Revenue, Segment), Analytics (Campaign performance, Conversions), and Data build (Custom report, Designs). Open Analytics in the sidebar.";
   }
   return "I am Bubu, the VISORA assistant. I can help with Content templates, Analytics, Planly projects, campaigns, segments, and Canvas. Ask about any of those.";
 }
