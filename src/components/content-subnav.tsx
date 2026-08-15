@@ -34,12 +34,12 @@ export function ContentSubnav() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[220px] shrink-0 border-r border-sidebar-border bg-sidebar px-3 py-6">
-      <div className="px-2 text-[11px] font-semibold uppercase tracking-wide text-sidebar-muted">Content</div>
+    <aside className="w-[220px] shrink-0 border-r border-sidebar-border bg-sidebar px-3 py-6 text-white">
+      <div className="px-2 text-[11px] font-semibold uppercase tracking-wide text-white/60">Content</div>
       <div className="mt-3 flex flex-col gap-5">
         {SECTIONS.map((section) => (
           <div key={section.title}>
-            <div className="px-2 text-[10px] font-semibold uppercase tracking-wide text-sidebar-muted/80">
+            <div className="px-2 text-[10px] font-semibold uppercase tracking-wide text-white/50">
               {section.title}
             </div>
             <nav className="mt-2 flex flex-col gap-1">
@@ -51,7 +51,7 @@ export function ContentSubnav() {
                     key={item.href}
                     href={item.href}
                     className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
-                      active ? "bg-primary text-white" : "text-sidebar-foreground hover:bg-white/5"
+                      active ? "bg-primary text-white" : "text-white hover:bg-white/10"
                     }`}
                   >
                     <Icon size={16} />
