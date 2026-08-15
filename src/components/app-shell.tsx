@@ -35,12 +35,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen grid grid-cols-[240px_1fr] bg-background">
-      <aside className="flex flex-col gap-8 border-r border-sidebar-border bg-sidebar px-4 py-6 text-white">
-        <Link href="/" className="px-2">
+      <aside className="sticky top-0 flex h-screen flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 text-white">
+        <Link href="/" className="shrink-0 px-2">
           <div className="text-[11px] font-semibold tracking-[0.28em] text-accent">VISORA</div>
           <div className="text-lg font-semibold leading-tight text-white">Engagement</div>
         </Link>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {NAV.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const Icon = item.icon;
@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
+                className={`flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
                   active
                     ? "bg-primary text-white"
                     : "text-white hover:bg-white/10"
@@ -60,18 +60,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-xl border border-sidebar-border bg-white/5 p-3 text-xs text-white/60">
+        <div className="shrink-0 rounded-xl border border-white/15 bg-white/10 p-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
                 V
               </span>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-white/60">Workspace</div>
-                <div className="text-sm font-medium text-white">VISORA</div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-white/80">Workspace</div>
+                <div className="truncate text-sm font-semibold text-white">VISORA</div>
               </div>
             </div>
-            <ChevronDown size={14} className="text-white/60" />
+            <ChevronDown size={14} className="shrink-0 text-white/80" />
           </div>
         </div>
       </aside>
