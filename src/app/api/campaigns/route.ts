@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
       subject: body.subject ?? null,
       body: body.body ?? "",
       segmentId: body.segmentId || null,
+      conversionEvent: body.conversionEvent ?? null,
+      scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
     },
   });
   return NextResponse.json(campaign);
