@@ -471,11 +471,11 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
             </button>
           </div>
 
-          <div className="flex flex-1 justify-center overflow-auto px-6 pb-6">
+          <div className="flex flex-1 items-start justify-center overflow-auto px-6 pb-6">
             <div
               className={`w-full rounded-lg bg-surface shadow-lg transition-all ${
                 deviceView === "mobile" ? "max-w-[375px]" : "max-w-[680px]"
-              }`}
+              } ${blocks.length === 0 ? "min-h-[520px]" : "min-h-[320px]"}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -494,7 +494,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
                 </div>
               ) : null}
 
-              <div className={`space-y-1 p-6 ${blocks.length === 0 && !previewMode ? "pt-4" : ""}`}>
+              <div className={`space-y-1 p-6 pb-8 ${blocks.length === 0 && !previewMode ? "pt-4" : ""}`}>
                 {blocks.map((block) => (
                   <div
                     key={block.id}
