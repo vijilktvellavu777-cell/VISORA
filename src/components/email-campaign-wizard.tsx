@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
+import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 
 type SegmentOption = { id: string; name: string };
 
@@ -92,6 +93,7 @@ export function EmailCampaignWizard() {
   const [copied, setCopied] = useState(false);
   const [editingSendingInfo, setEditingSendingInfo] = useState(false);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
+  const [dragDropEditorOpen, setDragDropEditorOpen] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,19 +185,13 @@ export function EmailCampaignWizard() {
 
   async function selectEditorMode(mode: "drag-drop" | "html" | "templates") {
     setEditorMode(mode);
+    if (mode === "drag-drop") {
+      setDragDropEditorOpen(true);
+      return;
+    }
     if (mode === "html" && !campaign?.body) {
       setCampaign((prev) =>
         prev ? { ...prev, body: "<html>\n  <body>\n    <p>Hi {{ first_name }},</p>\n  </body>\n</html>" } : prev,
-      );
-    }
-    if (mode === "drag-drop" && !campaign?.body) {
-      setCampaign((prev) =>
-        prev
-          ? {
-              ...prev,
-              body: "Hi {{ first_name }},\n\nStart building your email with the drag-and-drop editor.",
-            }
-          : prev,
       );
     }
     if (mode === "templates") {
@@ -547,17 +543,24 @@ export function EmailCampaignWizard() {
               ) : null}
 
               {editorMode === "drag-drop" ? (
-                <div className="mt-6 rounded-xl border border-dashed border-border bg-background p-8 text-center">
-                  <p className="text-sm font-medium text-foreground">Drag-and-drop editor</p>
-                  <p className="mt-2 text-sm text-muted">
-                    Drop content blocks here to build your email layout.
-                  </p>
-                  <textarea
-                    className={`${inputClass} mx-auto mt-4 min-h-32 max-w-xl font-mono text-xs`}
-                    value={campaign.body}
-                    onChange={(e) => setCampaign({ ...campaign, body: e.target.value })}
-                    placeholder="Email preview text…"
-                  />
+                <div className="mt-6 rounded-xl border border-border bg-background p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Drag-and-drop editor</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {campaign.body.trim()
+                          ? "Your email design has been saved from the editor."
+                          : "Open the editor to build your email with content blocks."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDragDropEditorOpen(true)}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                    >
+                      {campaign.body.trim() ? "Edit design" : "Open editor"}
+                    </button>
+                  </div>
                 </div>
               ) : null}
 
@@ -754,6 +757,18 @@ export function EmailCampaignWizard() {
           </button>
         </div>
       </footer>
+
+      {dragDropEditorOpen ? (
+        <EmailDragDropEditor
+          campaignName={campaign.name}
+          initialBody={campaign.body}
+          onDone={(html) => {
+            setCampaign((prev) => (prev ? { ...prev, body: html } : prev));
+            setDragDropEditorOpen(false);
+          }}
+          onClose={() => setDragDropEditorOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
