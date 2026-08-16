@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
+import { EmailHtmlEditor } from "@/components/email-html-editor";
 
 type SegmentOption = { id: string; name: string };
 
@@ -94,6 +95,7 @@ export function EmailCampaignWizard() {
   const [editingSendingInfo, setEditingSendingInfo] = useState(false);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
   const [dragDropEditorOpen, setDragDropEditorOpen] = useState(false);
+  const [htmlEditorOpen, setHtmlEditorOpen] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -189,10 +191,19 @@ export function EmailCampaignWizard() {
       setDragDropEditorOpen(true);
       return;
     }
-    if (mode === "html" && !campaign?.body) {
-      setCampaign((prev) =>
-        prev ? { ...prev, body: "<html>\n  <body>\n    <p>Hi {{ first_name }},</p>\n  </body>\n</html>" } : prev,
-      );
+    if (mode === "html") {
+      if (!campaign?.body?.trim()) {
+        setCampaign((prev) =>
+          prev
+            ? {
+                ...prev,
+                body: "<html>\n  <body>\n    <p>Hi {{ first_name }},</p>\n  </body>\n</html>",
+              }
+            : prev,
+        );
+      }
+      setHtmlEditorOpen(true);
+      return;
     }
     if (mode === "templates") {
       const response = await fetch("/api/templates?channel=email");
@@ -223,6 +234,7 @@ export function EmailCampaignWizard() {
       setEditorMode("html");
       setCampaign((prev) => (prev ? { ...prev, body: content } : prev));
       setUploadFileName(file.name);
+      setHtmlEditorOpen(true);
       setError(null);
     };
     reader.onerror = () => setError("Could not read the uploaded file");
@@ -531,14 +543,24 @@ export function EmailCampaignWizard() {
               </div>
 
               {editorMode === "html" ? (
-                <div className="mt-6">
-                  <Field label="HTML code">
-                    <textarea
-                      className={`${inputClass} min-h-56 font-mono text-xs`}
-                      value={campaign.body}
-                      onChange={(e) => setCampaign({ ...campaign, body: e.target.value })}
-                    />
-                  </Field>
+                <div className="mt-6 rounded-xl border border-border bg-background p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">HTML code editor</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {campaign.body.trim()
+                          ? "Your HTML has been saved from the editor."
+                          : "Open the editor to write HTML with a live preview."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHtmlEditorOpen(true)}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                    >
+                      {campaign.body.trim() ? "Edit HTML" : "Open editor"}
+                    </button>
+                  </div>
                 </div>
               ) : null}
 
@@ -757,6 +779,18 @@ export function EmailCampaignWizard() {
           </button>
         </div>
       </footer>
+
+      {htmlEditorOpen ? (
+        <EmailHtmlEditor
+          campaignName={campaign.name}
+          initialBody={campaign.body}
+          onDone={(html) => {
+            setCampaign((prev) => (prev ? { ...prev, body: html } : prev));
+            setHtmlEditorOpen(false);
+          }}
+          onClose={() => setHtmlEditorOpen(false)}
+        />
+      ) : null}
 
       {dragDropEditorOpen ? (
         <EmailDragDropEditor
