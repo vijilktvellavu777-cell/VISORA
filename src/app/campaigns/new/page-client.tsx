@@ -7,9 +7,10 @@ import NewCampaignPage from "./new-campaign-form";
 export default function NewCampaignRouter() {
   const searchParams = useSearchParams();
   const type = searchParams.get("type") ?? "email";
+  const fresh = searchParams.get("fresh") === "1";
 
   if (type === "email") {
-    return <EmailCampaignWizard />;
+    return <EmailCampaignWizard fresh={fresh} />;
   }
 
   return <NewCampaignPage />;

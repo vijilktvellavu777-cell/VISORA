@@ -20,6 +20,12 @@ import {
   X,
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
+import {
+  clearEmailWizardDraftSession,
+  EMAIL_WIZARD_CREATING_KEY,
+  EMAIL_WIZARD_DRAFT_KEY,
+  waitForEmailWizardDraftId,
+} from "@/lib/campaign-names";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
 import { EmailTemplatesPicker, type EmailTemplateItem } from "@/components/email-templates-picker";
@@ -83,7 +89,33 @@ function defaultCampaignName() {
   return `New Campaign - ${format(new Date(), "MMMM d, yyyy")}`;
 }
 
-export function EmailCampaignWizard() {
+function mapCampaignDraft(created: {
+  id: string;
+  name: string;
+  description: string | null;
+  subject: string | null;
+  fromAddress: string | null;
+  body: string;
+  segmentId: string | null;
+  conversionEvent: string | null;
+  scheduledAt: string | null;
+  status: string;
+}): CampaignDraft {
+  return {
+    id: created.id,
+    name: created.name,
+    description: created.description,
+    subject: created.subject ?? "",
+    fromAddress: created.fromAddress ?? DEFAULT_FROM,
+    body: created.body ?? "",
+    segmentId: created.segmentId,
+    conversionEvent: created.conversionEvent,
+    scheduledAt: created.scheduledAt,
+    status: created.status,
+  };
+}
+
+export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [campaign, setCampaign] = useState<CampaignDraft | null>(null);
@@ -106,10 +138,58 @@ export function EmailCampaignWizard() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadDraft(draftId: string) {
+      const response = await fetch(`/api/campaigns/${draftId}`);
+      if (!response.ok) return null;
+      const draft = await response.json();
+      if (draft.status !== "draft" || draft.channel !== "email") return null;
+      return mapCampaignDraft(draft);
+    }
+
     async function init() {
-      const [segmentRes, createRes] = await Promise.all([
-        fetch("/api/segments").then((r) => r.json()),
-        fetch("/api/campaigns", {
+      const segmentRes = await fetch("/api/segments").then((r) => r.json());
+      if (cancelled) return;
+      if (Array.isArray(segmentRes)) setSegments(segmentRes);
+
+      if (fresh) {
+        clearEmailWizardDraftSession();
+      }
+
+      const savedDraftId = sessionStorage.getItem(EMAIL_WIZARD_DRAFT_KEY);
+      if (savedDraftId && !fresh) {
+        const draft = await loadDraft(savedDraftId);
+        if (cancelled) return;
+        if (draft) {
+          setCampaign(draft);
+          if (draft.description) setShowDescription(true);
+          if (draft.scheduledAt) {
+            setScheduleMode("scheduled");
+            const dt = new Date(draft.scheduledAt);
+            setScheduledDate(format(dt, "yyyy-MM-dd"));
+            setScheduledTime(format(dt, "HH:mm"));
+          }
+          return;
+        }
+        sessionStorage.removeItem(EMAIL_WIZARD_DRAFT_KEY);
+      }
+
+      if (sessionStorage.getItem(EMAIL_WIZARD_CREATING_KEY) === "1") {
+        const draftId = await waitForEmailWizardDraftId();
+        if (cancelled) return;
+        if (draftId) {
+          const draft = await loadDraft(draftId);
+          if (draft) {
+            setCampaign(draft);
+            return;
+          }
+        }
+      }
+
+      sessionStorage.setItem(EMAIL_WIZARD_CREATING_KEY, "1");
+      try {
+        const createRes = await fetch("/api/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -120,37 +200,38 @@ export function EmailCampaignWizard() {
             body: "",
             autoUniqueName: true,
           }),
-        }),
-      ]);
+        });
 
-      if (Array.isArray(segmentRes)) setSegments(segmentRes);
-      if (!createRes.ok) {
-        setError("Could not create campaign draft");
-        return;
-      }
-      const created = await createRes.json();
-      setCampaign({
-        id: created.id,
-        name: created.name,
-        description: created.description,
-        subject: created.subject ?? "",
-        fromAddress: created.fromAddress ?? DEFAULT_FROM,
-        body: created.body ?? "",
-        segmentId: created.segmentId,
-        conversionEvent: created.conversionEvent,
-        scheduledAt: created.scheduledAt,
-        status: created.status,
-      });
-      if (created.description) setShowDescription(true);
-      if (created.scheduledAt) {
-        setScheduleMode("scheduled");
-        const dt = new Date(created.scheduledAt);
-        setScheduledDate(format(dt, "yyyy-MM-dd"));
-        setScheduledTime(format(dt, "HH:mm"));
+        if (!createRes.ok) {
+          if (!cancelled) setError("Could not create campaign draft");
+          return;
+        }
+
+        const created = await createRes.json();
+        sessionStorage.setItem(EMAIL_WIZARD_DRAFT_KEY, created.id);
+        if (cancelled) return;
+
+        setCampaign(mapCampaignDraft(created));
+        if (created.description) setShowDescription(true);
+        if (created.scheduledAt) {
+          setScheduleMode("scheduled");
+          const dt = new Date(created.scheduledAt);
+          setScheduledDate(format(dt, "yyyy-MM-dd"));
+          setScheduledTime(format(dt, "HH:mm"));
+        }
+      } finally {
+        sessionStorage.removeItem(EMAIL_WIZARD_CREATING_KEY);
       }
     }
-    init().catch(() => setError("Could not load campaign wizard"));
-  }, []);
+
+    init().catch(() => {
+      if (!cancelled) setError("Could not load campaign wizard");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fresh]);
 
   async function saveCampaign(data: Partial<CampaignDraft> & { status?: string }) {
     if (!campaign) return false;
@@ -290,6 +371,7 @@ export function EmailCampaignWizard() {
 
     const ok = await saveCampaign({ scheduledAt, status });
     if (!ok) return;
+    clearEmailWizardDraftSession();
     if (saveOnly) {
       router.push("/campaigns");
       router.refresh();
@@ -312,6 +394,7 @@ export function EmailCampaignWizard() {
       status: "draft",
     });
     if (ok) {
+      clearEmailWizardDraftSession();
       router.push("/campaigns");
       router.refresh();
     }

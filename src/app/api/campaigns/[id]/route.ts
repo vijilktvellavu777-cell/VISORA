@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { DUPLICATE_CAMPAIGN_NAME_ERROR, findCampaignWithName } from "@/lib/campaign-names";
+import {
+  DUPLICATE_CAMPAIGN_NAME_ERROR,
+  findCampaignWithName,
+} from "@/lib/campaign-names";
 import { getDefaultWorkspace } from "@/lib/workspace";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
