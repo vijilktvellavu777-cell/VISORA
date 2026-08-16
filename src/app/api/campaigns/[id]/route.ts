@@ -29,6 +29,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.description !== undefined ? { description: body.description || null } : {}),
       ...(body.subject !== undefined ? { subject: body.subject || null } : {}),
+      ...(body.fromAddress !== undefined ? { fromAddress: body.fromAddress || null } : {}),
       ...(body.body !== undefined ? { body: body.body } : {}),
       ...(body.segmentId !== undefined ? { segmentId: body.segmentId || null } : {}),
       ...(body.conversionEvent !== undefined ? { conversionEvent: body.conversionEvent || null } : {}),

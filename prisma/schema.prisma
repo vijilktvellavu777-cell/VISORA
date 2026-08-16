@@ -119,6 +119,8 @@ model Campaign {
   channel     String
   status      String    @default("draft")
   subject     String?
+  /// Sender address shown in the email header
+  fromAddress String?
   body        String
   segmentId   String?
   segment     Segment?  @relation(fields: [segmentId], references: [id])

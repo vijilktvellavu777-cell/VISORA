@@ -7,9 +7,13 @@ import { format } from "date-fns";
 import {
   AlertCircle,
   ChevronDown,
+  Code,
   Copy,
   Info,
+  LayoutGrid,
   Lock,
+  MousePointerClick,
+  Pencil,
   Tag,
   X,
 } from "lucide-react";
@@ -22,12 +26,38 @@ type CampaignDraft = {
   name: string;
   description: string | null;
   subject: string | null;
+  fromAddress: string | null;
   body: string;
   segmentId: string | null;
   conversionEvent: string | null;
   scheduledAt: string | null;
   status: string;
 };
+
+type EmailTemplate = { id: string; name: string; subject: string | null; body: string };
+
+const DEFAULT_FROM = "VISORA <noreply@visora.app>";
+
+const CREATE_EMAIL_OPTIONS = [
+  {
+    id: "drag-drop" as const,
+    title: "Drag-and-drop editor",
+    subtitle: "Start from scratch",
+    icon: MousePointerClick,
+  },
+  {
+    id: "html" as const,
+    title: "HTML code editor",
+    subtitle: "Start from scratch",
+    icon: Code,
+  },
+  {
+    id: "templates" as const,
+    title: "Templates",
+    subtitle: "Choose a template",
+    icon: LayoutGrid,
+  },
+];
 
 const STEPS = [
   { id: 1, label: "Compose message" },
@@ -58,6 +88,9 @@ export function EmailCampaignWizard() {
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [copied, setCopied] = useState(false);
+  const [editingSendingInfo, setEditingSendingInfo] = useState(false);
+  const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -72,7 +105,8 @@ export function EmailCampaignWizard() {
             name: defaultCampaignName(),
             channel: "email",
             subject: "",
-            body: "Hi {{ first_name }},\n\n",
+            fromAddress: DEFAULT_FROM,
+            body: "",
           }),
         }),
       ]);
@@ -88,6 +122,7 @@ export function EmailCampaignWizard() {
         name: created.name,
         description: created.description,
         subject: created.subject ?? "",
+        fromAddress: created.fromAddress ?? DEFAULT_FROM,
         body: created.body ?? "",
         segmentId: created.segmentId,
         conversionEvent: created.conversionEvent,
@@ -124,6 +159,7 @@ export function EmailCampaignWizard() {
       name: updated.name,
       description: updated.description,
       subject: updated.subject ?? "",
+      fromAddress: updated.fromAddress ?? DEFAULT_FROM,
       body: updated.body ?? "",
       segmentId: updated.segmentId,
       conversionEvent: updated.conversionEvent,
@@ -141,12 +177,49 @@ export function EmailCampaignWizard() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function selectEditorMode(mode: "drag-drop" | "html" | "templates") {
+    setEditorMode(mode);
+    if (mode === "html" && !campaign?.body) {
+      setCampaign((prev) =>
+        prev ? { ...prev, body: "<html>\n  <body>\n    <p>Hi {{ first_name }},</p>\n  </body>\n</html>" } : prev,
+      );
+    }
+    if (mode === "drag-drop" && !campaign?.body) {
+      setCampaign((prev) =>
+        prev
+          ? {
+              ...prev,
+              body: "Hi {{ first_name }},\n\nStart building your email with the drag-and-drop editor.",
+            }
+          : prev,
+      );
+    }
+    if (mode === "templates") {
+      const response = await fetch("/api/templates?channel=email");
+      const data = await response.json();
+      if (Array.isArray(data)) setEmailTemplates(data);
+    }
+  }
+
+  function applyTemplate(template: EmailTemplate) {
+    setCampaign((prev) =>
+      prev
+        ? {
+            ...prev,
+            subject: template.subject ?? prev.subject,
+            body: template.body,
+          }
+        : prev,
+    );
+  }
+
   async function goNext() {
     if (!campaign) return;
     if (step === 1) {
       const ok = await saveCampaign({
         name: campaign.name,
         description: campaign.description,
+        fromAddress: campaign.fromAddress,
         subject: campaign.subject,
         body: campaign.body,
       });
@@ -250,87 +323,208 @@ export function EmailCampaignWizard() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-8 py-8">
+      <div className="mx-auto max-w-4xl px-8 py-8">
         {step === 1 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Campaign Details</h2>
-            <Field label="Campaign Name">
-              <input
-                className={inputClass}
-                value={campaign.name}
-                onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
-              />
-            </Field>
-            {showDescription ? (
-              <Field label="Description">
-                <textarea
-                  className={`${inputClass} min-h-20`}
-                  value={campaign.description ?? ""}
-                  onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
+          <div className="space-y-6">
+            <Card className="space-y-5 p-6">
+              <h2 className="text-lg font-semibold text-foreground">Campaign Details</h2>
+              <Field label="Campaign Name">
+                <input
+                  className={inputClass}
+                  value={campaign.name}
+                  onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
                 />
               </Field>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowDescription(true)}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                + Add description
-              </button>
-            )}
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary"
-            >
-              <Tag size={14} />
-              Tags
-              <ChevronDown size={14} />
-            </button>
-
-            <hr className="border-border" />
-
-            <div>
-              <div className="text-sm font-semibold text-foreground">Campaign ID</div>
-              <div className="mt-2 flex overflow-hidden rounded-lg border border-border">
-                <input
-                  readOnly
-                  value={campaign.id}
-                  className="min-w-0 flex-1 border-0 bg-surface px-3 py-2 text-sm text-muted outline-none"
-                />
+              {showDescription ? (
+                <Field label="Description">
+                  <textarea
+                    className={`${inputClass} min-h-20`}
+                    value={campaign.description ?? ""}
+                    onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
+                  />
+                </Field>
+              ) : (
                 <button
                   type="button"
-                  onClick={copyId}
-                  className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                  onClick={() => setShowDescription(true)}
+                  className="text-sm font-medium text-primary hover:underline"
                 >
-                  <Copy size={14} />
-                  {copied ? "Copied" : "Copy"}
+                  + Add description
+                </button>
+              )}
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary"
+              >
+                <Tag size={14} />
+                Tags
+                <ChevronDown size={14} />
+              </button>
+
+              <hr className="border-border" />
+
+              <div>
+                <div className="text-sm font-semibold text-foreground">Campaign ID</div>
+                <div className="mt-2 flex overflow-hidden rounded-lg border border-border">
+                  <input
+                    readOnly
+                    value={campaign.id}
+                    className="min-w-0 flex-1 border-0 bg-surface px-3 py-2 text-sm text-muted outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={copyId}
+                    className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                  >
+                    <Copy size={14} />
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
+                  <Info size={14} className="mt-0.5 shrink-0 text-primary" />
+                  This is the unique key for this Campaign. Use it to identify which Campaign to send in a request to
+                  the Campaign Trigger API.
+                </p>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Sending info</h2>
+                <button
+                  type="button"
+                  onClick={() => setEditingSendingInfo((value) => !value)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-foreground"
+                  aria-label="Edit sending info"
+                >
+                  <Pencil size={16} />
                 </button>
               </div>
-              <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
-                <Info size={14} className="mt-0.5 shrink-0 text-primary" />
-                This is the unique key for this Campaign. Use it to identify which Campaign to send in a request to
-                the Campaign Trigger API.
-              </p>
-            </div>
 
-            <hr className="border-border" />
+              {editingSendingInfo ? (
+                <div className="mt-4 space-y-4">
+                  <Field label="From address">
+                    <input
+                      className={inputClass}
+                      value={campaign.fromAddress ?? DEFAULT_FROM}
+                      onChange={(e) => setCampaign({ ...campaign, fromAddress: e.target.value })}
+                      placeholder="VISORA <noreply@visora.app>"
+                    />
+                  </Field>
+                  <Field label="Subject line">
+                    <input
+                      className={inputClass}
+                      value={campaign.subject ?? ""}
+                      onChange={(e) => setCampaign({ ...campaign, subject: e.target.value })}
+                      placeholder="Your email subject"
+                    />
+                  </Field>
+                  <button
+                    type="button"
+                    onClick={() => setEditingSendingInfo(false)}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Done editing
+                  </button>
+                </div>
+              ) : (
+                <dl className="mt-4 space-y-3 text-sm">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">From address</dt>
+                    <dd className="mt-1 text-foreground">{campaign.fromAddress || DEFAULT_FROM}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Subject line</dt>
+                    <dd className="mt-1 text-foreground">{campaign.subject?.trim() || "No subject yet"}</dd>
+                  </div>
+                </dl>
+              )}
+            </Card>
 
-            <Field label="Email subject">
-              <input
-                className={inputClass}
-                value={campaign.subject ?? ""}
-                onChange={(e) => setCampaign({ ...campaign, subject: e.target.value })}
-                placeholder="Your subject line"
-              />
-            </Field>
-            <Field label="Message body">
-              <textarea
-                className={`${inputClass} min-h-48 font-mono text-xs`}
-                value={campaign.body}
-                onChange={(e) => setCampaign({ ...campaign, body: e.target.value })}
-              />
-            </Field>
-          </Card>
+            <Card className="p-6">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-foreground">Create new email</h2>
+                <p className="mt-1 text-sm text-muted">How would you like to start?</p>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                {CREATE_EMAIL_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const active = editorMode === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => selectEditorMode(option.id)}
+                      className={`rounded-xl border p-5 text-center transition hover:border-primary/40 hover:shadow-sm ${
+                        active ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border bg-surface"
+                      }`}
+                    >
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-background">
+                        <Icon size={28} className="text-primary" strokeWidth={1.5} />
+                      </div>
+                      <div className="mt-4 text-sm font-semibold text-foreground">{option.title}</div>
+                      <div className="mt-1 text-xs text-muted">{option.subtitle}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {editorMode === "html" ? (
+                <div className="mt-6">
+                  <Field label="HTML code">
+                    <textarea
+                      className={`${inputClass} min-h-56 font-mono text-xs`}
+                      value={campaign.body}
+                      onChange={(e) => setCampaign({ ...campaign, body: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              ) : null}
+
+              {editorMode === "drag-drop" ? (
+                <div className="mt-6 rounded-xl border border-dashed border-border bg-background p-8 text-center">
+                  <p className="text-sm font-medium text-foreground">Drag-and-drop editor</p>
+                  <p className="mt-2 text-sm text-muted">
+                    Drop content blocks here to build your email layout.
+                  </p>
+                  <textarea
+                    className={`${inputClass} mx-auto mt-4 min-h-32 max-w-xl font-mono text-xs`}
+                    value={campaign.body}
+                    onChange={(e) => setCampaign({ ...campaign, body: e.target.value })}
+                    placeholder="Email preview text…"
+                  />
+                </div>
+              ) : null}
+
+              {editorMode === "templates" ? (
+                <div className="mt-6 space-y-3">
+                  {emailTemplates.length === 0 ? (
+                    <p className="rounded-lg border border-border bg-background px-4 py-6 text-center text-sm text-muted">
+                      No email templates yet. Create one under Content → Email.
+                    </p>
+                  ) : (
+                    emailTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => applyTemplate(template)}
+                        className="flex w-full items-start justify-between rounded-lg border border-border bg-background px-4 py-3 text-left hover:border-primary/40"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-foreground">{template.name}</div>
+                          {template.subject ? (
+                            <div className="mt-1 text-xs text-muted">{template.subject}</div>
+                          ) : null}
+                        </div>
+                        <span className="text-xs font-medium text-primary">Use template</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
+            </Card>
+          </div>
         ) : null}
 
         {step === 2 ? (

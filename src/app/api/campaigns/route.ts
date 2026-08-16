@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       channel: body.channel,
       status: "draft",
       subject: body.subject ?? null,
+      fromAddress: body.fromAddress ?? "VISORA <noreply@visora.app>",
       body: body.body ?? "",
       segmentId: body.segmentId || null,
       conversionEvent: body.conversionEvent ?? null,
