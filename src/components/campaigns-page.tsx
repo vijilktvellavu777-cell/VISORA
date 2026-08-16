@@ -37,6 +37,10 @@ function isActive(status: string) {
   return !["sent", "paused"].includes(status);
 }
 
+function isDraft(campaign: CampaignRow) {
+  return campaign.status === "draft";
+}
+
 export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
@@ -44,6 +48,7 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
   const filtered = useMemo(() => {
     return campaigns.filter((campaign) => {
       if (statusFilter === "active" && !isActive(campaign.status)) return false;
+      if (statusFilter === "drafts" && !isDraft(campaign)) return false;
       if (statusFilter === "sent" && campaign.status !== "sent") return false;
       if (search && !campaign.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
@@ -86,6 +91,7 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
                 >
                   <option value="active">Active</option>
                   <option value="all">All</option>
+                  <option value="drafts">Drafts</option>
                   <option value="sent">Sent</option>
                 </select>
                 <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -129,6 +135,16 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
           <div className="mt-3">
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
               Status: Active
+              <button type="button" onClick={() => setStatusFilter("all")} aria-label="Clear status filter">
+                <X size={12} />
+              </button>
+            </span>
+          </div>
+        ) : null}
+        {statusFilter === "drafts" ? (
+          <div className="mt-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+              Status: Drafts
               <button type="button" onClick={() => setStatusFilter("all")} aria-label="Clear status filter">
                 <X size={12} />
               </button>
