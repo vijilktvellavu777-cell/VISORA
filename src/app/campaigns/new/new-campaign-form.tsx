@@ -40,7 +40,8 @@ export default function NewCampaignPage() {
       body: JSON.stringify({ name, description, channel, segmentId, subject, body }),
     });
     if (!response.ok) {
-      setError("Could not create campaign");
+      const json = await response.json().catch(() => ({}));
+      setError(typeof json.error === "string" ? json.error : "Could not create campaign");
       return;
     }
     const campaign = await response.json();
@@ -57,7 +58,15 @@ export default function NewCampaignPage() {
       <form onSubmit={onSubmit} className="max-w-2xl space-y-4 p-8">
         <Card className="space-y-4 p-5">
           <Field label="Name">
-            <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required />
+            <input
+              className={inputClass}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (error) setError(null);
+              }}
+              required
+            />
           </Field>
           <Field label="Description">
             <input className={inputClass} value={description} onChange={(e) => setDescription(e.target.value)} />

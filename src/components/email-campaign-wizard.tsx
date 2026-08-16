@@ -102,6 +102,7 @@ export function EmailCampaignWizard() {
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -117,6 +118,7 @@ export function EmailCampaignWizard() {
             subject: "",
             fromAddress: DEFAULT_FROM,
             body: "",
+            autoUniqueName: true,
           }),
         }),
       ]);
@@ -160,7 +162,13 @@ export function EmailCampaignWizard() {
     });
     setSaving(false);
     if (!response.ok) {
-      setError("Could not save campaign");
+      const json = await response.json().catch(() => ({}));
+      const message = typeof json.error === "string" ? json.error : "Could not save campaign";
+      if (response.status === 409 && data.name !== undefined) {
+        setNameError(message);
+      } else {
+        setError(message);
+      }
       return false;
     }
     const updated = await response.json();
@@ -177,6 +185,7 @@ export function EmailCampaignWizard() {
       status: updated.status,
     });
     setError(null);
+    setNameError(null);
     return true;
   }
 
@@ -384,10 +393,14 @@ export function EmailCampaignWizard() {
               <h2 className="text-lg font-semibold text-foreground">Campaign Details</h2>
               <Field label="Campaign Name">
                 <input
-                  className={inputClass}
+                  className={`${inputClass} ${nameError ? "border-error focus:border-error" : ""}`}
                   value={campaign.name}
-                  onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
+                  onChange={(e) => {
+                    setCampaign({ ...campaign, name: e.target.value });
+                    if (nameError) setNameError(null);
+                  }}
                 />
+                {nameError ? <p className="mt-1.5 text-sm text-error">{nameError}</p> : null}
               </Field>
               {showDescription ? (
                 <Field label="Description">

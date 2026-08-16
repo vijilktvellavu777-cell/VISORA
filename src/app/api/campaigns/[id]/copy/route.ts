@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { uniqueCampaignName } from "@/lib/campaign-names";
 import { getDefaultWorkspace } from "@/lib/workspace";
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -11,10 +12,12 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const name = await uniqueCampaignName(workspace.id, `${existing.name} (Copy)`);
+
   const copy = await prisma.campaign.create({
     data: {
       workspaceId: workspace.id,
-      name: `${existing.name} (Copy)`,
+      name,
       description: existing.description,
       channel: existing.channel,
       status: "draft",

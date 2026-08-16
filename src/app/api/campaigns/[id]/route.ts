@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { DUPLICATE_CAMPAIGN_NAME_ERROR, findCampaignWithName } from "@/lib/campaign-names";
 import { getDefaultWorkspace } from "@/lib/workspace";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -23,10 +24,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  if (body.name !== undefined) {
+    const name = String(body.name).trim();
+    if (!name) {
+      return NextResponse.json({ error: "Campaign name is required." }, { status: 400 });
+    }
+    const duplicate = await findCampaignWithName(workspace.id, name, id);
+    if (duplicate) {
+      return NextResponse.json({ error: DUPLICATE_CAMPAIGN_NAME_ERROR }, { status: 409 });
+    }
+  }
+
   const campaign = await prisma.campaign.update({
     where: { id },
     data: {
-      ...(body.name !== undefined ? { name: body.name } : {}),
+      ...(body.name !== undefined ? { name: String(body.name).trim() } : {}),
       ...(body.description !== undefined ? { description: body.description || null } : {}),
       ...(body.subject !== undefined ? { subject: body.subject || null } : {}),
       ...(body.fromAddress !== undefined ? { fromAddress: body.fromAddress || null } : {}),
