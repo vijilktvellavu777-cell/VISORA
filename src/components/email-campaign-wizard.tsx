@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
-  AlertCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Code,
   Copy,
   Info,
@@ -17,7 +18,7 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { Button, Card, Field, inputClass } from "@/components/ui";
+import { Card, Field, inputClass } from "@/components/ui";
 
 type SegmentOption = { id: string; name: string };
 
@@ -60,10 +61,10 @@ const CREATE_EMAIL_OPTIONS = [
 ];
 
 const STEPS = [
-  { id: 1, label: "Compose message" },
-  { id: 2, label: "Target audience" },
-  { id: 3, label: "Assign conversions" },
-  { id: 4, label: "Schedule delivery" },
+  { id: 1, label: "Compose message", shortLabel: "Compose" },
+  { id: 2, label: "Target audience", shortLabel: "Target" },
+  { id: 3, label: "Assign conversions", shortLabel: "Assign" },
+  { id: 4, label: "Schedule delivery", shortLabel: "Schedule" },
 ] as const;
 
 const CONVERSION_EVENTS = [
@@ -259,6 +260,28 @@ export function EmailCampaignWizard() {
     }
   }
 
+  async function saveDraft() {
+    if (!campaign) return;
+    const ok = await saveCampaign({
+      name: campaign.name,
+      description: campaign.description,
+      fromAddress: campaign.fromAddress,
+      subject: campaign.subject,
+      body: campaign.body,
+      segmentId: campaign.segmentId,
+      conversionEvent: campaign.conversionEvent,
+      status: "draft",
+    });
+    if (ok) {
+      router.push("/campaigns");
+      router.refresh();
+    }
+  }
+
+  function goBack() {
+    if (step > 1) setStep(step - 1);
+  }
+
   if (!campaign) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted">
@@ -288,42 +311,9 @@ export function EmailCampaignWizard() {
           <Lock size={12} />
           Limited access
         </span>
-
-        <div className="mt-6 flex flex-wrap justify-between gap-6">
-          {STEPS.map((item) => {
-            const active = step === item.id;
-            const complete = step > item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => item.id < step && setStep(item.id)}
-                className="flex min-w-[120px] flex-1 flex-col items-center gap-2 text-center"
-              >
-                <span
-                  className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
-                    active
-                      ? "bg-primary text-white"
-                      : complete
-                        ? "bg-primary/15 text-primary"
-                        : "bg-primary/10 text-primary/70"
-                  }`}
-                >
-                  {item.id}
-                  {active ? (
-                    <AlertCircle size={12} className="absolute -bottom-0.5 -right-0.5 fill-warning text-surface" />
-                  ) : null}
-                </span>
-                <span className={`text-xs ${active ? "font-semibold text-foreground" : "text-muted"}`}>
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-8 py-8">
+      <div className="mx-auto max-w-4xl px-8 py-8 pb-28">
         {step === 1 ? (
           <div className="space-y-6">
             <Card className="space-y-5 p-6">
@@ -618,33 +608,78 @@ export function EmailCampaignWizard() {
         ) : null}
 
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
-
-        <div className="mt-6 flex items-center justify-between gap-3">
-          <div>
-            {step > 1 ? (
-              <Button variant="ghost" onClick={() => setStep(step - 1)}>
-                Back
-              </Button>
-            ) : (
-              <Button href="/campaigns" variant="ghost">
-                Cancel
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {step === 4 ? (
-              <>
-                <Button variant="ghost" onClick={() => finish(true)}>
-                  {saving ? "Saving…" : "Save draft"}
-                </Button>
-                <Button onClick={() => finish(false)}>{saving ? "Saving…" : "Review campaign"}</Button>
-              </>
-            ) : (
-              <Button onClick={goNext}>{saving ? "Saving…" : "Next"}</Button>
-            )}
-          </div>
-        </div>
       </div>
+
+      <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface">
+        <div className="flex items-center gap-4 px-6 py-4">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={step === 1}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Previous step"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-4 sm:gap-6">
+            {STEPS.map((item) => {
+              const active = step === item.id;
+              const complete = step > item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => item.id < step && setStep(item.id)}
+                  disabled={item.id > step}
+                  className="flex items-center gap-2 disabled:cursor-default"
+                >
+                  <span
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                      active
+                        ? "bg-primary text-white"
+                        : complete
+                          ? "bg-primary/15 text-primary"
+                          : "bg-primary/10 text-primary/60"
+                    }`}
+                  >
+                    {item.id}
+                  </span>
+                  <span
+                    className={`text-sm ${
+                      active ? "font-semibold text-foreground" : complete ? "text-foreground" : "text-muted"
+                    }`}
+                  >
+                    {item.shortLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (step < 4) goNext();
+              else finish(false);
+            }}
+            disabled={saving}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={step === 4 ? "Review campaign" : "Next step"}
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          <button
+            type="button"
+            onClick={saveDraft}
+            disabled={saving}
+            className="ml-2 shrink-0 rounded-lg border border-primary bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
+          >
+            {saving ? "Saving…" : "Save Draft"}
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }
