@@ -104,6 +104,11 @@ model MessageTemplate {
   channel     String
   subject     String?
   body        String
+  /// drag-drop | html
+  editorType  String    @default("html")
+  createdBy   String    @default("VISORA")
+  /// saved | visora
+  source      String    @default("saved")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

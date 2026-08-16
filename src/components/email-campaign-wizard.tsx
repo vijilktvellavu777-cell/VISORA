@@ -22,6 +22,7 @@ import {
 import { Card, Field, inputClass } from "@/components/ui";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
+import { EmailTemplatesPicker, type EmailTemplateItem } from "@/components/email-templates-picker";
 
 type SegmentOption = { id: string; name: string };
 
@@ -38,7 +39,7 @@ type CampaignDraft = {
   status: string;
 };
 
-type EmailTemplate = { id: string; name: string; subject: string | null; body: string };
+type EmailTemplate = EmailTemplateItem;
 
 const DEFAULT_FROM = "VISORA <noreply@visora.app>";
 
@@ -96,7 +97,8 @@ export function EmailCampaignWizard() {
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
   const [dragDropEditorOpen, setDragDropEditorOpen] = useState(false);
   const [htmlEditorOpen, setHtmlEditorOpen] = useState(false);
-  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [templatesPickerOpen, setTemplatesPickerOpen] = useState(false);
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -206,9 +208,8 @@ export function EmailCampaignWizard() {
       return;
     }
     if (mode === "templates") {
-      const response = await fetch("/api/templates?channel=email");
-      const data = await response.json();
-      if (Array.isArray(data)) setEmailTemplates(data);
+      setTemplatesPickerOpen(true);
+      return;
     }
   }
 
@@ -222,6 +223,7 @@ export function EmailCampaignWizard() {
           }
         : prev,
     );
+    setSelectedTemplateName(template.name);
   }
 
   function handleUploadFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -587,29 +589,24 @@ export function EmailCampaignWizard() {
               ) : null}
 
               {editorMode === "templates" ? (
-                <div className="mt-6 space-y-3">
-                  {emailTemplates.length === 0 ? (
-                    <p className="rounded-lg border border-border bg-background px-4 py-6 text-center text-sm text-muted">
-                      No email templates yet. Create one under Content → Email.
-                    </p>
-                  ) : (
-                    emailTemplates.map((template) => (
-                      <button
-                        key={template.id}
-                        type="button"
-                        onClick={() => applyTemplate(template)}
-                        className="flex w-full items-start justify-between rounded-lg border border-border bg-background px-4 py-3 text-left hover:border-primary/40"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-foreground">{template.name}</div>
-                          {template.subject ? (
-                            <div className="mt-1 text-xs text-muted">{template.subject}</div>
-                          ) : null}
-                        </div>
-                        <span className="text-xs font-medium text-primary">Use template</span>
-                      </button>
-                    ))
-                  )}
+                <div className="mt-6 rounded-xl border border-border bg-background p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Templates</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {selectedTemplateName
+                          ? `Selected template: ${selectedTemplateName}`
+                          : "Browse saved templates or Visora templates to start your email."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTemplatesPickerOpen(true)}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                    >
+                      {selectedTemplateName ? "Change template" : "Browse templates"}
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </Card>
@@ -779,6 +776,21 @@ export function EmailCampaignWizard() {
           </button>
         </div>
       </footer>
+
+      {templatesPickerOpen ? (
+        <EmailTemplatesPicker
+          onSelect={(template) => {
+            applyTemplate(template);
+            setTemplatesPickerOpen(false);
+          }}
+          onClose={() => setTemplatesPickerOpen(false)}
+          onBuildFromScratch={(mode) => {
+            setEditorMode(mode);
+            if (mode === "drag-drop") setDragDropEditorOpen(true);
+            if (mode === "html") setHtmlEditorOpen(true);
+          }}
+        />
+      ) : null}
 
       {htmlEditorOpen ? (
         <EmailHtmlEditor
