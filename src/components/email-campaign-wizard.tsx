@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   ChevronDown,
@@ -92,6 +92,8 @@ export function EmailCampaignWizard() {
   const [editingSendingInfo, setEditingSendingInfo] = useState(false);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [uploadFileName, setUploadFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -212,6 +214,23 @@ export function EmailCampaignWizard() {
           }
         : prev,
     );
+  }
+
+  function handleUploadFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = typeof reader.result === "string" ? reader.result : "";
+      setEditorMode("html");
+      setCampaign((prev) => (prev ? { ...prev, body: content } : prev));
+      setUploadFileName(file.name);
+      setError(null);
+    };
+    reader.onerror = () => setError("Could not read the uploaded file");
+    reader.readAsText(file);
+    event.target.value = "";
   }
 
   async function goNext() {
@@ -458,6 +477,26 @@ export function EmailCampaignWizard() {
                     </button>
                   );
                 })}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".html,.htm,.txt,text/html,text/plain"
+                className="hidden"
+                onChange={handleUploadFile}
+              />
+              <div className="mt-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-sm font-semibold text-primary hover:underline"
+                >
+                  Upload file
+                </button>
+                {uploadFileName ? (
+                  <p className="mt-2 text-xs text-muted">Uploaded: {uploadFileName}</p>
+                ) : null}
               </div>
 
               {editorMode === "html" ? (
