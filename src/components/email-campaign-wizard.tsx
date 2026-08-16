@@ -68,6 +68,113 @@ const STEPS = [
   { id: 4, label: "Schedule delivery", shortLabel: "Schedule" },
 ] as const;
 
+function WizardStepBar({
+  step,
+  onStepClick,
+  variant = "top",
+}: {
+  step: number;
+  onStepClick: (stepId: number) => void;
+  variant?: "top" | "footer";
+}) {
+  const isTop = variant === "top";
+
+  return (
+    <div
+      className={
+        isTop
+          ? "flex w-full items-start justify-center gap-0 px-2 sm:px-4"
+          : "flex min-w-0 flex-1 flex-wrap items-center justify-center gap-4 sm:gap-6"
+      }
+      role="navigation"
+      aria-label="Campaign wizard steps"
+    >
+      {STEPS.map((item, index) => {
+        const active = step === item.id;
+        const complete = step > item.id;
+        const clickable = item.id < step;
+        const isLast = index === STEPS.length - 1;
+
+        const circleClass = active
+          ? "border-primary bg-primary text-white shadow-sm"
+          : complete
+            ? "border-primary bg-primary/15 text-primary"
+            : "border-border bg-surface text-muted";
+
+        const labelClass = active
+          ? "font-semibold text-foreground"
+          : complete
+            ? "text-foreground"
+            : "text-muted";
+
+        const stepControl = (
+          <button
+            type="button"
+            onClick={() => clickable && onStepClick(item.id)}
+            disabled={!clickable}
+            className={`group flex flex-col items-center text-center disabled:cursor-default ${
+              isTop ? "min-w-[72px] flex-1 sm:min-w-[120px]" : "flex-row gap-2"
+            }`}
+          >
+            <span
+              className={`relative inline-flex items-center justify-center rounded-full border-2 font-semibold transition ${
+                isTop ? "h-9 w-9 text-sm" : "h-7 w-7 text-xs"
+              } ${circleClass}`}
+            >
+              {item.id}
+              {active && isTop ? (
+                <AlertCircle
+                  size={12}
+                  className="absolute -bottom-0.5 -right-0.5 fill-warning text-surface"
+                />
+              ) : null}
+            </span>
+            <span className={`${isTop ? "mt-2 text-xs" : "text-sm"} ${labelClass}`}>{item.shortLabel}</span>
+            {isTop ? (
+              <span className="mt-0.5 hidden text-[11px] text-muted sm:block">{item.label}</span>
+            ) : null}
+          </button>
+        );
+
+        if (!isTop) {
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => clickable && onStepClick(item.id)}
+              disabled={!clickable}
+              className="flex items-center gap-2 disabled:cursor-default"
+            >
+              <span
+                className={`relative inline-flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold ${circleClass}`}
+              >
+                {item.id}
+              </span>
+              <span className={`text-sm ${labelClass}`}>{item.shortLabel}</span>
+            </button>
+          );
+        }
+
+        return (
+          <div key={item.id} className="flex min-w-0 flex-1 items-start">
+            <div className="relative flex w-full flex-col items-center">
+              {stepControl}
+            </div>
+            {!isLast ? (
+              <div
+                aria-hidden
+                className={`mt-[18px] h-0.5 min-w-[12px] flex-1 rounded-full ${
+                  complete ? "bg-primary/40" : "bg-border"
+                }`}
+              />
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const CONVERSION_EVENTS = [
   { value: "", label: "No conversion tracking" },
   { value: "purchase", label: "Purchase" },
@@ -326,44 +433,16 @@ export function EmailCampaignWizard() {
         </div>
       </div>
 
-      <div className="border-b border-border bg-surface px-8 py-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <Lock size={12} />
-          Limited access
-        </span>
+      <div className="sticky top-0 z-20 border-b border-border bg-surface shadow-sm">
+        <div className="px-8 py-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+            <Lock size={12} />
+            Limited access
+          </span>
+        </div>
 
-        <div className="mt-6 flex flex-wrap justify-between gap-4">
-          {STEPS.map((item) => {
-            const active = step === item.id;
-            const complete = step > item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => item.id < step && setStep(item.id)}
-                disabled={item.id > step}
-                className="flex min-w-[100px] flex-1 flex-col items-center gap-2 text-center disabled:cursor-default"
-              >
-                <span
-                  className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
-                    active
-                      ? "bg-primary text-white"
-                      : complete
-                        ? "bg-primary/15 text-primary"
-                        : "bg-primary/10 text-primary/70"
-                  }`}
-                >
-                  {item.id}
-                  {active ? (
-                    <AlertCircle size={12} className="absolute -bottom-0.5 -right-0.5 fill-warning text-surface" />
-                  ) : null}
-                </span>
-                <span className={`text-xs ${active ? "font-semibold text-foreground" : "text-muted"}`}>
-                  {item.shortLabel}
-                </span>
-              </button>
-            );
-          })}
+        <div className="border-t border-border bg-background px-4 py-5 sm:px-8">
+          <WizardStepBar step={step} onStepClick={setStep} variant="top" />
         </div>
       </div>
 
@@ -696,40 +775,7 @@ export function EmailCampaignWizard() {
             <ChevronLeft size={20} />
           </button>
 
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-4 sm:gap-6">
-            {STEPS.map((item) => {
-              const active = step === item.id;
-              const complete = step > item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => item.id < step && setStep(item.id)}
-                  disabled={item.id > step}
-                  className="flex items-center gap-2 disabled:cursor-default"
-                >
-                  <span
-                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                      active
-                        ? "bg-primary text-white"
-                        : complete
-                          ? "bg-primary/15 text-primary"
-                          : "bg-primary/10 text-primary/60"
-                    }`}
-                  >
-                    {item.id}
-                  </span>
-                  <span
-                    className={`text-sm ${
-                      active ? "font-semibold text-foreground" : complete ? "text-foreground" : "text-muted"
-                    }`}
-                  >
-                    {item.shortLabel}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <WizardStepBar step={step} onStepClick={setStep} variant="footer" />
 
           <button
             type="button"
