@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { CreateCampaignDropdown } from "@/components/create-campaign-dropdown";
+import { CampaignRowMenu } from "@/components/campaign-row-menu";
 import { channelLabel } from "@/lib/messaging";
 
 type CampaignRow = {
@@ -169,13 +170,16 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
               <th className="py-3 pr-4 font-medium">Entry schedule</th>
               <th className="py-3 pr-4 font-medium">Sent</th>
               <th className="py-3 pr-4 font-medium">Teams</th>
-              <th className="py-3 font-medium">Last edited</th>
+              <th className="py-3 pr-4 font-medium">Last edited</th>
+              <th className="py-3 w-12 font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16">
+                <td colSpan={9} className="py-16">
                   <div className="text-center">
                     <p className="text-sm font-medium text-muted">No Results Found</p>
                     <div className="mx-auto mt-8 flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-background">
@@ -216,7 +220,10 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
                   </td>
                   <td className="py-4 pr-4">{campaign._count.sends}</td>
                   <td className="py-4 pr-4 text-muted">VISORA</td>
-                  <td className="py-4 text-muted">{format(new Date(campaign.updatedAt), "MMM d, yyyy")}</td>
+                  <td className="py-4 pr-4 text-muted">{format(new Date(campaign.updatedAt), "MMM d, yyyy")}</td>
+                  <td className="py-4 text-right">
+                    <CampaignRowMenu campaignId={campaign.id} campaignName={campaign.name} />
+                  </td>
                 </tr>
               ))
             )}

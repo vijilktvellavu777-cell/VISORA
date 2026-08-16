@@ -43,3 +43,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   return NextResponse.json(campaign);
 }
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const workspace = await getDefaultWorkspace();
+
+  const existing = await prisma.campaign.findFirst({
+    where: { id, workspaceId: workspace.id },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.campaign.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
