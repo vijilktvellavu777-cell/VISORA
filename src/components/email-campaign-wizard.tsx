@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
+  AlertCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -330,6 +331,40 @@ export function EmailCampaignWizard() {
           <Lock size={12} />
           Limited access
         </span>
+
+        <div className="mt-6 flex flex-wrap justify-between gap-4">
+          {STEPS.map((item) => {
+            const active = step === item.id;
+            const complete = step > item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => item.id < step && setStep(item.id)}
+                disabled={item.id > step}
+                className="flex min-w-[100px] flex-1 flex-col items-center gap-2 text-center disabled:cursor-default"
+              >
+                <span
+                  className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
+                    active
+                      ? "bg-primary text-white"
+                      : complete
+                        ? "bg-primary/15 text-primary"
+                        : "bg-primary/10 text-primary/70"
+                  }`}
+                >
+                  {item.id}
+                  {active ? (
+                    <AlertCircle size={12} className="absolute -bottom-0.5 -right-0.5 fill-warning text-surface" />
+                  ) : null}
+                </span>
+                <span className={`text-xs ${active ? "font-semibold text-foreground" : "text-muted"}`}>
+                  {item.shortLabel}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mx-auto max-w-4xl px-8 py-8 pb-28">
