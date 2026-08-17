@@ -130,7 +130,13 @@ function mapCampaignDraft(created: {
   };
 }
 
-export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
+export function EmailCampaignWizard({
+  fresh = false,
+  campaignId,
+}: {
+  fresh?: boolean;
+  campaignId?: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [campaign, setCampaign] = useState<CampaignDraft | null>(null);
@@ -169,6 +175,30 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       if (cancelled) return;
       if (Array.isArray(segmentRes)) setSegments(segmentRes);
 
+      async function applyLoadedDraft(draft: CampaignDraft) {
+        setCampaign(draft);
+        setTargeting(targetingFromCampaign(draft));
+        if (draft.description) setShowDescription(true);
+        if (draft.scheduledAt) {
+          setScheduleMode("scheduled");
+          const dt = new Date(draft.scheduledAt);
+          setScheduledDate(format(dt, "yyyy-MM-dd"));
+          setScheduledTime(format(dt, "HH:mm"));
+        }
+      }
+
+      if (campaignId) {
+        const draft = await loadDraft(campaignId);
+        if (cancelled) return;
+        if (draft) {
+          sessionStorage.setItem(EMAIL_WIZARD_DRAFT_KEY, campaignId);
+          await applyLoadedDraft(draft);
+          return;
+        }
+        setError("Could not load campaign draft");
+        return;
+      }
+
       if (fresh) {
         clearEmailWizardDraftSession();
       }
@@ -178,15 +208,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         const draft = await loadDraft(savedDraftId);
         if (cancelled) return;
         if (draft) {
-          setCampaign(draft);
-          setTargeting(targetingFromCampaign(draft));
-          if (draft.description) setShowDescription(true);
-          if (draft.scheduledAt) {
-            setScheduleMode("scheduled");
-            const dt = new Date(draft.scheduledAt);
-            setScheduledDate(format(dt, "yyyy-MM-dd"));
-            setScheduledTime(format(dt, "HH:mm"));
-          }
+          await applyLoadedDraft(draft);
           return;
         }
         sessionStorage.removeItem(EMAIL_WIZARD_DRAFT_KEY);
@@ -198,8 +220,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         if (draftId) {
           const draft = await loadDraft(draftId);
           if (draft) {
-            setCampaign(draft);
-            setTargeting(targetingFromCampaign(draft));
+            await applyLoadedDraft(draft);
             return;
           }
         }
@@ -229,15 +250,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         sessionStorage.setItem(EMAIL_WIZARD_DRAFT_KEY, created.id);
         if (cancelled) return;
 
-        setCampaign(mapCampaignDraft(created));
-        setTargeting(targetingFromCampaign(mapCampaignDraft(created)));
-        if (created.description) setShowDescription(true);
-        if (created.scheduledAt) {
-          setScheduleMode("scheduled");
-          const dt = new Date(created.scheduledAt);
-          setScheduledDate(format(dt, "yyyy-MM-dd"));
-          setScheduledTime(format(dt, "HH:mm"));
-        }
+        await applyLoadedDraft(mapCampaignDraft(created));
       } finally {
         sessionStorage.removeItem(EMAIL_WIZARD_CREATING_KEY);
       }
@@ -250,7 +263,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [fresh]);
+  }, [fresh, campaignId]);
 
   async function saveCampaign(data: Partial<CampaignDraft> & { status?: string }) {
     if (!campaign) return false;

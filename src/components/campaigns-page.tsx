@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -42,7 +43,13 @@ function isDraft(campaign: CampaignRow) {
   return campaign.status === "draft";
 }
 
+function draftEditHref(campaign: CampaignRow) {
+  if (campaign.channel === "email") return `/campaigns/${campaign.id}/edit`;
+  return `/campaigns/${campaign.id}`;
+}
+
 export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
 
@@ -201,12 +208,36 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
                 </td>
               </tr>
             ) : (
-              filtered.map((campaign) => (
-                <tr key={campaign.id} className="border-b border-border last:border-0">
+              filtered.map((campaign) => {
+                const draft = isDraft(campaign);
+                return (
+                <tr
+                  key={campaign.id}
+                  onClick={() => {
+                    if (draft) router.push(draftEditHref(campaign));
+                  }}
+                  className={`border-b border-border last:border-0 ${
+                    draft ? "cursor-pointer hover:bg-background" : ""
+                  }`}
+                >
                   <td className="py-4 pr-4">
-                    <Link href={`/campaigns/${campaign.id}`} className="font-medium text-foreground hover:text-primary">
-                      {campaign.name}
-                    </Link>
+                    {draft ? (
+                      <Link
+                        href={draftEditHref(campaign)}
+                        onClick={(event) => event.stopPropagation()}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {campaign.name}
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/campaigns/${campaign.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {campaign.name}
+                      </Link>
+                    )}
                   </td>
                   <td className="py-4 pr-4">
                     <Badge tone={statusTone(campaign.status)}>{campaign.status}</Badge>
@@ -221,11 +252,17 @@ export function CampaignsPageClient({ campaigns }: { campaigns: CampaignRow[] })
                   <td className="py-4 pr-4">{campaign._count.sends}</td>
                   <td className="py-4 pr-4 text-muted">VISORA</td>
                   <td className="py-4 pr-4 text-muted">{format(new Date(campaign.updatedAt), "MMM d, yyyy")}</td>
-                  <td className="py-4 text-right">
-                    <CampaignRowMenu campaignId={campaign.id} campaignName={campaign.name} />
+                  <td className="py-4 text-right" onClick={(event) => event.stopPropagation()}>
+                    <CampaignRowMenu
+                      campaignId={campaign.id}
+                      campaignName={campaign.name}
+                      status={campaign.status}
+                      channel={campaign.channel}
+                    />
                   </td>
                 </tr>
-              ))
+              );
+              })
             )}
           </tbody>
         </table>

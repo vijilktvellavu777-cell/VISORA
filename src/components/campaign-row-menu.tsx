@@ -8,9 +8,11 @@ import { Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
 type Props = {
   campaignId: string;
   campaignName: string;
+  status?: string;
+  channel?: string;
 };
 
-export function CampaignRowMenu({ campaignId, campaignName }: Props) {
+export function CampaignRowMenu({ campaignId, campaignName, status, channel }: Props) {
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -24,7 +26,10 @@ export function CampaignRowMenu({ campaignId, campaignName }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const editHref = `/campaigns/${campaignId}`;
+  const editHref =
+    status === "draft" && channel === "email"
+      ? `/campaigns/${campaignId}/edit`
+      : `/campaigns/${campaignId}`;
 
   async function handleCopy() {
     setBusy(true);
