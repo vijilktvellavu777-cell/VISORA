@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Mail, Bell, Smartphone, LayoutGrid } from "lucide-react";
+import { ChevronDown, Mail, Bell, Smartphone } from "lucide-react";
 
 const OPTIONS = [
   { channel: "email", label: "Email", icon: Mail },
   { channel: "push", label: "Push", icon: Bell },
   { channel: "in_app", label: "In-app", icon: Smartphone },
-  { channel: "content_card", label: "Content card", icon: LayoutGrid },
 ] as const;
 
 export function CreateCampaignDropdown({ className = "" }: { className?: string }) {
@@ -40,7 +39,7 @@ export function CreateCampaignDropdown({ className = "" }: { className?: string 
             return (
               <Link
                 key={option.channel}
-                href={`/campaigns/new?type=${option.channel}${["email", "push", "in_app"].includes(option.channel) ? "&fresh=1" : ""}`}
+                href={`/campaigns/new?type=${option.channel}&fresh=1`}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-background"
                 onClick={() => setOpen(false)}
               >
