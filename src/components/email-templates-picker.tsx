@@ -22,7 +22,7 @@ export type EmailTemplateItem = {
   body: string;
   editorType: string;
   createdBy: string;
-  createdAt: string;
+  createdAt?: string;
   updatedAt: string;
 };
 
@@ -95,7 +95,7 @@ function TemplatePreviewPane({ template }: { template: EmailTemplateItem }) {
           <PreviewMetaField label="Created by" value={template.createdBy} />
           <PreviewMetaField
             label="Created"
-            value={format(new Date(template.createdAt), "MMM d, yyyy")}
+            value={format(new Date(template.createdAt ?? template.updatedAt), "MMM d, yyyy")}
           />
           <PreviewMetaField
             label="Last edited"
