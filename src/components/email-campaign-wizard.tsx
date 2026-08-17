@@ -13,7 +13,6 @@ import {
   Copy,
   Info,
   LayoutGrid,
-  Lock,
   MousePointerClick,
   Pencil,
   Tag,
@@ -428,6 +427,10 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
     if (step > 1) setStep(step - 1);
   }
 
+  function goToStep(nextStep: number) {
+    if (nextStep >= 1 && nextStep <= STEPS.length) setStep(nextStep);
+  }
+
   if (!campaign) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted">
@@ -453,12 +456,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       </div>
 
       <div className="border-b border-border bg-surface px-8 py-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <Lock size={12} />
-          Limited access
-        </span>
-
-        <div className="mt-6 flex flex-wrap justify-between gap-4">
+        <div className="flex flex-wrap justify-between gap-4">
           {STEPS.map((item) => {
             const active = step === item.id;
             const complete = step > item.id;
@@ -466,9 +464,8 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => item.id < step && setStep(item.id)}
-                disabled={item.id > step}
-                className="flex min-w-[100px] flex-1 flex-col items-center gap-2 text-center disabled:cursor-default"
+                onClick={() => goToStep(item.id)}
+                className="flex min-w-[100px] flex-1 flex-col items-center gap-2 text-center transition hover:opacity-80"
               >
                 <span
                   className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
@@ -829,9 +826,8 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => item.id < step && setStep(item.id)}
-                  disabled={item.id > step}
-                  className="flex items-center gap-2 disabled:cursor-default"
+                  onClick={() => goToStep(item.id)}
+                  className="flex items-center gap-2 rounded-lg px-2 py-1 transition hover:bg-background"
                 >
                   <span
                     className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
