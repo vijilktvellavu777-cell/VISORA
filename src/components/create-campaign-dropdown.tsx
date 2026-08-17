@@ -40,7 +40,7 @@ export function CreateCampaignDropdown({ className = "" }: { className?: string 
             return (
               <Link
                 key={option.channel}
-                href={`/campaigns/new?type=${option.channel}${option.channel === "email" ? "&fresh=1" : ""}`}
+                href={`/campaigns/new?type=${option.channel}${["email", "push", "in_app"].includes(option.channel) ? "&fresh=1" : ""}`}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-background"
                 onClick={() => setOpen(false)}
               >

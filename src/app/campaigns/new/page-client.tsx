@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { ChannelCampaignWizard } from "@/components/channel-campaign-wizard";
 import { EmailCampaignWizard } from "@/components/email-campaign-wizard";
 import NewCampaignPage from "./new-campaign-form";
 
@@ -11,6 +12,14 @@ export default function NewCampaignRouter() {
 
   if (type === "email") {
     return <EmailCampaignWizard fresh={fresh} />;
+  }
+
+  if (type === "push") {
+    return <ChannelCampaignWizard channel="push" fresh={fresh} />;
+  }
+
+  if (type === "in_app") {
+    return <ChannelCampaignWizard channel="in_app" fresh={fresh} />;
   }
 
   return <NewCampaignPage />;

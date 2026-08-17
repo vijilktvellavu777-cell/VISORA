@@ -109,3 +109,43 @@ export async function waitForEmailWizardDraftId(timeoutMs = 5000) {
 
   return sessionStorage.getItem(EMAIL_WIZARD_DRAFT_KEY);
 }
+
+export const PUSH_WIZARD_DRAFT_KEY = "visora-push-wizard-draft-id";
+export const PUSH_WIZARD_CREATING_KEY = "visora-push-wizard-creating";
+export const IN_APP_WIZARD_DRAFT_KEY = "visora-in-app-wizard-draft-id";
+export const IN_APP_WIZARD_CREATING_KEY = "visora-in-app-wizard-creating";
+
+type WizardChannel = "push" | "in_app";
+
+const WIZARD_DRAFT_KEYS: Record<WizardChannel, string> = {
+  push: PUSH_WIZARD_DRAFT_KEY,
+  in_app: IN_APP_WIZARD_DRAFT_KEY,
+};
+
+const WIZARD_CREATING_KEYS: Record<WizardChannel, string> = {
+  push: PUSH_WIZARD_CREATING_KEY,
+  in_app: IN_APP_WIZARD_CREATING_KEY,
+};
+
+export function clearChannelWizardDraftSession(channel: WizardChannel) {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(WIZARD_DRAFT_KEYS[channel]);
+  sessionStorage.removeItem(WIZARD_CREATING_KEYS[channel]);
+}
+
+export async function waitForChannelWizardDraftId(channel: WizardChannel, timeoutMs = 5000) {
+  if (typeof window === "undefined") return null;
+
+  const draftKey = WIZARD_DRAFT_KEYS[channel];
+  const creatingKey = WIZARD_CREATING_KEYS[channel];
+  const started = Date.now();
+
+  while (Date.now() - started < timeoutMs) {
+    const draftId = sessionStorage.getItem(draftKey);
+    if (draftId) return draftId;
+    if (sessionStorage.getItem(creatingKey) !== "1") return null;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  return sessionStorage.getItem(draftKey);
+}
