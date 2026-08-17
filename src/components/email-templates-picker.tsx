@@ -22,6 +22,7 @@ export type EmailTemplateItem = {
   body: string;
   editorType: string;
   createdBy: string;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -53,41 +54,56 @@ function TemplateThumbnail({ template }: { template: EmailTemplateItem }) {
   );
 }
 
+function templateFormatLabel(type: string) {
+  return type === "drag-drop" ? "Drag-and-drop" : "HTML";
+}
+
+function PreviewMetaField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-sm font-semibold text-foreground">{label}</dt>
+      <dd className="mt-1 text-sm text-foreground">{value}</dd>
+    </div>
+  );
+}
+
 function TemplatePreviewPane({ template }: { template: EmailTemplateItem }) {
   return (
-    <div className="mx-auto max-w-4xl space-y-6 py-4">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold text-foreground">{template.name}</h2>
-        <p className="text-sm text-muted">
-          {editorTypeLabel(template.editorType)} · Last edited{" "}
-          {format(new Date(template.updatedAt), "MMM d, yyyy, h:mm a")} · Created by {template.createdBy}
-        </p>
-      </div>
-
-      {template.subject ? (
-        <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-muted">Subject line</div>
-          <p className="mt-1 text-sm text-foreground">{template.subject}</p>
-        </div>
-      ) : null}
-
-      <div>
-        <div className="text-xs font-medium uppercase tracking-wide text-muted">Email preview</div>
-        <div className="mx-auto mt-2 max-w-3xl overflow-hidden rounded-lg border border-border bg-white">
-          {template.body.trim() ? (
-            <iframe
-              title={`Preview ${template.name}`}
-              srcDoc={template.body}
-              className="h-[480px] w-full border-0 bg-white"
-              sandbox=""
-            />
-          ) : (
-            <div className="flex h-[480px] items-center justify-center px-6 text-sm text-muted">
-              No content available for preview.
-            </div>
-          )}
+    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div className="min-h-0 flex-1 overflow-auto bg-background px-6 py-8 lg:px-10">
+        <div className="mx-auto flex min-h-full max-w-3xl items-start justify-center">
+          <div className="w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm">
+            {template.body.trim() ? (
+              <iframe
+                title={`Preview ${template.name}`}
+                srcDoc={template.body}
+                className="h-[min(720px,70vh)] w-full border-0 bg-white"
+                sandbox=""
+              />
+            ) : (
+              <div className="flex h-[min(720px,70vh)] items-center justify-center px-6 text-sm text-muted">
+                No content available for preview.
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      <aside className="w-full shrink-0 border-t border-border bg-surface px-8 py-8 lg:w-[340px] lg:border-l lg:border-t-0 xl:w-[380px]">
+        <h2 className="text-3xl font-semibold tracking-tight text-foreground">{template.name}</h2>
+        <dl className="mt-8 space-y-6">
+          <PreviewMetaField label="Created by" value={template.createdBy} />
+          <PreviewMetaField
+            label="Created"
+            value={format(new Date(template.createdAt), "MMM d, yyyy")}
+          />
+          <PreviewMetaField
+            label="Last edited"
+            value={format(new Date(template.updatedAt), "MMM d, yyyy")}
+          />
+          <PreviewMetaField label="Template format" value={templateFormatLabel(template.editorType)} />
+        </dl>
+      </aside>
     </div>
   );
 }
@@ -186,49 +202,53 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
       <header className="flex shrink-0 items-start justify-between border-b border-border px-8 py-6">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">Email templates</h1>
         <div className="flex items-center gap-2">
-          <div ref={buildRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setBuildOpen((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5"
-            >
-              Build from scratch
-              <ChevronDown size={14} />
-            </button>
-            {buildOpen ? (
-              <div className="absolute right-0 top-full z-10 mt-1 min-w-[180px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+          {!previewTemplate ? (
+            <>
+              <div ref={buildRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => {
-                    setBuildOpen(false);
-                    onBuildFromScratch?.("drag-drop");
-                    onClose();
-                  }}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-background"
+                  onClick={() => setBuildOpen((value) => !value)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5"
                 >
-                  Drag-and-drop editor
+                  Build from scratch
+                  <ChevronDown size={14} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBuildOpen(false);
-                    onBuildFromScratch?.("html");
-                    onClose();
-                  }}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-background"
-                >
-                  HTML code editor
-                </button>
+                {buildOpen ? (
+                  <div className="absolute right-0 top-full z-10 mt-1 min-w-[180px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBuildOpen(false);
+                        onBuildFromScratch?.("drag-drop");
+                        onClose();
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-background"
+                    >
+                      Drag-and-drop editor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBuildOpen(false);
+                        onBuildFromScratch?.("html");
+                        onClose();
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-background"
+                    >
+                      HTML code editor
+                    </button>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted hover:bg-background"
-            aria-label="Upload template"
-          >
-            <Upload size={18} />
-          </button>
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted hover:bg-background"
+                aria-label="Upload template"
+              >
+                <Upload size={18} />
+              </button>
+            </>
+          ) : null}
           <button
             type="button"
             onClick={onClose}
@@ -240,6 +260,8 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
         </div>
       </header>
 
+      {!previewTemplate ? (
+        <>
       <div className="border-b border-border px-8">
         <div className="flex gap-8">
           <button
@@ -324,20 +346,8 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
       </div>
 
       <div className="flex shrink-0 items-center justify-between border-b border-border px-8 py-3">
-        {previewTemplate ? (
-          <button
-            type="button"
-            onClick={closePreview}
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-          >
-            <ChevronLeft size={16} />
-            Back to templates
-          </button>
-        ) : (
-          <p className="text-sm font-semibold text-foreground">{filtered.length} Results</p>
-        )}
-        {!previewTemplate ? (
-          <div className="inline-flex overflow-hidden rounded-lg border border-border">
+        <p className="text-sm font-semibold text-foreground">{filtered.length} Results</p>
+        <div className="inline-flex overflow-hidden rounded-lg border border-border">
           <button
             type="button"
             onClick={() => setViewMode("list")}
@@ -359,13 +369,10 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
             <LayoutGrid size={16} />
           </button>
         </div>
-        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto px-8 py-2">
-        {previewTemplate ? (
-          <TemplatePreviewPane template={previewTemplate} />
-        ) : loading ? (
+        {loading ? (
           <p className="py-12 text-center text-sm text-muted">Loading templates…</p>
         ) : filtered.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">No templates found.</p>
@@ -484,8 +491,25 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
           </div>
         )}
       </div>
+        </>
+      ) : (
+        <TemplatePreviewPane template={previewTemplate} />
+      )}
 
-      <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-border px-8 py-4">
+      <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-8 py-4">
+        {previewTemplate ? (
+          <button
+            type="button"
+            onClick={closePreview}
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <ChevronLeft size={16} />
+            Back to templates
+          </button>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onClose}
@@ -501,6 +525,7 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
         >
           Select template
         </button>
+        </div>
       </footer>
     </div>
   );
