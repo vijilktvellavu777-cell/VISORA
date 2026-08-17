@@ -126,11 +126,13 @@ function FilterGroupCard({
   group,
   onChange,
   onRemove,
+  variant = "filter",
 }: {
   title: string;
   group: TargetingFilterGroup;
   onChange: (group: TargetingFilterGroup) => void;
   onRemove?: () => void;
+  variant?: "filter" | "exclusion";
 }) {
   const filterOptions = PREBUILT_TARGETING_FILTERS.map((filter) => ({
     id: filter.id,
@@ -139,8 +141,14 @@ function FilterGroupCard({
     group: "Pre-built filters",
   }));
 
+  const isExclusion = variant === "exclusion";
+
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div
+      className={`rounded-lg border p-4 ${
+        isExclusion ? "border-red-200 bg-red-50" : "border-border bg-background"
+      }`}
+    >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <GripVertical size={16} className="text-muted" />
@@ -164,7 +172,12 @@ function FilterGroupCard({
 
       <div className="space-y-2">
         {group.filters.map((filter) => (
-          <div key={filter.id} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+          <div
+            key={filter.id}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${
+              isExclusion ? "border-red-100 bg-white" : "border-border bg-surface"
+            }`}
+          >
             <Search size={14} className="shrink-0 text-muted" />
             <span className="min-w-0 flex-1 truncate text-sm text-foreground">{filter.label}</span>
             <button
@@ -199,7 +212,9 @@ function FilterGroupCard({
         <button
           type="button"
           onClick={onRemove}
-          className="mt-3 text-xs font-medium text-muted hover:text-foreground"
+          className={`mt-3 text-xs font-medium hover:underline ${
+            isExclusion ? "text-red-700 hover:text-red-800" : "text-muted hover:text-foreground"
+          }`}
         >
           Remove group
         </button>
@@ -313,6 +328,7 @@ export function CampaignTargetingStep({ segments, value, onChange }: Props) {
           {value.exclusionGroups.map((group, index) => (
             <FilterGroupCard
               key={group.id}
+              variant="exclusion"
               title={`Exclusion group ${index + 1}`}
               group={group}
               onChange={(nextGroup) =>
