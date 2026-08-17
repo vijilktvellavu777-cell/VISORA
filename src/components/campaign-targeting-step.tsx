@@ -219,22 +219,6 @@ export function CampaignTargetingStep({ segments, value, onChange }: Props) {
     [segments],
   );
 
-  const filterOptions = useMemo(
-    () =>
-      PREBUILT_TARGETING_FILTERS.map((filter) => ({
-        id: filter.id,
-        label: filter.label,
-        description: filter.description,
-        group: "Pre-built filters",
-      })),
-    [],
-  );
-
-  const segmentSearchOptions = useMemo(
-    () => [...segmentOptions, ...filterOptions],
-    [segmentOptions, filterOptions],
-  );
-
   const selectedSegments = segments.filter((segment) => value.segmentIds.includes(segment.id));
 
   function toggleSegment(segmentId: string) {
@@ -247,30 +231,10 @@ export function CampaignTargetingStep({ segments, value, onChange }: Props) {
     });
   }
 
-  function addFilterFromSegmentSearch(filterId: string, label: string) {
-    const prebuilt = PREBUILT_TARGETING_FILTERS.find((filter) => filter.id === filterId);
-    if (!prebuilt) return;
-
-    const nextGroups = value.filterGroups.length
-      ? [...value.filterGroups]
-      : [createFilterGroup("or")];
-    const firstGroup = nextGroups[0];
-    nextGroups[0] = {
-      ...firstGroup,
-      filters: [...firstGroup.filters, createFilterItem(filterId, label)],
-    };
-    onChange({ ...value, filterGroups: nextGroups });
-  }
-
-  function handleSegmentSearchSelect(id: string, label: string) {
-    const isSegment = segments.some((segment) => segment.id === id);
-    if (isSegment) {
-      if (!value.segmentIds.includes(id)) {
-        onChange({ ...value, segmentIds: [...value.segmentIds, id] });
-      }
-      return;
+  function handleSegmentSearchSelect(segmentId: string) {
+    if (!value.segmentIds.includes(segmentId)) {
+      onChange({ ...value, segmentIds: [...value.segmentIds, segmentId] });
     }
-    addFilterFromSegmentSearch(id, label);
   }
 
   return (
@@ -291,8 +255,8 @@ export function CampaignTargetingStep({ segments, value, onChange }: Props) {
 
         <SearchDropdown
           placeholder="Search Segments..."
-          options={segmentSearchOptions}
-          onSelect={handleSegmentSearchSelect}
+          options={segmentOptions}
+          onSelect={(segmentId) => handleSegmentSearchSelect(segmentId)}
         />
 
         {selectedSegments.length > 0 ? (
@@ -324,7 +288,7 @@ export function CampaignTargetingStep({ segments, value, onChange }: Props) {
           {value.filterGroups.map((group, index) => (
             <FilterGroupCard
               key={group.id}
-              title={`Filter group${value.filterGroups.length > 1 ? ` ${index + 1}` : ""}`}
+              title={`Filter group ${index + 1}`}
               group={group}
               onChange={(nextGroup) =>
                 onChange({
@@ -349,7 +313,7 @@ export function CampaignTargetingStep({ segments, value, onChange }: Props) {
           {value.exclusionGroups.map((group, index) => (
             <FilterGroupCard
               key={group.id}
-              title={`Exclusion group${value.exclusionGroups.length > 1 ? ` ${index + 1}` : ""}`}
+              title={`Exclusion group ${index + 1}`}
               group={group}
               onChange={(nextGroup) =>
                 onChange({
