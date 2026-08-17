@@ -122,11 +122,11 @@ export function CampaignReviewSummaryStep({
         <div>
           <div className="text-xs font-medium uppercase tracking-wide text-muted">Email content</div>
           {hasBody ? (
-            <div className="mt-2 overflow-hidden rounded-lg border border-border bg-white">
+            <div className="mx-auto mt-2 max-w-3xl overflow-hidden rounded-lg border border-border bg-white">
               <iframe
                 title="Email preview"
                 srcDoc={campaign.body}
-                className="h-64 w-full border-0 bg-white"
+                className="h-[480px] w-full border-0 bg-white"
                 sandbox=""
               />
             </div>
