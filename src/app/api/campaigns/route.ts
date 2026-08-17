@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         body: body.body ?? "",
         segmentId: body.segmentId || null,
         conversionEvent: body.conversionEvent ?? null,
+        targetingRules: body.targetingRules ?? "{}",
         scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
       },
       { autoUniqueName: Boolean(body.autoUniqueName) },

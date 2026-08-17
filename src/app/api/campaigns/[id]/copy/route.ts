@@ -26,6 +26,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         fromAddress: existing.fromAddress,
         body: existing.body,
         segmentId: existing.segmentId,
+        targetingRules: existing.targetingRules,
         conversionEvent: existing.conversionEvent,
         scheduledAt: null,
       },

@@ -129,6 +129,8 @@ model Campaign {
   body        String
   segmentId   String?
   segment     Segment?  @relation(fields: [segmentId], references: [id])
+  /// JSON targeting: segments, filter groups, exclusion groups
+  targetingRules String @default("{}")
   /// Conversion event to track, e.g. purchase, signup
   conversionEvent String?
   templateId  String?

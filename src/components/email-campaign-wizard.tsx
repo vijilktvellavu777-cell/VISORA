@@ -20,12 +20,19 @@ import {
   X,
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
+import { CampaignTargetingStep } from "@/components/campaign-targeting-step";
 import {
   clearEmailWizardDraftSession,
   EMAIL_WIZARD_CREATING_KEY,
   EMAIL_WIZARD_DRAFT_KEY,
   waitForEmailWizardDraftId,
 } from "@/lib/campaign-names";
+import {
+  emptyTargeting,
+  parseCampaignTargeting,
+  serializeCampaignTargeting,
+  type CampaignTargeting,
+} from "@/lib/campaign-targeting";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
 import { EmailTemplatesPicker, type EmailTemplateItem } from "@/components/email-templates-picker";
@@ -40,6 +47,7 @@ type CampaignDraft = {
   fromAddress: string | null;
   body: string;
   segmentId: string | null;
+  targetingRules: string;
   conversionEvent: string | null;
   scheduledAt: string | null;
   status: string;
@@ -72,7 +80,7 @@ const CREATE_EMAIL_OPTIONS = [
 
 const STEPS = [
   { id: 1, label: "Compose message", shortLabel: "Compose" },
-  { id: 2, label: "Target audience", shortLabel: "Target" },
+  { id: 2, label: "Target Audience", shortLabel: "Target" },
   { id: 3, label: "Assign conversions", shortLabel: "Assign" },
   { id: 4, label: "Schedule delivery", shortLabel: "Schedule" },
 ] as const;
@@ -87,6 +95,20 @@ const CONVERSION_EVENTS = [
 
 function defaultCampaignName() {
   return `New Campaign - ${format(new Date(), "MMMM d, yyyy")}`;
+}
+
+function targetingFromCampaign(campaign: {
+  segmentId: string | null;
+  targetingRules?: string | null;
+}): CampaignTargeting {
+  const parsed = parseCampaignTargeting(campaign.targetingRules);
+  if (campaign.segmentId && !parsed.segmentIds.includes(campaign.segmentId)) {
+    parsed.segmentIds = [campaign.segmentId, ...parsed.segmentIds];
+  }
+  if (parsed.filterGroups.length === 0) {
+    parsed.filterGroups = emptyTargeting().filterGroups;
+  }
+  return parsed;
 }
 
 function mapCampaignDraft(created: {
@@ -109,6 +131,7 @@ function mapCampaignDraft(created: {
     fromAddress: created.fromAddress ?? DEFAULT_FROM,
     body: created.body ?? "",
     segmentId: created.segmentId,
+    targetingRules: created.targetingRules ?? "{}",
     conversionEvent: created.conversionEvent,
     scheduledAt: created.scheduledAt,
     status: created.status,
@@ -136,6 +159,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [targeting, setTargeting] = useState<CampaignTargeting>(emptyTargeting());
 
   useEffect(() => {
     let cancelled = false;
@@ -163,6 +187,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         if (cancelled) return;
         if (draft) {
           setCampaign(draft);
+          setTargeting(targetingFromCampaign(draft));
           if (draft.description) setShowDescription(true);
           if (draft.scheduledAt) {
             setScheduleMode("scheduled");
@@ -182,6 +207,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
           const draft = await loadDraft(draftId);
           if (draft) {
             setCampaign(draft);
+            setTargeting(targetingFromCampaign(draft));
             return;
           }
         }
@@ -212,6 +238,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         if (cancelled) return;
 
         setCampaign(mapCampaignDraft(created));
+        setTargeting(targetingFromCampaign(mapCampaignDraft(created)));
         if (created.description) setShowDescription(true);
         if (created.scheduledAt) {
           setScheduleMode("scheduled");
@@ -253,18 +280,11 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       return false;
     }
     const updated = await response.json();
-    setCampaign({
-      id: updated.id,
-      name: updated.name,
-      description: updated.description,
-      subject: updated.subject ?? "",
-      fromAddress: updated.fromAddress ?? DEFAULT_FROM,
-      body: updated.body ?? "",
-      segmentId: updated.segmentId,
-      conversionEvent: updated.conversionEvent,
-      scheduledAt: updated.scheduledAt,
-      status: updated.status,
-    });
+    const nextCampaign = mapCampaignDraft(updated);
+    setCampaign(nextCampaign);
+    if (data.targetingRules !== undefined || data.segmentId !== undefined) {
+      setTargeting(targetingFromCampaign(nextCampaign));
+    }
     setError(null);
     setNameError(null);
     return true;
@@ -348,7 +368,10 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       return;
     }
     if (step === 2) {
-      const ok = await saveCampaign({ segmentId: campaign.segmentId });
+      const ok = await saveCampaign({
+        segmentId: targeting.segmentIds[0] ?? null,
+        targetingRules: serializeCampaignTargeting(targeting),
+      });
       if (ok) setStep(3);
       return;
     }
@@ -389,7 +412,8 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       fromAddress: campaign.fromAddress,
       subject: campaign.subject,
       body: campaign.body,
-      segmentId: campaign.segmentId,
+      segmentId: targeting.segmentIds[0] ?? null,
+      targetingRules: serializeCampaignTargeting(targeting),
       conversionEvent: campaign.conversionEvent,
       status: "draft",
     });
@@ -710,24 +734,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         ) : null}
 
         {step === 2 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Target audience</h2>
-            <p className="text-sm text-muted">Choose which segment should receive this email campaign.</p>
-            <Field label="Segment">
-              <select
-                className={inputClass}
-                value={campaign.segmentId ?? ""}
-                onChange={(e) => setCampaign({ ...campaign, segmentId: e.target.value || null })}
-              >
-                <option value="">All profiles</option>
-                {segments.map((segment) => (
-                  <option key={segment.id} value={segment.id}>
-                    {segment.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </Card>
+          <CampaignTargetingStep segments={segments} value={targeting} onChange={setTargeting} />
         ) : null}
 
         {step === 3 ? (
