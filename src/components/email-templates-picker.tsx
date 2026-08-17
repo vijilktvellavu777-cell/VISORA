@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import {
   ArrowDownUp,
   ChevronDown,
+  ChevronLeft,
+  Eye,
   LayoutGrid,
   List,
   Search,
@@ -51,6 +53,45 @@ function TemplateThumbnail({ template }: { template: EmailTemplateItem }) {
   );
 }
 
+function TemplatePreviewPane({ template }: { template: EmailTemplateItem }) {
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 py-4">
+      <div className="space-y-1">
+        <h2 className="text-2xl font-semibold text-foreground">{template.name}</h2>
+        <p className="text-sm text-muted">
+          {editorTypeLabel(template.editorType)} · Last edited{" "}
+          {format(new Date(template.updatedAt), "MMM d, yyyy, h:mm a")} · Created by {template.createdBy}
+        </p>
+      </div>
+
+      {template.subject ? (
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted">Subject line</div>
+          <p className="mt-1 text-sm text-foreground">{template.subject}</p>
+        </div>
+      ) : null}
+
+      <div>
+        <div className="text-xs font-medium uppercase tracking-wide text-muted">Email preview</div>
+        <div className="mx-auto mt-2 max-w-3xl overflow-hidden rounded-lg border border-border bg-white">
+          {template.body.trim() ? (
+            <iframe
+              title={`Preview ${template.name}`}
+              srcDoc={template.body}
+              className="h-[480px] w-full border-0 bg-white"
+              sandbox=""
+            />
+          ) : (
+            <div className="flex h-[480px] items-center justify-center px-6 text-sm text-muted">
+              No content available for preview.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: Props) {
   const [tab, setTab] = useState<Tab>("saved");
   const [templates, setTemplates] = useState<EmailTemplateItem[]>([]);
@@ -60,6 +101,7 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplateItem | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [buildOpen, setBuildOpen] = useState(false);
@@ -73,6 +115,7 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
       const data = await response.json();
       setTemplates(Array.isArray(data) ? data : []);
       setSelectedId(null);
+      setPreviewTemplate(null);
       setLoading(false);
     }
     load().catch(() => {
@@ -123,10 +166,19 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
   }
 
   function handleSelectTemplate() {
-    const template = filtered.find((item) => item.id === selectedId);
+    const template = previewTemplate ?? filtered.find((item) => item.id === selectedId);
     if (!template) return;
     onSelect(template);
     onClose();
+  }
+
+  function openPreview(template: EmailTemplateItem) {
+    setSelectedId(template.id);
+    setPreviewTemplate(template);
+  }
+
+  function closePreview() {
+    setPreviewTemplate(null);
   }
 
   return (
@@ -272,8 +324,20 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
       </div>
 
       <div className="flex shrink-0 items-center justify-between border-b border-border px-8 py-3">
-        <p className="text-sm font-semibold text-foreground">{filtered.length} Results</p>
-        <div className="inline-flex overflow-hidden rounded-lg border border-border">
+        {previewTemplate ? (
+          <button
+            type="button"
+            onClick={closePreview}
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <ChevronLeft size={16} />
+            Back to templates
+          </button>
+        ) : (
+          <p className="text-sm font-semibold text-foreground">{filtered.length} Results</p>
+        )}
+        {!previewTemplate ? (
+          <div className="inline-flex overflow-hidden rounded-lg border border-border">
           <button
             type="button"
             onClick={() => setViewMode("list")}
@@ -295,10 +359,13 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
             <LayoutGrid size={16} />
           </button>
         </div>
+        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto px-8 py-2">
-        {loading ? (
+        {previewTemplate ? (
+          <TemplatePreviewPane template={previewTemplate} />
+        ) : loading ? (
           <p className="py-12 text-center text-sm text-muted">Loading templates…</p>
         ) : filtered.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">No templates found.</p>
@@ -326,7 +393,8 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
                     <ChevronDown size={12} className={sortKey === "updatedAt" && sortDir === "desc" ? "" : "opacity-40"} />
                   </button>
                 </th>
-                <th className="py-3 font-medium">Created by</th>
+                <th className="py-3 pr-4 font-medium">Created by</th>
+                <th className="w-12 py-3 text-right font-medium" aria-label="Preview" />
               </tr>
             </thead>
             <tbody>
@@ -335,7 +403,7 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
                 return (
                   <tr
                     key={template.id}
-                    onClick={() => setSelectedId(template.id)}
+                    onClick={() => openPreview(template)}
                     className={`cursor-pointer border-b border-border last:border-0 ${
                       selected ? "bg-primary/5" : "hover:bg-background"
                     }`}
@@ -351,7 +419,20 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
                     <td className="py-4 pr-4 text-muted">
                       {format(new Date(template.updatedAt), "MMM d, yyyy, h:mm a")}
                     </td>
-                    <td className="py-4 text-muted">{template.createdBy}</td>
+                    <td className="py-4 pr-4 text-muted">{template.createdBy}</td>
+                    <td className="py-4 text-right">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openPreview(template);
+                        }}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-primary"
+                        aria-label={`Preview ${template.name}`}
+                      >
+                        <Eye size={18} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -362,14 +443,32 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
             {filtered.map((template) => {
               const selected = selectedId === template.id;
               return (
-                <button
+                <div
                   key={template.id}
-                  type="button"
-                  onClick={() => setSelectedId(template.id)}
-                  className={`rounded-xl border p-4 text-left transition ${
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openPreview(template)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openPreview(template);
+                    }
+                  }}
+                  className={`relative cursor-pointer rounded-xl border p-4 text-left transition ${
                     selected ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border hover:border-primary/30"
                   }`}
                 >
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openPreview(template);
+                    }}
+                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-primary"
+                    aria-label={`Preview ${template.name}`}
+                  >
+                    <Eye size={18} />
+                  </button>
                   <div className="mb-3 flex justify-center">
                     <TemplateThumbnail template={template} />
                   </div>
@@ -379,7 +478,7 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
                     {format(new Date(template.updatedAt), "MMM d, yyyy, h:mm a")}
                   </div>
                   <div className="mt-1 text-xs text-muted">{template.createdBy}</div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -397,7 +496,7 @@ export function EmailTemplatesPicker({ onSelect, onClose, onBuildFromScratch }: 
         <button
           type="button"
           onClick={handleSelectTemplate}
-          disabled={!selectedId}
+          disabled={!selectedId && !previewTemplate}
           className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-muted disabled:text-white/80"
         >
           Select template
