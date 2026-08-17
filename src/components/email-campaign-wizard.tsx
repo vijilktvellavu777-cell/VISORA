@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
 import { CampaignTargetingStep } from "@/components/campaign-targeting-step";
+import { CampaignReviewSummaryStep } from "@/components/campaign-review-summary-step";
 import {
   clearEmailWizardDraftSession,
   EMAIL_WIZARD_CREATING_KEY,
@@ -80,17 +81,9 @@ const CREATE_EMAIL_OPTIONS = [
 const STEPS = [
   { id: 1, label: "Compose message", shortLabel: "Compose" },
   { id: 2, label: "Target Audience", shortLabel: "Target" },
-  { id: 3, label: "Assign conversions", shortLabel: "Assign" },
+  { id: 3, label: "Review summary", shortLabel: "Summary" },
   { id: 4, label: "Schedule delivery", shortLabel: "Schedule" },
 ] as const;
-
-const CONVERSION_EVENTS = [
-  { value: "", label: "No conversion tracking" },
-  { value: "purchase", label: "Purchase" },
-  { value: "signup", label: "Signup" },
-  { value: "conversion", label: "Conversion" },
-  { value: "order_completed", label: "Order completed" },
-];
 
 function defaultCampaignName() {
   return `New Campaign - ${format(new Date(), "MMMM d, yyyy")}`;
@@ -375,8 +368,7 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       return;
     }
     if (step === 3) {
-      const ok = await saveCampaign({ conversionEvent: campaign.conversionEvent });
-      if (ok) setStep(4);
+      setStep(4);
       return;
     }
   }
@@ -413,7 +405,6 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
       body: campaign.body,
       segmentId: targeting.segmentIds[0] ?? null,
       targetingRules: serializeCampaignTargeting(targeting),
-      conversionEvent: campaign.conversionEvent,
       status: "draft",
     });
     if (ok) {
@@ -735,25 +726,14 @@ export function EmailCampaignWizard({ fresh = false }: { fresh?: boolean }) {
         ) : null}
 
         {step === 3 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Assign conversions</h2>
-            <p className="text-sm text-muted">
-              Select a conversion event to measure performance after users receive this campaign.
-            </p>
-            <Field label="Conversion event">
-              <select
-                className={inputClass}
-                value={campaign.conversionEvent ?? ""}
-                onChange={(e) => setCampaign({ ...campaign, conversionEvent: e.target.value || null })}
-              >
-                {CONVERSION_EVENTS.map((event) => (
-                  <option key={event.value || "none"} value={event.value}>
-                    {event.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </Card>
+          <CampaignReviewSummaryStep
+            campaign={campaign}
+            targeting={targeting}
+            segments={segments}
+            selectedTemplateName={selectedTemplateName}
+            defaultFrom={DEFAULT_FROM}
+            onEditStep={goToStep}
+          />
         ) : null}
 
         {step === 4 ? (
