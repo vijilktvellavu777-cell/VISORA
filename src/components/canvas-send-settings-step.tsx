@@ -22,18 +22,19 @@ export function CanvasSendSettingsStep({ value, onChange }: Props) {
 
         <div>
           <h3 className="text-sm font-semibold text-foreground">Subscription Settings</h3>
-        <div className="mt-3">
-          <Field label="Send to these users:">
-            <select
-              className={inputClass}
-              value={value.subscriptionAudience ?? "subscribed_or_opted_in"}
-              onChange={(event) => onChange({ ...value, subscriptionAudience: event.target.value })}
-            >
-              <option value="subscribed_or_opted_in">users who are subscribed or opted-in</option>
-              <option value="subscribed_only">users who are subscribed only</option>
-              <option value="all">all users</option>
-            </select>
-          </Field>
+          <div className="mt-3">
+            <Field label="Send to these users:">
+              <select
+                className={inputClass}
+                value={value.subscriptionAudience ?? "subscribed_or_opted_in"}
+                onChange={(event) => onChange({ ...value, subscriptionAudience: event.target.value })}
+              >
+                <option value="subscribed_or_opted_in">users who are subscribed or opted-in</option>
+                <option value="subscribed_only">users who are subscribed only</option>
+                <option value="all">all users</option>
+              </select>
+            </Field>
+          </div>
         </div>
       </div>
 
