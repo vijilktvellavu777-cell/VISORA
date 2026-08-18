@@ -34,7 +34,7 @@ function statusTone(status: string) {
 }
 
 function isActiveStatus(status: string) {
-  return status === "active";
+  return status !== "archived";
 }
 
 function BlockPreview({ imageUrl, name }: { imageUrl: string | null; name: string }) {

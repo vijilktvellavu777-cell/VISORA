@@ -128,9 +128,12 @@ export function ContentBlockEditorPage({
     }
 
     const saved = await response.json();
-    if (!isEditing) {
-      router.replace(`/content/templates/content-blocks/${saved.id}/edit`);
-    }
+    setBlock((current) => ({
+      ...current,
+      id: saved.id,
+      status: saved.status ?? current.status,
+    }));
+    router.push("/content/templates/content-blocks");
     router.refresh();
   }
 
