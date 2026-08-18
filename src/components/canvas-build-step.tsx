@@ -87,44 +87,50 @@ export function CanvasBuildStep({
   }
 
   return (
-    <div className="-mx-8 flex min-h-[calc(100vh-220px)] flex-col border-y border-border bg-background">
-      <div className="flex min-h-0 flex-1">
+    <div className="flex h-[calc(100vh-112px)] w-full min-w-0 flex-col bg-background">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {!sidebarCollapsed ? (
-          <aside className="flex w-72 shrink-0 flex-col border-r border-border bg-surface">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div>
-                <div className="text-sm font-semibold text-foreground">Components</div>
-                <p className="mt-0.5 text-xs text-muted">Select components to build your user journey.</p>
+          <aside className="flex w-[300px] min-w-[300px] shrink-0 flex-col border-r border-border bg-surface">
+            <div className="border-b border-border px-5 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-foreground">Components</div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted">
+                    Select components to build your user journey.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateLayout({ sidebarCollapsed: true })}
+                  className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-background hover:text-foreground"
+                  aria-label="Collapse sidebar"
+                >
+                  <ArrowLeftRight size={16} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => updateLayout({ sidebarCollapsed: true })}
-                className="text-muted hover:text-foreground"
-                aria-label="Collapse sidebar"
-              >
-                <ArrowLeftRight size={16} />
-              </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-3">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               {COMPONENT_GROUPS.map((group) => (
-                <div key={group.title} className="mb-5">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{group.title}</div>
-                  <div className="space-y-1.5">
+                <div key={group.title} className="mb-6 last:mb-0">
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                    {group.title}
+                  </div>
+                  <div className="space-y-1">
                     {group.items.map((item) => {
                       const Icon = item.icon;
                       return (
                         <button
                           key={item.label}
                           type="button"
-                          className="flex w-full items-center gap-3 rounded-lg border border-transparent px-2 py-2 text-left hover:border-border hover:bg-background"
+                          className="flex w-full items-center gap-3 rounded-lg border border-transparent px-2 py-2.5 text-left hover:border-border hover:bg-background"
                         >
                           <span
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-white ${item.tone}`}
+                            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white ${item.tone}`}
                           >
                             <Icon size={16} />
                           </span>
-                          <span className="text-sm text-foreground">{item.label}</span>
+                          <span className="min-w-0 flex-1 text-sm leading-snug text-foreground">{item.label}</span>
                         </button>
                       );
                     })}
@@ -133,10 +139,10 @@ export function CanvasBuildStep({
               ))}
             </div>
 
-            <div className="border-t border-border p-3">
+            <div className="border-t border-border px-4 py-4">
               <button
                 type="button"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted hover:bg-background hover:text-foreground"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm text-muted hover:bg-background hover:text-foreground"
               >
                 <Sparkles size={14} />
                 Clean Up Canvas
@@ -147,15 +153,15 @@ export function CanvasBuildStep({
           <button
             type="button"
             onClick={() => updateLayout({ sidebarCollapsed: false })}
-            className="flex w-10 shrink-0 items-center justify-center border-r border-border bg-surface text-muted hover:text-foreground"
+            className="flex w-12 shrink-0 items-center justify-center border-r border-border bg-surface text-muted hover:text-foreground"
             aria-label="Expand sidebar"
           >
             <ArrowLeftRight size={16} />
           </button>
         )}
 
-        <div className="relative min-w-0 flex-1 bg-slate-50">
-          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50">
+          <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-5 py-2.5">
             <button
               type="button"
               className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
@@ -173,7 +179,8 @@ export function CanvasBuildStep({
             </div>
           </div>
 
-          <div className="flex flex-col items-center px-8 py-10">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-6 py-10">
             <div className="w-full max-w-md overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
               <button
                 type="button"
@@ -216,10 +223,10 @@ export function CanvasBuildStep({
             {variants.map((variant) => (
               <div key={variant.id} className="w-full max-w-md">
                 <div className="flex items-stretch overflow-hidden rounded-full border border-border bg-slate-700 text-sm text-white shadow-sm">
-                  <div className="flex items-center bg-primary/20 px-3 py-2 font-semibold text-primary-foreground">
+                  <div className="flex min-w-[72px] items-center justify-center bg-slate-600 px-4 py-2.5 font-semibold">
                     {variant.weight}%
                   </div>
-                  <div className="flex flex-1 items-center px-4 py-2 font-medium">{variant.name}</div>
+                  <div className="flex flex-1 items-center px-4 py-2.5 font-medium">{variant.name}</div>
                   <button
                     type="button"
                     className="px-3 py-2 text-white/80 hover:bg-white/10"
@@ -242,11 +249,12 @@ export function CanvasBuildStep({
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-5 py-3">
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
           <button type="button" className="inline-flex items-center gap-1 hover:text-foreground">
             Detailed View, 100%

@@ -402,7 +402,7 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
   const isBuildStep = step === 5;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <div className="border-b border-border bg-surface px-6 pt-3">
         <div className="flex items-center gap-1 text-sm">
           <Link href="/canvas" className="rounded-t-lg px-3 py-2 text-muted hover:text-foreground">
@@ -431,7 +431,7 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         </div>
       ) : null}
 
-      <div className={isBuildStep ? "pb-0" : "mx-auto max-w-4xl px-8 py-8 pb-28"}>
+      <div className={isBuildStep ? "flex min-h-0 flex-1 flex-col" : "mx-auto max-w-4xl px-8 py-8 pb-28"}>
         {step === 1 ? (
           <div className="space-y-6">
             <Card className="space-y-5 p-6">
