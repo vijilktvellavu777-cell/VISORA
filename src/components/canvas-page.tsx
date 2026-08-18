@@ -9,7 +9,6 @@ import {
   ChevronDown,
   Columns3,
   Info,
-  Lock,
   MessageSquare,
   Search,
   SlidersHorizontal,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { CreateCanvasDropdown } from "@/components/create-canvas-dropdown";
+import { CanvasRowMenu } from "@/components/canvas-row-menu";
 
 type CanvasRow = {
   id: string;
@@ -72,13 +72,7 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
 
       <div className="border-b border-border px-8 py-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Canvas</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-              <Lock size={12} />
-              Limited access
-            </span>
-          </div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Canvas</h1>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -194,7 +188,10 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
                 <th className="py-3 pr-4 font-medium">Steps</th>
                 <th className="py-3 pr-4 font-medium">Enrolled</th>
                 <th className="py-3 pr-4 font-medium">Teams</th>
-                <th className="py-3 font-medium">Last edited</th>
+                <th className="py-3 pr-4 font-medium">Last edited</th>
+                <th className="w-10 py-3 font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -226,7 +223,10 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
                   <td className="py-4 pr-4">{canvas._count.steps}</td>
                   <td className="py-4 pr-4">{canvas._count.entries}</td>
                   <td className="py-4 pr-4 text-muted">VISORA</td>
-                  <td className="py-4 text-muted">{format(new Date(canvas.updatedAt), "MMM d, yyyy")}</td>
+                  <td className="py-4 pr-4 text-muted">{format(new Date(canvas.updatedAt), "MMM d, yyyy")}</td>
+                  <td className="py-4" onClick={(event) => event.stopPropagation()}>
+                    <CanvasRowMenu canvasId={canvas.id} canvasName={canvas.name} />
+                  </td>
                 </tr>
                 );
               })}
