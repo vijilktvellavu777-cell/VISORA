@@ -14,12 +14,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const workspace = await getDefaultWorkspace();
   const body = await request.json();
+  const attributes = Array.isArray(body.attributes)
+    ? body.attributes.filter((value: unknown) => typeof value === "string" && value.trim())
+    : [];
   const item = await prisma.listExtension.create({
     data: {
       workspaceId: workspace.id,
       name: body.name,
       type: body.type ?? "email",
       description: body.description ?? null,
+      attributes: JSON.stringify(attributes),
     },
   });
   return NextResponse.json(item);

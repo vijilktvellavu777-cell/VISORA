@@ -2,17 +2,67 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Plus, X } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
+
+const PRESET_ATTRIBUTES = [
+  { value: "first_name", label: "First_name" },
+  { value: "last_name", label: "Last_name" },
+] as const;
+
+function attributeLabel(value: string) {
+  const preset = PRESET_ATTRIBUTES.find((item) => item.value === value);
+  return preset?.label ?? value;
+}
 
 export function CreateListExtensionPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [type, setType] = useState("email");
   const [description, setDescription] = useState("");
+  const [attributes, setAttributes] = useState<string[]>([]);
+  const [attributePicker, setAttributePicker] = useState("");
+  const [customAttribute, setCustomAttribute] = useState("");
+  const [showCustomAttribute, setShowCustomAttribute] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availablePresets = useMemo(
+    () => PRESET_ATTRIBUTES.filter((item) => !attributes.includes(item.value)),
+    [attributes],
+  );
+
+  function addAttribute(value: string) {
+    const normalized = value.trim().toLowerCase().replace(/\s+/g, "_");
+    if (!normalized) {
+      setError("Attribute name is required.");
+      return;
+    }
+    if (attributes.includes(normalized)) {
+      setError("That attribute has already been added.");
+      return;
+    }
+
+    setAttributes((current) => [...current, normalized]);
+    setAttributePicker("");
+    setCustomAttribute("");
+    setShowCustomAttribute(false);
+    setError(null);
+  }
+
+  function removeAttribute(value: string) {
+    setAttributes((current) => current.filter((item) => item !== value));
+  }
+
+  function handleAttributeSelect(value: string) {
+    setAttributePicker(value);
+    if (value === "custom") {
+      setShowCustomAttribute(true);
+      return;
+    }
+    if (value) addAttribute(value);
+  }
 
   async function saveExtension() {
     if (!name.trim()) {
@@ -30,6 +80,7 @@ export function CreateListExtensionPage() {
         name: name.trim(),
         type,
         description: description.trim() || null,
+        attributes,
       }),
     });
 
@@ -115,6 +166,89 @@ export function CreateListExtensionPage() {
               placeholder="Describe what this extension does"
             />
           </Field>
+
+          <div className="space-y-3 border-t border-border pt-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Attributes</h3>
+                <p className="mt-1 text-xs text-muted">Choose profile fields this extension maps to your list.</p>
+              </div>
+              <div className="relative min-w-[220px]">
+                <select
+                  className={`${inputClass} appearance-none pr-8`}
+                  value={attributePicker}
+                  onChange={(event) => handleAttributeSelect(event.target.value)}
+                >
+                  <option value="">Add attribute</option>
+                  {availablePresets.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                  <option value="custom">New attribute</option>
+                </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+              </div>
+            </div>
+
+            {showCustomAttribute ? (
+              <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background p-3">
+                <label className="min-w-[220px] flex-1 text-sm">
+                  <span className="mb-1.5 block text-muted">Attribute name</span>
+                  <input
+                    className={inputClass}
+                    value={customAttribute}
+                    onChange={(event) => setCustomAttribute(event.target.value)}
+                    placeholder="e.g. company, plan_tier"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => addAttribute(customAttribute)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                >
+                  <Plus size={14} />
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustomAttribute(false);
+                    setCustomAttribute("");
+                    setAttributePicker("");
+                  }}
+                  className="rounded-lg border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : null}
+
+            {attributes.length > 0 ? (
+              <ul className="space-y-2">
+                {attributes.map((attribute) => (
+                  <li
+                    key={attribute}
+                    className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
+                  >
+                    <span className="text-sm font-medium text-foreground">{attributeLabel(attribute)}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttribute(attribute)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-foreground"
+                      aria-label={`Remove ${attributeLabel(attribute)}`}
+                    >
+                      <X size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted">
+                No attributes added yet. Use Add attribute to include First_name, Last_name, or a custom field.
+              </p>
+            )}
+          </div>
         </Card>
 
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
