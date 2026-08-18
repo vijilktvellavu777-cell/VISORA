@@ -35,7 +35,9 @@ export function CreateSegmentPage() {
   const [builder, setBuilder] = useState<BuilderState>(emptySegmentBuilder());
   const [lookupQuery, setLookupQuery] = useState("");
   const [totalUsers, setTotalUsers] = useState(0);
+  const [estimatedUsers, setEstimatedUsers] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [runningCounts, setRunningCounts] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,8 +49,38 @@ export function CreateSegmentPage() {
       .catch(() => undefined);
   }, []);
 
-  const estimatedUsers = 0;
   const estimatedPercent = totalUsers > 0 ? ((estimatedUsers / totalUsers) * 100).toFixed(1) : "0.0";
+
+  function buildRules() {
+    return buildSegmentRulesPayload({
+      appsTarget,
+      specificApps,
+      analyticsTracking,
+      filterGroups: builder.filterGroups,
+      exclusionGroups: builder.exclusionGroups,
+    });
+  }
+
+  async function runCounts() {
+    setRunningCounts(true);
+    setError(null);
+
+    const response = await fetch("/api/segments/estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rules: buildRules() }),
+    });
+
+    setRunningCounts(false);
+    if (!response.ok) {
+      setError("Could not run counts");
+      return;
+    }
+
+    const data = await response.json();
+    setEstimatedUsers(typeof data.count === "number" ? data.count : 0);
+    if (typeof data.totalUsers === "number") setTotalUsers(data.totalUsers);
+  }
 
   async function saveSegment() {
     if (!name.trim()) {
@@ -59,13 +91,7 @@ export function CreateSegmentPage() {
     setSaving(true);
     setError(null);
 
-    const rules = buildSegmentRulesPayload({
-      appsTarget,
-      specificApps,
-      analyticsTracking,
-      filterGroups: builder.filterGroups,
-      exclusionGroups: builder.exclusionGroups,
-    });
+    const rules = buildRules();
 
     const response = await fetch("/api/segments", {
       method: "POST",
@@ -104,7 +130,25 @@ export function CreateSegmentPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-8 py-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Create segment</h1>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Create segment</h1>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/audience/segments"
+              className="rounded-lg border border-primary px-5 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+            >
+              Cancel
+            </Link>
+            <button
+              type="button"
+              onClick={saveSegment}
+              disabled={saving}
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
@@ -254,7 +298,12 @@ export function CreateSegmentPage() {
                 <div className="text-sm text-muted">Estimated users</div>
                 <div className="mt-1 text-4xl font-semibold text-foreground">{estimatedUsers.toLocaleString()}</div>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border">
-                  <div className="h-full w-0 rounded-full bg-primary" />
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{
+                      width: totalUsers > 0 ? `${Math.min(100, (estimatedUsers / totalUsers) * 100)}%` : "0%",
+                    }}
+                  />
                 </div>
                 <div className="mt-2 text-sm text-muted">{estimatedPercent}% of total users</div>
               </div>
@@ -291,20 +340,14 @@ export function CreateSegmentPage() {
       </div>
 
       <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface px-8 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-end gap-3">
-          <Link
-            href="/audience/segments"
-            className="rounded-lg border border-primary px-5 py-2 text-sm font-medium text-primary hover:bg-primary/5"
-          >
-            Cancel
-          </Link>
+        <div className="mx-auto flex max-w-7xl items-center justify-end">
           <button
             type="button"
-            onClick={saveSegment}
-            disabled={saving}
+            onClick={runCounts}
+            disabled={runningCounts}
             className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save segment"}
+            {runningCounts ? "Running…" : "Run counts"}
           </button>
         </div>
       </footer>
