@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -14,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { ContentBlockPreviewModal } from "@/components/content-block-preview-modal";
+import { ContentBlockRowMenu } from "@/components/content-block-row-menu";
 import { contentBlockTypeLabel, parseContentTags } from "@/lib/content-blocks";
 
 export type ContentBlockRow = {
@@ -25,6 +26,7 @@ export type ContentBlockRow = {
   inclusionCount: number;
   updatedAt: string;
   imageUrl: string | null;
+  body: string;
 };
 
 function statusTone(status: string) {
@@ -37,15 +39,19 @@ function isActiveStatus(status: string) {
   return status !== "archived";
 }
 
-function BlockPreview({ imageUrl, name }: { imageUrl: string | null; name: string }) {
-  if (imageUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={imageUrl} alt="" className="h-10 w-14 rounded border border-border object-cover" />
-    );
-  }
-
-  return (
+function BlockPreview({
+  imageUrl,
+  name,
+  onClick,
+}: {
+  imageUrl: string | null;
+  name: string;
+  onClick?: () => void;
+}) {
+  const content = imageUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={imageUrl} alt="" className="h-10 w-14 rounded border border-border object-cover" />
+  ) : (
     <div
       className="flex h-10 w-14 items-center justify-center rounded border border-dashed border-border bg-background text-[10px] font-medium text-muted"
       aria-hidden
@@ -53,15 +59,31 @@ function BlockPreview({ imageUrl, name }: { imageUrl: string | null; name: strin
       {name.slice(0, 2).toUpperCase()}
     </div>
   );
+
+  if (!onClick) return content;
+
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      className="rounded transition hover:opacity-80"
+      aria-label={`Preview ${name}`}
+    >
+      {content}
+    </button>
+  );
 }
 
 export function ContentBlocksPageClient({ blocks }: { blocks: ContentBlockRow[] }) {
-  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("active");
   const [tagFilter, setTagFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [selected, setSelected] = useState<string[]>([]);
+  const [previewBlock, setPreviewBlock] = useState<ContentBlockRow | null>(null);
 
   const filtered = useMemo(() => {
     return blocks.filter((block) => {
@@ -268,19 +290,29 @@ export function ContentBlocksPageClient({ blocks }: { blocks: ContentBlockRow[] 
         ) : viewMode === "grid" ? (
           <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((block) => (
-              <button
+              <div
                 key={block.id}
-                type="button"
-                onClick={() => router.push(`/content/templates/content-blocks/${block.id}/edit`)}
-                className="rounded-xl border border-border bg-surface p-4 text-left hover:border-primary/40 hover:shadow-sm"
+                className="rounded-xl border border-border bg-surface p-4 hover:border-primary/40 hover:shadow-sm"
               >
-                <BlockPreview imageUrl={block.imageUrl} name={block.name} />
-                <div className="mt-3 font-medium text-foreground">{block.name}</div>
+                <div className="flex items-start justify-between gap-3">
+                  <BlockPreview
+                    imageUrl={block.imageUrl}
+                    name={block.name}
+                    onClick={() => setPreviewBlock(block)}
+                  />
+                  <ContentBlockRowMenu blockId={block.id} blockName={block.name} />
+                </div>
+                <Link
+                  href={`/content/templates/content-blocks/${block.id}/edit`}
+                  className="mt-3 block font-medium text-foreground hover:text-primary"
+                >
+                  {block.name}
+                </Link>
                 <div className="mt-2 flex items-center gap-2">
                   <Badge tone={statusTone(block.status)}>{block.status}</Badge>
                   <span className="text-xs text-muted">{contentBlockTypeLabel(block.blockType)}</span>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         ) : (
@@ -302,6 +334,9 @@ export function ContentBlocksPageClient({ blocks }: { blocks: ContentBlockRow[] 
                 <th className="py-3 pr-4 font-medium">Type</th>
                 <th className="py-3 pr-4 font-medium">Tags</th>
                 <th className="py-3 pr-4 font-medium">Last edited</th>
+                <th className="w-10 py-3 font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -310,10 +345,9 @@ export function ContentBlocksPageClient({ blocks }: { blocks: ContentBlockRow[] 
                 return (
                   <tr
                     key={block.id}
-                    onClick={() => router.push(`/content/templates/content-blocks/${block.id}/edit`)}
-                    className="cursor-pointer border-b border-border last:border-0 hover:bg-background"
+                    className="border-b border-border last:border-0 hover:bg-background"
                   >
-                    <td className="py-4 pr-3" onClick={(event) => event.stopPropagation()}>
+                    <td className="py-4 pr-3">
                       <input
                         type="checkbox"
                         checked={selected.includes(block.id)}
@@ -328,12 +362,15 @@ export function ContentBlocksPageClient({ blocks }: { blocks: ContentBlockRow[] 
                       />
                     </td>
                     <td className="py-4 pr-4">
-                      <BlockPreview imageUrl={block.imageUrl} name={block.name} />
+                      <BlockPreview
+                        imageUrl={block.imageUrl}
+                        name={block.name}
+                        onClick={() => setPreviewBlock(block)}
+                      />
                     </td>
                     <td className="py-4 pr-4">
                       <Link
                         href={`/content/templates/content-blocks/${block.id}/edit`}
-                        onClick={(event) => event.stopPropagation()}
                         className="font-medium text-foreground hover:text-primary"
                       >
                         {block.name}
@@ -348,12 +385,19 @@ export function ContentBlocksPageClient({ blocks }: { blocks: ContentBlockRow[] 
                       {tags.length ? tags.join(", ") : "—"}
                     </td>
                     <td className="py-4 pr-4 text-muted">{format(new Date(block.updatedAt), "MMM d, yyyy")}</td>
+                    <td className="py-4">
+                      <ContentBlockRowMenu blockId={block.id} blockName={block.name} />
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         )}
+
+        {previewBlock ? (
+          <ContentBlockPreviewModal block={previewBlock} onClose={() => setPreviewBlock(null)} />
+        ) : null}
       </div>
     </div>
   );

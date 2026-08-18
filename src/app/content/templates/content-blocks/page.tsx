@@ -23,6 +23,7 @@ export default async function ContentBlocksTemplatesPage() {
         inclusionCount: block.inclusionCount,
         updatedAt: block.updatedAt.toISOString(),
         imageUrl: block.imageUrl,
+        body: block.body,
       }))}
     />
   );
