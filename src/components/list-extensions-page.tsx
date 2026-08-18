@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { ListExtensionRowMenu } from "@/components/list-extension-row-menu";
 
 const STARRED_EXTENSIONS_KEY = "visora-starred-list-extensions";
 
@@ -256,13 +257,16 @@ export function ListExtensionsPageClient({ extensions }: { extensions: ListExten
               <th className="py-3 pr-4 font-medium">Status</th>
               <th className="py-3 pr-4 font-medium">Last edited</th>
               <th className="py-3 pr-4 font-medium">Created by</th>
-              <th className="py-3 font-medium">Teams</th>
+              <th className="py-3 pr-4 font-medium">Teams</th>
+              <th className="w-10 py-3 font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-muted">
+                <td colSpan={8} className="py-16 text-center text-sm text-muted">
                   No Results Found
                 </td>
               </tr>
@@ -298,6 +302,9 @@ export function ListExtensionsPageClient({ extensions }: { extensions: ListExten
                     </td>
                     <td className="py-4 pr-4 text-muted">VISORA</td>
                     <td className="py-4 text-muted">VISORA</td>
+                    <td className="py-4" onClick={(event) => event.stopPropagation()}>
+                      <ListExtensionRowMenu extensionId={extension.id} extensionName={extension.name} />
+                    </td>
                   </tr>
                 );
               })

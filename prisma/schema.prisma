@@ -273,6 +273,24 @@ model ListExtension {
   status      String    @default("active")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  entries ListExtensionEntry[]
+}
+
+model ListExtensionEntry {
+  id           String        @id @default(cuid())
+  extensionId  String
+  extension    ListExtension @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  externalId   String?
+  email        String?
+  phone        String?
+  firstName    String?
+  lastName     String?
+  /// JSON object of extra attribute values
+  attributes   String        @default("{}")
+  createdAt    DateTime      @default(now())
+
+  @@index([extensionId])
 }
 
 model SuppressionList {
