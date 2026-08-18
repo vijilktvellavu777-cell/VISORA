@@ -170,6 +170,14 @@ model Canvas {
   status      String    @default("draft")
   segmentId   String?
   segment     Segment?  @relation(fields: [segmentId], references: [id])
+  /// JSON array of conversion event names (max 4)
+  conversionEvents String @default("[]")
+  /// JSON array of tag strings
+  tags        String    @default("[]")
+  /// JSON entry schedule settings
+  entrySchedule String  @default("{}")
+  /// JSON send settings
+  sendSettings String   @default("{}")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -38,6 +39,7 @@ function isActiveStatus(status: string) {
 }
 
 export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("active");
   const [tagFilter, setTagFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -62,14 +64,9 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="border-b border-border px-8 pt-4">
-        <div className="flex gap-6">
-          <button
-            type="button"
-            className="border-b-2 border-primary pb-3 text-sm font-medium text-foreground"
-          >
-            Canvas
-          </button>
+      <div className="border-b border-border px-8">
+        <div className="inline-flex border-b-2 border-primary py-4 text-sm font-medium text-primary">
+          Canvas
         </div>
       </div>
 
@@ -132,14 +129,14 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
             </label>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-primary hover:bg-background"
+              className="inline-flex items-center gap-2 rounded-lg border border-primary bg-surface px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
             >
               <SlidersHorizontal size={16} />
               Filters
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-primary hover:bg-background"
+              className="inline-flex items-center gap-2 rounded-lg border border-primary bg-surface px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
             >
               <Columns3 size={16} />
               Columns
@@ -201,10 +198,21 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((canvas) => (
-                <tr key={canvas.id} className="border-b border-border last:border-0">
+              {filtered.map((canvas) => {
+                const href =
+                  canvas.status === "draft" ? `/canvas/${canvas.id}/edit` : `/canvas/${canvas.id}`;
+                return (
+                <tr
+                  key={canvas.id}
+                  onClick={() => router.push(href)}
+                  className="cursor-pointer border-b border-border last:border-0 hover:bg-background"
+                >
                   <td className="py-4 pr-4">
-                    <Link href={`/canvas/${canvas.id}`} className="font-medium text-foreground hover:text-primary">
+                    <Link
+                      href={href}
+                      onClick={(event) => event.stopPropagation()}
+                      className="font-medium text-foreground hover:text-primary"
+                    >
                       {canvas.name}
                     </Link>
                     {canvas.description ? (
@@ -220,7 +228,8 @@ export function CanvasPageClient({ canvases }: { canvases: CanvasRow[] }) {
                   <td className="py-4 pr-4 text-muted">VISORA</td>
                   <td className="py-4 text-muted">{format(new Date(canvas.updatedAt), "MMM d, yyyy")}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
