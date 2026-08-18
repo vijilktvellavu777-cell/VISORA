@@ -1,14 +1,25 @@
 import { prisma } from "@/lib/db";
 import { getDefaultWorkspace } from "@/lib/workspace";
-import { ListExtensionsManager } from "@/components/list-extensions-manager";
+import { ListExtensionsPageClient } from "@/components/list-extensions-page";
 
 export const dynamic = "force-dynamic";
 
 export default async function ListExtensionsPage() {
   const workspace = await getDefaultWorkspace();
-  const items = await prisma.listExtension.findMany({
+  const extensions = await prisma.listExtension.findMany({
     where: { workspaceId: workspace.id },
-    orderBy: { createdAt: "desc" },
+    orderBy: { updatedAt: "desc" },
   });
-  return <ListExtensionsManager items={JSON.parse(JSON.stringify(items))} />;
+
+  const rows = extensions.map((extension) => ({
+    id: extension.id,
+    name: extension.name,
+    description: extension.description,
+    type: extension.type,
+    status: extension.status,
+    updatedAt: extension.updatedAt.toISOString(),
+    createdAt: extension.createdAt.toISOString(),
+  }));
+
+  return <ListExtensionsPageClient extensions={rows} />;
 }
