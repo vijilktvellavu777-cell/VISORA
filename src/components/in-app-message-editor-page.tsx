@@ -104,7 +104,7 @@ export function InAppMessageEditorPage({ initial }: { initial: InAppMessageDraft
         </Card>
       </div>
 
-      <footer className="fixed bottom-0 left-[460px] right-0 z-30 border-t border-border bg-surface">
+      <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface">
         <div className="flex items-center justify-end gap-3 px-6 py-4">
           <button
             type="button"
