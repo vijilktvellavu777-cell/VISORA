@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getDefaultWorkspace } from "@/lib/workspace";
+import { resolveExtensionAttributes } from "@/lib/list-extension-attributes";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -18,6 +19,17 @@ function parseCsv(text: string) {
   });
 }
 
+function rowValue(row: Record<string, string>, attribute: string): string | null {
+  const direct = row[attribute];
+  if (direct) return direct;
+
+  if (attribute === "first_name") return row.firstname || null;
+  if (attribute === "last_name") return row.lastname || null;
+  if (attribute === "external_id") return row.externalid || null;
+
+  return null;
+}
+
 export async function POST(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const workspace = await getDefaultWorkspace();
@@ -29,32 +41,36 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Extension not found" }, { status: 404 });
   }
 
+  const attributes = resolveExtensionAttributes(extension.attributes, extension.type);
   const text = await request.text();
   const rows = parseCsv(text);
   let imported = 0;
 
   for (const row of rows) {
-    const externalId = row.external_id || row.externalid || row.email || row.phone;
+    const externalId =
+      rowValue(row, "external_id") ||
+      row.email ||
+      row.phone ||
+      attributes.map((attribute) => rowValue(row, attribute)).find(Boolean) ||
+      null;
     if (!externalId) continue;
+
+    const customAttributes: Record<string, string> = {};
+    for (const attribute of attributes) {
+      if (["first_name", "last_name", "email", "phone", "external_id"].includes(attribute)) continue;
+      const value = rowValue(row, attribute);
+      if (value) customAttributes[attribute] = value;
+    }
 
     await prisma.listExtensionEntry.create({
       data: {
         extensionId: id,
         externalId,
-        email: row.email || null,
-        phone: row.phone || null,
-        firstName: row.first_name || row.firstname || null,
-        lastName: row.last_name || row.lastname || null,
-        attributes: JSON.stringify(
-          Object.fromEntries(
-            Object.entries(row).filter(
-              ([key]) =>
-                !["external_id", "externalid", "email", "phone", "first_name", "firstname", "last_name", "lastname"].includes(
-                  key,
-                ),
-            ),
-          ),
-        ),
+        email: rowValue(row, "email"),
+        phone: rowValue(row, "phone"),
+        firstName: rowValue(row, "first_name"),
+        lastName: rowValue(row, "last_name"),
+        attributes: JSON.stringify(customAttributes),
       },
     });
     imported += 1;

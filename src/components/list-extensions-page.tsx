@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -56,6 +57,7 @@ function statusTone(status: string) {
 }
 
 export function ListExtensionsPageClient({ extensions }: { extensions: ListExtensionRow[] }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("active");
   const [tagFilter, setTagFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -274,8 +276,12 @@ export function ListExtensionsPageClient({ extensions }: { extensions: ListExten
               paginated.map((extension) => {
                 const starred = starredIds.has(extension.id);
                 return (
-                  <tr key={extension.id} className="border-b border-border last:border-0 hover:bg-background">
-                    <td className="py-4 pr-3">
+                  <tr
+                    key={extension.id}
+                    onClick={() => router.push(`/audience/list-extensions/${extension.id}`)}
+                    className="cursor-pointer border-b border-border last:border-0 hover:bg-background"
+                  >
+                    <td className="py-4 pr-3" onClick={(event) => event.stopPropagation()}>
                       <button
                         type="button"
                         onClick={() => toggleStar(extension.id)}
@@ -288,7 +294,13 @@ export function ListExtensionsPageClient({ extensions }: { extensions: ListExten
                       </button>
                     </td>
                     <td className="py-4 pr-4">
-                      <div className="font-medium text-foreground">{extension.name}</div>
+                      <Link
+                        href={`/audience/list-extensions/${extension.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {extension.name}
+                      </Link>
                       {extension.description ? (
                         <p className="mt-1 text-xs text-muted">{extension.description}</p>
                       ) : null}

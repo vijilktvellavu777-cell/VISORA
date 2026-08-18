@@ -5,15 +5,10 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
-
-const PRESET_ATTRIBUTES = [
-  { value: "first_name", label: "First_name" },
-  { value: "last_name", label: "Last_name" },
-] as const;
+import { extensionAttributeLabel, PRESET_EXTENSION_ATTRIBUTES } from "@/lib/list-extension-attributes";
 
 function attributeLabel(value: string) {
-  const preset = PRESET_ATTRIBUTES.find((item) => item.value === value);
-  return preset?.label ?? value;
+  return extensionAttributeLabel(value);
 }
 
 export function CreateListExtensionPage() {
@@ -29,7 +24,7 @@ export function CreateListExtensionPage() {
   const [error, setError] = useState<string | null>(null);
 
   const availablePresets = useMemo(
-    () => PRESET_ATTRIBUTES.filter((item) => !attributes.includes(item.value)),
+    () => PRESET_EXTENSION_ATTRIBUTES.filter((item) => !attributes.includes(item.value)),
     [attributes],
   );
 
