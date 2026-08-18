@@ -4,6 +4,12 @@ import { getDefaultWorkspace, resolveSegmentMembers } from "@/lib/workspace";
 
 export async function GET(request: NextRequest) {
   const workspace = await getDefaultWorkspace();
+
+  if (request.nextUrl.searchParams.get("stats") === "1") {
+    const totalUsers = await prisma.customer.count({ where: { workspaceId: workspace.id } });
+    return NextResponse.json({ totalUsers });
+  }
+
   const segmentId = request.nextUrl.searchParams.get("segmentId");
   if (segmentId) {
     const members = await resolveSegmentMembers(workspace.id, segmentId);
