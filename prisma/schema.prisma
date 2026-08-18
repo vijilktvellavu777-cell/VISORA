@@ -178,6 +178,8 @@ model Canvas {
   entrySchedule String  @default("{}")
   /// JSON send settings
   sendSettings String   @default("{}")
+  /// JSON canvas builder layout (variants, sidebar state)
+  buildLayout String    @default("{}")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

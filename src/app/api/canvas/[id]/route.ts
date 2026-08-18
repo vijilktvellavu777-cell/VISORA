@@ -57,6 +57,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (body.sendSettings !== undefined) {
     data.sendSettings = JSON.stringify(body.sendSettings ?? {});
   }
+  if (body.buildLayout !== undefined) {
+    data.buildLayout = JSON.stringify(body.buildLayout ?? {});
+  }
 
   if (Array.isArray(body.steps)) {
     await prisma.canvasStep.deleteMany({ where: { canvasId: id } });
@@ -89,6 +92,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     tags: parseJson(canvas.tags, []),
     entrySchedule: parseJson(canvas.entrySchedule, {}),
     sendSettings: parseJson(canvas.sendSettings, {}),
+    buildLayout: parseJson(canvas.buildLayout, {}),
   });
 }
 

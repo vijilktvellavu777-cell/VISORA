@@ -19,18 +19,26 @@ import {
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
 import { CampaignTargetingStep } from "@/components/campaign-targeting-step";
-import {
-  emptyTargeting,
-  parseCampaignTargeting,
-  serializeCampaignTargeting,
-  type CampaignTargeting,
-} from "@/lib/campaign-targeting";
+import { CanvasBuildStep } from "@/components/canvas-build-step";
+import { CanvasEntryScheduleStep } from "@/components/canvas-entry-schedule-step";
+import { CanvasSendSettingsStep } from "@/components/canvas-send-settings-step";
+import { emptyTargeting, type CampaignTargeting } from "@/lib/campaign-targeting";
 import {
   CANVAS_WIZARD_CREATING_KEY,
   CANVAS_WIZARD_DRAFT_KEY,
   clearCanvasWizardDraftSession,
   waitForCanvasWizardDraftId,
 } from "@/lib/canvas-names";
+import {
+  DEFAULT_BUILD_LAYOUT,
+  DEFAULT_ENTRY_SCHEDULE,
+  DEFAULT_SEND_SETTINGS,
+  formatEntryScheduleSummary,
+  formatSendSettingsSummary,
+  type CanvasBuildLayout,
+  type CanvasEntrySchedule,
+  type CanvasSendSettings,
+} from "@/lib/canvas-wizard-types";
 import { parseJson } from "@/lib/types";
 
 type SegmentOption = { id: string; name: string };
@@ -49,18 +57,9 @@ type CanvasDraft = {
   segmentId: string | null;
   conversionEvents: string[];
   tags: string[];
-  entrySchedule: {
-    mode?: "always" | "scheduled";
-    startDate?: string;
-    startTime?: string;
-    endDate?: string;
-    endTime?: string;
-  };
-  sendSettings: {
-    sendWindowStart?: string;
-    sendWindowEnd?: string;
-    frequencyCap?: string;
-  };
+  entrySchedule: CanvasEntrySchedule;
+  sendSettings: CanvasSendSettings;
+  buildLayout: CanvasBuildLayout;
   steps: CanvasStepDraft[];
 };
 
@@ -87,8 +86,27 @@ function mapCanvasDraft(raw: {
   tags?: string | unknown[];
   entrySchedule?: string | Record<string, unknown>;
   sendSettings?: string | Record<string, unknown>;
+  buildLayout?: string | Record<string, unknown>;
   steps?: { type: string; name: string; config: string }[];
 }): CanvasDraft {
+  const entrySchedule = (
+    typeof raw.entrySchedule === "object" && raw.entrySchedule !== null
+      ? raw.entrySchedule
+      : parseJson(raw.entrySchedule as string, {})
+  ) as CanvasEntrySchedule;
+
+  const sendSettings = (
+    typeof raw.sendSettings === "object" && raw.sendSettings !== null
+      ? raw.sendSettings
+      : parseJson(raw.sendSettings as string, {})
+  ) as CanvasSendSettings;
+
+  const buildLayout = (
+    typeof raw.buildLayout === "object" && raw.buildLayout !== null
+      ? raw.buildLayout
+      : parseJson(raw.buildLayout as string, {})
+  ) as CanvasBuildLayout;
+
   return {
     id: raw.id,
     name: raw.name,
@@ -101,12 +119,9 @@ function mapCanvasDraft(raw: {
     tags: Array.isArray(raw.tags)
       ? raw.tags.filter((value): value is string => typeof value === "string")
       : parseJson<string[]>(raw.tags as string, []),
-    entrySchedule: (typeof raw.entrySchedule === "object" && raw.entrySchedule !== null
-      ? raw.entrySchedule
-      : parseJson(raw.entrySchedule as string, {})) as CanvasDraft["entrySchedule"],
-    sendSettings: (typeof raw.sendSettings === "object" && raw.sendSettings !== null
-      ? raw.sendSettings
-      : parseJson(raw.sendSettings as string, {})) as CanvasDraft["sendSettings"],
+    entrySchedule: { ...DEFAULT_ENTRY_SCHEDULE, ...entrySchedule },
+    sendSettings: { ...DEFAULT_SEND_SETTINGS, ...sendSettings },
+    buildLayout: { ...DEFAULT_BUILD_LAYOUT, ...buildLayout },
     steps: (raw.steps ?? []).map((step) => ({
       type: step.type,
       name: step.name,
@@ -283,11 +298,12 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         name: data.name ?? canvas.name,
         description: data.description ?? canvas.description,
         status: data.status,
-        segmentId: data.segmentId ?? canvas.segmentId,
+        segmentId: data.segmentId ?? targeting.segmentIds[0] ?? canvas.segmentId ?? null,
         conversionEvents: data.conversionEvents ?? canvas.conversionEvents,
         tags: data.tags ?? canvas.tags,
         entrySchedule: data.entrySchedule ?? canvas.entrySchedule,
         sendSettings: data.sendSettings ?? canvas.sendSettings,
+        buildLayout: data.buildLayout ?? canvas.buildLayout,
         steps: data.steps ?? canvas.steps,
       }),
     });
@@ -327,32 +343,27 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
     });
   }
 
-  function addCanvasStep(type: "message" | "delay") {
-    if (!canvas) return;
-    const name = type === "message" ? "Send message" : "Wait";
-    setCanvas({
-      ...canvas,
-      steps: [...canvas.steps, { type, name, config: type === "delay" ? JSON.stringify({ hours: 24 }) : "{}" }],
-    });
-  }
-
-  async function saveDraft() {
-    if (!canvas) return;
+  async function saveDraft(options?: { continueToSummary?: boolean }) {
+    if (!canvas) return false;
     const ok = await saveCanvas({
       name: canvas.name,
       description: canvas.description,
       conversionEvents: canvas.conversionEvents,
-      segmentId: targeting.segmentIds[0] ?? canvas.segmentId ?? null,
       entrySchedule: canvas.entrySchedule,
       sendSettings: canvas.sendSettings,
+      buildLayout: canvas.buildLayout,
       steps: canvas.steps,
-      status: "draft",
+      status: options?.continueToSummary ? canvas.status : "draft",
     });
-    if (ok) {
+    if (ok && !options?.continueToSummary) {
       clearCanvasWizardDraftSession();
       router.push("/canvas");
       router.refresh();
     }
+    if (ok && options?.continueToSummary) {
+      setStep(6);
+    }
+    return ok;
   }
 
   function goBack() {
@@ -369,9 +380,9 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
       name: canvas.name,
       description: canvas.description,
       conversionEvents: canvas.conversionEvents,
-      segmentId: targeting.segmentIds[0] ?? canvas.segmentId ?? null,
       entrySchedule: canvas.entrySchedule,
       sendSettings: canvas.sendSettings,
+      buildLayout: canvas.buildLayout,
       steps: canvas.steps,
     });
     if (ok && step < STEPS.length) setStep(step + 1);
@@ -388,6 +399,8 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
   const tabTitle =
     canvas.name.length > 28 ? `Edit '${canvas.name.slice(0, 28)}…'` : `Edit '${canvas.name}'`;
 
+  const isBuildStep = step === 5;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b border-border bg-surface px-6 pt-3">
@@ -402,19 +415,23 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
             </Link>
           </div>
         </div>
-        <div className="mt-2 pb-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-            <Lock size={12} />
-            Limited access
-          </span>
+        {!isBuildStep ? (
+          <div className="mt-2 pb-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+              <Lock size={12} />
+              Limited access
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      {!isBuildStep ? (
+        <div className="border-b border-border bg-surface px-8 py-4">
+          <StepNav step={step} onStep={goToStep} />
         </div>
-      </div>
+      ) : null}
 
-      <div className="border-b border-border bg-surface px-8 py-4">
-        <StepNav step={step} onStep={goToStep} />
-      </div>
-
-      <div className="mx-auto max-w-4xl px-8 py-8 pb-28">
+      <div className={isBuildStep ? "pb-0" : "mx-auto max-w-4xl px-8 py-8 pb-28"}>
         {step === 1 ? (
           <div className="space-y-6">
             <Card className="space-y-5 p-6">
@@ -531,90 +548,10 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         ) : null}
 
         {step === 2 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Entry Schedule</h2>
-            <p className="text-sm text-muted">Choose when users can enter this Canvas journey.</p>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="entry-mode"
-                  checked={(canvas.entrySchedule.mode ?? "always") === "always"}
-                  onChange={() =>
-                    setCanvas({ ...canvas, entrySchedule: { ...canvas.entrySchedule, mode: "always" } })
-                  }
-                />
-                Always on — users can enter at any time
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="entry-mode"
-                  checked={canvas.entrySchedule.mode === "scheduled"}
-                  onChange={() =>
-                    setCanvas({ ...canvas, entrySchedule: { ...canvas.entrySchedule, mode: "scheduled" } })
-                  }
-                />
-                Scheduled — limit entry to a date range
-              </label>
-            </div>
-            {canvas.entrySchedule.mode === "scheduled" ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Start date">
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={canvas.entrySchedule.startDate ?? ""}
-                    onChange={(event) =>
-                      setCanvas({
-                        ...canvas,
-                        entrySchedule: { ...canvas.entrySchedule, startDate: event.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Start time">
-                  <input
-                    type="time"
-                    className={inputClass}
-                    value={canvas.entrySchedule.startTime ?? "09:00"}
-                    onChange={(event) =>
-                      setCanvas({
-                        ...canvas,
-                        entrySchedule: { ...canvas.entrySchedule, startTime: event.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="End date">
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={canvas.entrySchedule.endDate ?? ""}
-                    onChange={(event) =>
-                      setCanvas({
-                        ...canvas,
-                        entrySchedule: { ...canvas.entrySchedule, endDate: event.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="End time">
-                  <input
-                    type="time"
-                    className={inputClass}
-                    value={canvas.entrySchedule.endTime ?? "23:59"}
-                    onChange={(event) =>
-                      setCanvas({
-                        ...canvas,
-                        entrySchedule: { ...canvas.entrySchedule, endTime: event.target.value },
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-            ) : null}
-          </Card>
+          <CanvasEntryScheduleStep
+            value={canvas.entrySchedule}
+            onChange={(entrySchedule) => setCanvas({ ...canvas, entrySchedule })}
+          />
         ) : null}
 
         {step === 3 ? (
@@ -622,122 +559,21 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         ) : null}
 
         {step === 4 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Send Settings</h2>
-            <p className="text-sm text-muted">Control when messages in this Canvas can be sent.</p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Send window start">
-                <input
-                  type="time"
-                  className={inputClass}
-                  value={canvas.sendSettings.sendWindowStart ?? "08:00"}
-                  onChange={(event) =>
-                    setCanvas({
-                      ...canvas,
-                      sendSettings: { ...canvas.sendSettings, sendWindowStart: event.target.value },
-                    })
-                  }
-                />
-              </Field>
-              <Field label="Send window end">
-                <input
-                  type="time"
-                  className={inputClass}
-                  value={canvas.sendSettings.sendWindowEnd ?? "20:00"}
-                  onChange={(event) =>
-                    setCanvas({
-                      ...canvas,
-                      sendSettings: { ...canvas.sendSettings, sendWindowEnd: event.target.value },
-                    })
-                  }
-                />
-              </Field>
-            </div>
-            <Field label="Frequency cap">
-              <select
-                className={inputClass}
-                value={canvas.sendSettings.frequencyCap ?? "none"}
-                onChange={(event) =>
-                  setCanvas({
-                    ...canvas,
-                    sendSettings: { ...canvas.sendSettings, frequencyCap: event.target.value },
-                  })
-                }
-              >
-                <option value="none">No frequency cap</option>
-                <option value="1_per_day">1 message per day</option>
-                <option value="3_per_week">3 messages per week</option>
-              </select>
-            </Field>
-          </Card>
+          <CanvasSendSettingsStep
+            value={canvas.sendSettings}
+            onChange={(sendSettings) => setCanvas({ ...canvas, sendSettings })}
+          />
         ) : null}
 
         {step === 5 ? (
-          <Card className="space-y-5 p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Build Canvas</h2>
-                <p className="mt-1 text-sm text-muted">Add message and delay steps to your journey.</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => addCanvasStep("message")}
-                  className="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
-                >
-                  + Message
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addCanvasStep("delay")}
-                  className="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
-                >
-                  + Delay
-                </button>
-              </div>
-            </div>
-            {canvas.steps.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted">
-                No steps yet. Add a message or delay step to build your canvas.
-              </p>
-            ) : (
-              <ol className="space-y-3">
-                {canvas.steps.map((item, index) => (
-                  <li
-                    key={`${item.type}-${index}`}
-                    className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-background px-4 py-3"
-                  >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                      {index + 1}
-                    </span>
-                    <input
-                      className={`${inputClass} max-w-xs flex-1`}
-                      value={item.name}
-                      onChange={(event) => {
-                        const steps = [...canvas.steps];
-                        steps[index] = { ...steps[index], name: event.target.value };
-                        setCanvas({ ...canvas, steps });
-                      }}
-                    />
-                    <BadgeLike>{item.type}</BadgeLike>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCanvas({
-                          ...canvas,
-                          steps: canvas.steps.filter((_, stepIndex) => stepIndex !== index),
-                        })
-                      }
-                      className="ml-auto text-muted hover:text-error"
-                      aria-label="Remove step"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Card>
+          <CanvasBuildStep
+            layout={canvas.buildLayout}
+            onChange={(buildLayout) => setCanvas({ ...canvas, buildLayout })}
+            canvasName={canvas.name}
+            saving={saving}
+            onSave={() => saveDraft()}
+            onSaveAndContinue={() => saveDraft({ continueToSummary: true })}
+          />
         ) : null}
 
         {step === 6 ? (
@@ -753,11 +589,7 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
               />
               <SummaryRow
                 label="Entry schedule"
-                value={
-                  canvas.entrySchedule.mode === "scheduled"
-                    ? "Scheduled"
-                    : "Always on"
-                }
+                value={formatEntryScheduleSummary(canvas.entrySchedule)}
                 onEdit={() => goToStep(2)}
               />
               <SummaryRow
@@ -770,13 +602,13 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
                 onEdit={() => goToStep(3)}
               />
               <SummaryRow
-                label="Send window"
-                value={`${canvas.sendSettings.sendWindowStart ?? "08:00"} – ${canvas.sendSettings.sendWindowEnd ?? "20:00"}`}
+                label="Send settings"
+                value={formatSendSettingsSummary(canvas.sendSettings)}
                 onEdit={() => goToStep(4)}
               />
               <SummaryRow
-                label="Journey steps"
-                value={`${canvas.steps.length} step${canvas.steps.length === 1 ? "" : "s"}`}
+                label="Canvas variants"
+                value={`${canvas.buildLayout.variants?.length ?? 1} variant${(canvas.buildLayout.variants?.length ?? 1) === 1 ? "" : "s"}`}
                 onEdit={() => goToStep(5)}
               />
             </dl>
@@ -786,54 +618,48 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
       </div>
 
-      <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface">
-        <div className="flex items-center gap-4 px-6 py-4">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={step === 1}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Previous step"
-          >
-            <ChevronLeft size={20} />
-          </button>
+      {!isBuildStep ? (
+        <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface">
+          <div className="flex items-center gap-4 px-6 py-4">
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={step === 1}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Previous step"
+            >
+              <ChevronLeft size={20} />
+            </button>
 
-          <div className="hidden min-w-0 flex-1 sm:block">
-            <StepNav step={step} onStep={goToStep} compact />
+            <div className="hidden min-w-0 flex-1 sm:block">
+              <StepNav step={step} onStep={goToStep} compact />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (step < STEPS.length) goNext();
+                else saveDraft();
+              }}
+              disabled={saving}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={step === STEPS.length ? "Finish" : "Next step"}
+            >
+              <ChevronRight size={20} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => saveDraft()}
+              disabled={saving}
+              className="ml-2 shrink-0 rounded-lg border border-primary bg-surface px-5 py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (step < STEPS.length) goNext();
-              else saveDraft();
-            }}
-            disabled={saving}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label={step === STEPS.length ? "Finish" : "Next step"}
-          >
-            <ChevronRight size={20} />
-          </button>
-
-          <button
-            type="button"
-            onClick={saveDraft}
-            disabled={saving}
-            className="ml-2 shrink-0 rounded-lg border border-primary bg-surface px-5 py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
-        </div>
-      </footer>
+        </footer>
+      ) : null}
     </div>
-  );
-}
-
-function BadgeLike({ children }: { children: ReactNode }) {
-  return (
-    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium capitalize text-primary">
-      {children}
-    </span>
   );
 }
 
