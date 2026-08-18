@@ -566,14 +566,16 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         ) : null}
 
         {step === 5 ? (
-          <CanvasBuildStep
-            layout={canvas.buildLayout}
-            onChange={(buildLayout) => setCanvas({ ...canvas, buildLayout })}
-            canvasName={canvas.name}
-            saving={saving}
-            onSave={() => saveDraft()}
-            onSaveAndContinue={() => saveDraft({ continueToSummary: true })}
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <CanvasBuildStep
+              layout={canvas.buildLayout}
+              onChange={(buildLayout) => setCanvas({ ...canvas, buildLayout })}
+              canvasName={canvas.name}
+              saving={saving}
+              onSave={() => saveDraft()}
+              onSaveAndContinue={() => saveDraft({ continueToSummary: true })}
+            />
+          </div>
         ) : null}
 
         {step === 6 ? (
