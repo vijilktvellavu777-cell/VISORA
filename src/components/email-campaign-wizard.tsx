@@ -111,6 +111,7 @@ function mapCampaignDraft(created: {
   fromAddress: string | null;
   body: string;
   segmentId: string | null;
+  targetingRules?: string | null;
   conversionEvent: string | null;
   scheduledAt: string | null;
   status: string;

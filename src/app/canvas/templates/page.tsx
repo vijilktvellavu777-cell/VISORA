@@ -46,7 +46,7 @@ export default function CanvasTemplatesPage() {
   const router = useRouter();
   const [creating, setCreating] = useState<string | null>(null);
 
-  async function useTemplate(template: (typeof TEMPLATES)[number]) {
+  async function createFromTemplate(template: (typeof TEMPLATES)[number]) {
     setCreating(template.id);
     const response = await fetch("/api/canvas", {
       method: "POST",
@@ -86,7 +86,7 @@ export default function CanvasTemplatesPage() {
               <button
                 type="button"
                 disabled={creating === template.id}
-                onClick={() => useTemplate(template)}
+                onClick={() => createFromTemplate(template)}
                 className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
               >
                 {creating === template.id ? "Creating…" : "Use template"}

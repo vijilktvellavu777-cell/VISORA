@@ -215,17 +215,26 @@ model CanvasEntry {
 }
 
 model ContentTemplate {
-  id          String    @id @default(cuid())
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   /// push | in_app | content_card
-  kind        String
-  name        String
-  title       String?
-  body        String
-  imageUrl    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  kind           String
+  name           String
+  title          String?
+  body           String
+  imageUrl       String?
+  /// draft | active | archived
+  status         String    @default("draft")
+  description    String?
+  tags           String    @default("[]")
+  /// drag_drop | html
+  editorType     String?
+  /// content_block | in_app_message etc.
+  blockType      String    @default("content_block")
+  inclusionCount Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([workspaceId, kind])
 }

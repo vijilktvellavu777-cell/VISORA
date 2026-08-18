@@ -9,6 +9,7 @@ import {
   Image,
   LayoutGrid,
   Mail,
+  Smartphone,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -17,6 +18,7 @@ const SECTIONS = [
     items: [
       { href: "/content/templates/canvas", label: "Canvas", icon: GitBranch },
       { href: "/content/templates/content-blocks", label: "Content blocks", icon: LayoutGrid },
+      { href: "/content/templates/in-app-messages", label: "In-app messages", icon: Smartphone },
       { href: "/content/templates/email", label: "Email", icon: Mail },
       { href: "/content/templates/push", label: "Push", icon: Bell },
     ],
