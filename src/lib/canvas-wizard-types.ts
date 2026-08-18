@@ -15,6 +15,13 @@ export type CanvasSendSettings = {
   quietHoursEnabled?: boolean;
 };
 
+export type CanvasFlowStep = {
+  id: string;
+  componentType: string;
+  label: string;
+  tone: string;
+};
+
 export type CanvasBuildVariant = {
   id: string;
   name: string;
@@ -23,8 +30,11 @@ export type CanvasBuildVariant = {
 
 export type CanvasBuildLayout = {
   variants?: CanvasBuildVariant[];
+  variantSteps?: Record<string, CanvasFlowStep[]>;
   entryRulesExpanded?: boolean;
   sidebarCollapsed?: boolean;
+  zoom?: number;
+  viewMode?: "detailed" | "compact";
 };
 
 export const DEFAULT_ENTRY_SCHEDULE: CanvasEntrySchedule = {
@@ -43,9 +53,26 @@ export const DEFAULT_SEND_SETTINGS: CanvasSendSettings = {
 
 export const DEFAULT_BUILD_LAYOUT: CanvasBuildLayout = {
   variants: [{ id: "variant-1", name: "Variant 1", weight: 100 }],
+  variantSteps: {},
   entryRulesExpanded: true,
   sidebarCollapsed: false,
+  zoom: 100,
+  viewMode: "detailed",
 };
+
+export function canvasStepsFromLayout(layout: CanvasBuildLayout) {
+  const steps: { type: string; name: string; config: string }[] = [];
+  for (const variant of layout.variants ?? []) {
+    for (const step of layout.variantSteps?.[variant.id] ?? []) {
+      steps.push({
+        type: step.componentType,
+        name: step.label,
+        config: JSON.stringify({ variantId: variant.id, tone: step.tone }),
+      });
+    }
+  }
+  return steps;
+}
 
 export function formatEntryScheduleSummary(schedule: CanvasEntrySchedule): string {
   if (schedule.entryType === "action") return "Action-Based";

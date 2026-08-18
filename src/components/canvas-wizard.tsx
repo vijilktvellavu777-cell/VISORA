@@ -33,6 +33,7 @@ import {
   DEFAULT_BUILD_LAYOUT,
   DEFAULT_ENTRY_SCHEDULE,
   DEFAULT_SEND_SETTINGS,
+  canvasStepsFromLayout,
   formatEntryScheduleSummary,
   formatSendSettingsSummary,
   type CanvasBuildLayout,
@@ -291,6 +292,10 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
   async function saveCanvas(data: Partial<CanvasDraft> & { status?: string }) {
     if (!canvas) return false;
     setSaving(true);
+
+    const buildLayout = data.buildLayout ?? canvas.buildLayout;
+    const steps = data.steps ?? canvasStepsFromLayout(buildLayout);
+
     const response = await fetch(`/api/canvas/${canvas.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -303,8 +308,8 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         tags: data.tags ?? canvas.tags,
         entrySchedule: data.entrySchedule ?? canvas.entrySchedule,
         sendSettings: data.sendSettings ?? canvas.sendSettings,
-        buildLayout: data.buildLayout ?? canvas.buildLayout,
-        steps: data.steps ?? canvas.steps,
+        buildLayout,
+        steps,
       }),
     });
     setSaving(false);
