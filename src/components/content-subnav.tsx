@@ -4,9 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
-  Code,
+  FolderOpen,
   GitBranch,
-  Image,
   LayoutGrid,
   Mail,
   Smartphone,
@@ -25,10 +24,7 @@ const SECTIONS = [
   },
   {
     title: "Files",
-    items: [
-      { href: "/content/files/images", label: "Image", icon: Image },
-      { href: "/content/files/html", label: "HTML", icon: Code },
-    ],
+    items: [{ href: "/content/files/media-library", label: "Media Library", icon: FolderOpen }],
   },
 ] as const;
 

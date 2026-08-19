@@ -26,7 +26,7 @@ function replyFor(message: string) {
     return "Planly is the project board. Create a project, add tasks, and move them from To do → In progress → Done.";
   }
   if (text.includes("content") || text.includes("template") || text.includes("card") || text.includes("in-app") || text.includes("inapp")) {
-    return "Content holds reusable templates (Canvas, Content blocks, Email, Push) and files (Image, HTML). Open Content in the sidebar and pick a section.";
+    return "Content holds reusable templates (Canvas, Content blocks, Email, Push) and the Media Library. Open Content in the sidebar and pick a section.";
   }
   if (text.includes("analytic") || text.includes("report")) {
     return "Analytics has Reports (Report builder, Custom event, Engagement, Revenue, Segment), Analytics (Campaign performance, Conversions), and Data build (Custom report, Designs). Open Analytics in the sidebar.";
