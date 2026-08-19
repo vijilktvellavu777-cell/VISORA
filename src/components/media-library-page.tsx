@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { FolderOpen, Lock } from "lucide-react";
+import { Folder, FolderOpen, Lock } from "lucide-react";
 import { Badge, Button, Card, EmptyState, Field, inputClass } from "@/components/ui";
 
 type MediaFileItem = {
@@ -11,41 +11,87 @@ type MediaFileItem = {
   name: string;
   content: string;
   kind: string;
+  folderId: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
+type MediaFolderItem = {
+  id: string;
+  name: string;
+  fileCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type LibraryItem =
+  | { type: "folder"; item: MediaFolderItem }
+  | { type: "file"; item: MediaFileItem };
+
+type AddType = "image" | "html" | "folder";
+type FilterType = "all" | "folder" | "image" | "html";
+
 function kindLabel(kind: string) {
   if (kind === "html") return "HTML";
+  if (kind === "folder") return "Folder";
   return "Image";
 }
 
-export function MediaLibraryPageClient({ files }: { files: MediaFileItem[] }) {
+export function MediaLibraryPageClient({
+  files,
+  folders,
+}: {
+  files: MediaFileItem[];
+  folders: MediaFolderItem[];
+}) {
   const router = useRouter();
-  const [kind, setKind] = useState<"image" | "html">("image");
+  const [addType, setAddType] = useState<AddType>("image");
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
-  const [filter, setFilter] = useState<"all" | "image" | "html">("all");
+  const [filter, setFilter] = useState<FilterType>("all");
   const [saving, setSaving] = useState(false);
 
+  const libraryItems = useMemo<LibraryItem[]>(() => {
+    const folderItems: LibraryItem[] = folders.map((folder) => ({ type: "folder", item: folder }));
+    const fileItems: LibraryItem[] = files.map((file) => ({ type: "file", item: file }));
+    return [...folderItems, ...fileItems].sort(
+      (a, b) => new Date(getUpdatedAt(b)).getTime() - new Date(getUpdatedAt(a)).getTime(),
+    );
+  }, [files, folders]);
+
   const filtered = useMemo(() => {
-    if (filter === "all") return files;
-    return files.filter((file) => file.kind === filter);
-  }, [files, filter]);
+    if (filter === "all") return libraryItems;
+    if (filter === "folder") return libraryItems.filter((entry) => entry.type === "folder");
+    return libraryItems.filter((entry) => entry.type === "file" && entry.item.kind === filter);
+  }, [libraryItems, filter]);
 
   async function onSave() {
-    if (!name.trim() || !content.trim()) return;
+    if (!name.trim()) return;
+    if (addType !== "folder" && !content.trim()) return;
+
     setSaving(true);
-    await fetch("/api/content/files", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, name, content }),
-    });
+
+    if (addType === "folder") {
+      await fetch("/api/content/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+    } else {
+      await fetch("/api/content/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: addType, name, content }),
+      });
+    }
+
     setName("");
     setContent("");
     setSaving(false);
     router.refresh();
   }
+
+  const isEmpty = files.length === 0 && folders.length === 0;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -66,7 +112,7 @@ export function MediaLibraryPageClient({ files }: { files: MediaFileItem[] }) {
           </div>
         </div>
         <p className="mt-2 text-sm text-muted">
-          Manage image assets and HTML files in one place for reuse across campaigns and templates.
+          Manage folders, image assets, and HTML files in one place for reuse across campaigns and templates.
         </p>
       </div>
 
@@ -76,28 +122,33 @@ export function MediaLibraryPageClient({ files }: { files: MediaFileItem[] }) {
           <Field label="Type">
             <select
               className={inputClass}
-              value={kind}
-              onChange={(event) => setKind(event.target.value as "image" | "html")}
+              value={addType}
+              onChange={(event) => setAddType(event.target.value as AddType)}
             >
+              <option value="folder">Folder</option>
               <option value="image">Image</option>
               <option value="html">HTML</option>
             </select>
           </Field>
-          <Field label="Name">
+          <Field label={addType === "folder" ? "Folder name" : "Name"}>
             <input className={inputClass} value={name} onChange={(event) => setName(event.target.value)} />
           </Field>
-          <Field label={kind === "image" ? "Image URL" : "HTML content"}>
-            {kind === "html" ? (
-              <textarea
-                className={`${inputClass} min-h-40 font-mono text-xs`}
-                value={content}
-                onChange={(event) => setContent(event.target.value)}
-              />
-            ) : (
-              <input className={inputClass} value={content} onChange={(event) => setContent(event.target.value)} />
-            )}
-          </Field>
-          <Button onClick={onSave}>{saving ? "Saving…" : "Save to library"}</Button>
+          {addType !== "folder" ? (
+            <Field label={addType === "image" ? "Image URL" : "HTML content"}>
+              {addType === "html" ? (
+                <textarea
+                  className={`${inputClass} min-h-40 font-mono text-xs`}
+                  value={content}
+                  onChange={(event) => setContent(event.target.value)}
+                />
+              ) : (
+                <input className={inputClass} value={content} onChange={(event) => setContent(event.target.value)} />
+              )}
+            </Field>
+          ) : null}
+          <Button onClick={onSave}>
+            {saving ? "Saving…" : addType === "folder" ? "Create folder" : "Save to library"}
+          </Button>
         </Card>
 
         <Card className="overflow-hidden">
@@ -105,8 +156,8 @@ export function MediaLibraryPageClient({ files }: { files: MediaFileItem[] }) {
             <div className="text-sm font-medium text-foreground">
               {filtered.length} item{filtered.length === 1 ? "" : "s"}
             </div>
-            <div className="flex gap-2">
-              {(["all", "image", "html"] as const).map((value) => (
+            <div className="flex flex-wrap gap-2">
+              {(["all", "folder", "image", "html"] as const).map((value) => (
                 <button
                   key={value}
                   type="button"
@@ -126,49 +177,73 @@ export function MediaLibraryPageClient({ files }: { files: MediaFileItem[] }) {
           {filtered.length === 0 ? (
             <EmptyState
               title="No media yet"
-              body="Upload images and HTML files to build your shared media library."
+              body="Create folders or upload images and HTML files to build your shared media library."
             />
           ) : (
             <ul className="divide-y divide-border">
-              {filtered.map((file) => (
-                <li key={file.id} className="px-5 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-medium text-foreground">{file.name}</div>
-                      <div className="mt-1 text-xs text-muted">
-                        Updated {format(new Date(file.updatedAt), "MMM d, yyyy")}
+              {filtered.map((entry) =>
+                entry.type === "folder" ? (
+                  <li key={`folder-${entry.item.id}`} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Folder size={18} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-foreground">{entry.item.name}</div>
+                          <div className="mt-1 text-xs text-muted">
+                            {entry.item.fileCount} file{entry.item.fileCount === 1 ? "" : "s"} · Updated{" "}
+                            {format(new Date(entry.item.updatedAt), "MMM d, yyyy")}
+                          </div>
+                        </div>
                       </div>
+                      <Badge tone="accent">Folder</Badge>
                     </div>
-                    <Badge tone="accent">{kindLabel(file.kind)}</Badge>
-                  </div>
-                  {file.kind === "image" ? (
-                    <div className="mt-3 overflow-hidden rounded-lg border border-border bg-background">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={file.content} alt={file.name} className="max-h-40 w-full object-cover" />
+                  </li>
+                ) : (
+                  <li key={`file-${entry.item.id}`} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-foreground">{entry.item.name}</div>
+                        <div className="mt-1 text-xs text-muted">
+                          Updated {format(new Date(entry.item.updatedAt), "MMM d, yyyy")}
+                        </div>
+                      </div>
+                      <Badge tone="accent">{kindLabel(entry.item.kind)}</Badge>
                     </div>
-                  ) : (
-                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-xs text-muted">
-                      {file.content}
-                    </pre>
-                  )}
-                </li>
-              ))}
+                    {entry.item.kind === "image" ? (
+                      <div className="mt-3 overflow-hidden rounded-lg border border-border bg-background">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={entry.item.content} alt={entry.item.name} className="max-h-40 w-full object-cover" />
+                      </div>
+                    ) : (
+                      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-xs text-muted">
+                        {entry.item.content}
+                      </pre>
+                    )}
+                  </li>
+                ),
+              )}
             </ul>
           )}
         </Card>
       </div>
 
-      {files.length === 0 ? (
+      {isEmpty ? (
         <div className="px-8 pb-8">
           <div className="mx-auto flex max-w-md flex-col items-center rounded-xl border border-dashed border-primary/30 bg-primary/5 px-6 py-10 text-center">
             <FolderOpen size={32} className="text-primary" />
             <h2 className="mt-4 text-lg font-semibold text-foreground">Your Media Library is empty</h2>
             <p className="mt-2 text-sm text-muted">
-              Add images and HTML snippets to reuse them across your content and campaigns.
+              Create folders or add images and HTML snippets to organize your reusable media.
             </p>
           </div>
         </div>
       ) : null}
     </div>
   );
+}
+
+function getUpdatedAt(entry: LibraryItem) {
+  return entry.type === "folder" ? entry.item.updatedAt : entry.item.updatedAt;
 }

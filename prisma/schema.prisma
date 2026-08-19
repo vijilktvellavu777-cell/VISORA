@@ -23,6 +23,7 @@ model Workspace {
   templates         MessageTemplate[]
   contentTemplates  ContentTemplate[]
   contentFiles      ContentFile[]
+  mediaFolders      MediaFolder[]
   planProjects      PlanProject[]
   listExtensions    ListExtension[]
   suppressionLists  SuppressionList[]
@@ -240,18 +241,33 @@ model ContentTemplate {
 }
 
 model ContentFile {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folderId    String?
+  folder      MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   /// image | html
   kind        String
   name        String
   /// Public URL for images; raw HTML for html files
   content     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([workspaceId, kind])
+  @@index([folderId])
+}
+
+model MediaFolder {
+  id          String        @id @default(cuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  files       ContentFile[]
+
+  @@index([workspaceId])
 }
 
 model PlanProject {

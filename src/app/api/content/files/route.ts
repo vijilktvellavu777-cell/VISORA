@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       kind: body.kind,
       name: body.name,
       content: body.content ?? "",
+      folderId: typeof body.folderId === "string" ? body.folderId : null,
     },
   });
   return NextResponse.json(file);
