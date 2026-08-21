@@ -44,6 +44,7 @@ type CampaignDraft = {
   name: string;
   description: string | null;
   subject: string | null;
+  preheader: string | null;
   fromAddress: string | null;
   body: string;
   segmentId: string | null;
@@ -59,6 +60,7 @@ type EmailTemplate = EmailTemplateItem;
 const DEFAULT_FROM = "VISORA <noreply@visora.app>";
 const FROM_ADDRESS_PLACEHOLDER = "VISORA <noreply@visora.app>";
 const SUBJECT_PLACEHOLDER = "Your email subject";
+const PREHEADER_PLACEHOLDER = "Your preheader text";
 
 const CREATE_EMAIL_OPTIONS = [
   {
@@ -116,6 +118,7 @@ function mapCampaignDraft(created: {
   name: string;
   description: string | null;
   subject: string | null;
+  preheader?: string | null;
   fromAddress: string | null;
   body: string;
   segmentId: string | null;
@@ -130,6 +133,7 @@ function mapCampaignDraft(created: {
     name: created.name,
     description: created.description,
     subject: created.subject ?? "",
+    preheader: created.preheader ?? "",
     fromAddress: created.fromAddress ?? "",
     body: created.body ?? "",
     segmentId: created.segmentId,
@@ -384,6 +388,7 @@ export function EmailCampaignWizard({
         description: campaign.description,
         fromAddress: campaign.fromAddress,
         subject: campaign.subject,
+        preheader: campaign.preheader,
         body: campaign.body,
         tags: campaign.tags,
       });
@@ -433,6 +438,7 @@ export function EmailCampaignWizard({
       description: campaign.description,
       fromAddress: campaign.fromAddress,
       subject: campaign.subject,
+      preheader: campaign.preheader,
       body: campaign.body,
       segmentId: targeting.segmentIds[0] ?? null,
       targetingRules: serializeCampaignTargeting(targeting),
@@ -611,6 +617,14 @@ export function EmailCampaignWizard({
                       placeholder={SUBJECT_PLACEHOLDER}
                     />
                   </Field>
+                  <Field label="Preheader">
+                    <input
+                      className={inputClass}
+                      value={campaign.preheader ?? ""}
+                      onChange={(e) => setCampaign({ ...campaign, preheader: e.target.value })}
+                      placeholder={PREHEADER_PLACEHOLDER}
+                    />
+                  </Field>
                   <button
                     type="button"
                     onClick={() => setEditingSendingInfo(false)}
@@ -633,6 +647,12 @@ export function EmailCampaignWizard({
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted">Subject line</dt>
                     <dd className={`mt-1 ${campaign.subject?.trim() ? "text-foreground" : "text-muted"}`}>
                       {campaign.subject?.trim() || SUBJECT_PLACEHOLDER}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Preheader</dt>
+                    <dd className={`mt-1 ${campaign.preheader?.trim() ? "text-foreground" : "text-muted"}`}>
+                      {campaign.preheader?.trim() || PREHEADER_PLACEHOLDER}
                     </dd>
                   </div>
                 </dl>

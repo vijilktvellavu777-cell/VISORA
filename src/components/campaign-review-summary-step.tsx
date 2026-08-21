@@ -15,6 +15,7 @@ type Props = {
     description: string | null;
     fromAddress?: string | null;
     subject: string | null;
+    preheader?: string | null;
     body: string;
   };
   targeting: CampaignTargeting;
@@ -106,6 +107,10 @@ function EmailMessageSummary({
         ) : null}
         <SummaryField label="From address" value={campaign.fromAddress || defaultFrom} />
         <SummaryField label="Subject line" value={campaign.subject?.trim() || "No subject yet"} />
+        <SummaryField
+          label="Preheader"
+          value={campaign.preheader?.trim() || "No preheader yet"}
+        />
         {selectedTemplateName ? <SummaryField label="Template" value={selectedTemplateName} /> : null}
       </dl>
 

@@ -23,6 +23,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         channel: existing.channel,
         status: "draft",
         subject: existing.subject,
+        preheader: existing.preheader,
         fromAddress: existing.fromAddress,
         body: existing.body,
         segmentId: existing.segmentId,

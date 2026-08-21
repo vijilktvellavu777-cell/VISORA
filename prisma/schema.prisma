@@ -125,6 +125,8 @@ model Campaign {
   channel     String
   status      String    @default("draft")
   subject     String?
+  /// Preview text shown after the subject in inbox clients
+  preheader   String?
   /// Sender address shown in the email header
   fromAddress String?
   body        String

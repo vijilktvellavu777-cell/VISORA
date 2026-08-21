@@ -44,6 +44,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(body.name !== undefined ? { name: String(body.name).trim() } : {}),
       ...(body.description !== undefined ? { description: body.description || null } : {}),
       ...(body.subject !== undefined ? { subject: body.subject || null } : {}),
+      ...(body.preheader !== undefined ? { preheader: body.preheader || null } : {}),
       ...(body.fromAddress !== undefined ? { fromAddress: body.fromAddress || null } : {}),
       ...(body.body !== undefined ? { body: body.body } : {}),
       ...(body.segmentId !== undefined ? { segmentId: body.segmentId || null } : {}),
