@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   AlertCircle,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Code,
@@ -15,7 +14,6 @@ import {
   LayoutGrid,
   MousePointerClick,
   Pencil,
-  Tag,
   X,
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
@@ -36,6 +34,8 @@ import {
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
 import { EmailTemplatesPicker, type EmailTemplateItem } from "@/components/email-templates-picker";
+import { TagsPicker } from "@/components/tags-picker";
+import { parseTags } from "@/lib/tags";
 
 type SegmentOption = { id: string; name: string };
 
@@ -51,11 +51,14 @@ type CampaignDraft = {
   conversionEvent: string | null;
   scheduledAt: string | null;
   status: string;
+  tags: string[];
 };
 
 type EmailTemplate = EmailTemplateItem;
 
 const DEFAULT_FROM = "VISORA <noreply@visora.app>";
+const FROM_ADDRESS_PLACEHOLDER = "VISORA <noreply@visora.app>";
+const SUBJECT_PLACEHOLDER = "Your email subject";
 
 const CREATE_EMAIL_OPTIONS = [
   {
@@ -89,6 +92,11 @@ function defaultCampaignName() {
   return `New Campaign - ${format(new Date(), "MMMM d, yyyy")}`;
 }
 
+function resolveFromAddress(fromAddress: string | null) {
+  const trimmed = fromAddress?.trim();
+  return trimmed || DEFAULT_FROM;
+}
+
 function targetingFromCampaign(campaign: {
   segmentId: string | null;
   targetingRules?: string | null;
@@ -115,19 +123,21 @@ function mapCampaignDraft(created: {
   conversionEvent: string | null;
   scheduledAt: string | null;
   status: string;
+  tags?: string | unknown[] | null;
 }): CampaignDraft {
   return {
     id: created.id,
     name: created.name,
     description: created.description,
     subject: created.subject ?? "",
-    fromAddress: created.fromAddress ?? DEFAULT_FROM,
+    fromAddress: created.fromAddress ?? "",
     body: created.body ?? "",
     segmentId: created.segmentId,
     targetingRules: created.targetingRules ?? "{}",
     conversionEvent: created.conversionEvent,
     scheduledAt: created.scheduledAt,
     status: created.status,
+    tags: parseTags(created.tags),
   };
 }
 
@@ -147,7 +157,7 @@ export function EmailCampaignWizard({
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [copied, setCopied] = useState(false);
-  const [editingSendingInfo, setEditingSendingInfo] = useState(false);
+  const [editingSendingInfo, setEditingSendingInfo] = useState(true);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
   const [dragDropEditorOpen, setDragDropEditorOpen] = useState(false);
   const [htmlEditorOpen, setHtmlEditorOpen] = useState(false);
@@ -267,13 +277,18 @@ export function EmailCampaignWizard({
     };
   }, [fresh, campaignId]);
 
-  async function saveCampaign(data: Partial<CampaignDraft> & { status?: string }) {
+  async function saveCampaign(data: Partial<CampaignDraft> & { status?: string; tags?: string[] }) {
     if (!campaign) return false;
     setSaving(true);
     const response = await fetch(`/api/campaigns/${campaign.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        ...(data.fromAddress !== undefined
+          ? { fromAddress: resolveFromAddress(data.fromAddress) }
+          : {}),
+      }),
     });
     setSaving(false);
     if (!response.ok) {
@@ -370,6 +385,7 @@ export function EmailCampaignWizard({
         fromAddress: campaign.fromAddress,
         subject: campaign.subject,
         body: campaign.body,
+        tags: campaign.tags,
       });
       if (ok) setStep(2);
       return;
@@ -420,6 +436,7 @@ export function EmailCampaignWizard({
       body: campaign.body,
       segmentId: targeting.segmentIds[0] ?? null,
       targetingRules: serializeCampaignTargeting(targeting),
+      tags: campaign.tags,
       status: "draft",
     });
     if (ok) {
@@ -528,14 +545,13 @@ export function EmailCampaignWizard({
                   + Add description
                 </button>
               )}
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary"
-              >
-                <Tag size={14} />
-                Tags
-                <ChevronDown size={14} />
-              </button>
+              <TagsPicker
+                value={campaign.tags}
+                onChange={(tags) => {
+                  setCampaign({ ...campaign, tags });
+                  void saveCampaign({ tags });
+                }}
+              />
 
               <hr className="border-border" />
 
@@ -582,9 +598,9 @@ export function EmailCampaignWizard({
                   <Field label="From address">
                     <input
                       className={inputClass}
-                      value={campaign.fromAddress ?? DEFAULT_FROM}
+                      value={campaign.fromAddress ?? ""}
                       onChange={(e) => setCampaign({ ...campaign, fromAddress: e.target.value })}
-                      placeholder="VISORA <noreply@visora.app>"
+                      placeholder={FROM_ADDRESS_PLACEHOLDER}
                     />
                   </Field>
                   <Field label="Subject line">
@@ -592,7 +608,7 @@ export function EmailCampaignWizard({
                       className={inputClass}
                       value={campaign.subject ?? ""}
                       onChange={(e) => setCampaign({ ...campaign, subject: e.target.value })}
-                      placeholder="Your email subject"
+                      placeholder={SUBJECT_PLACEHOLDER}
                     />
                   </Field>
                   <button
@@ -607,11 +623,17 @@ export function EmailCampaignWizard({
                 <dl className="mt-4 space-y-3 text-sm">
                   <div>
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted">From address</dt>
-                    <dd className="mt-1 text-foreground">{campaign.fromAddress || DEFAULT_FROM}</dd>
+                    <dd
+                      className={`mt-1 ${campaign.fromAddress?.trim() ? "text-foreground" : "text-muted"}`}
+                    >
+                      {campaign.fromAddress?.trim() || FROM_ADDRESS_PLACEHOLDER}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted">Subject line</dt>
-                    <dd className="mt-1 text-foreground">{campaign.subject?.trim() || "No subject yet"}</dd>
+                    <dd className={`mt-1 ${campaign.subject?.trim() ? "text-foreground" : "text-muted"}`}>
+                      {campaign.subject?.trim() || SUBJECT_PLACEHOLDER}
+                    </dd>
                   </div>
                 </dl>
               )}

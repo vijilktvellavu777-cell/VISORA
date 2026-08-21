@@ -28,6 +28,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         segmentId: existing.segmentId,
         targetingRules: existing.targetingRules,
         conversionEvent: existing.conversionEvent,
+        tags: existing.tags,
         scheduledAt: null,
       },
     });

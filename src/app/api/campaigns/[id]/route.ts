@@ -49,6 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(body.segmentId !== undefined ? { segmentId: body.segmentId || null } : {}),
       ...(body.targetingRules !== undefined ? { targetingRules: body.targetingRules } : {}),
       ...(body.conversionEvent !== undefined ? { conversionEvent: body.conversionEvent || null } : {}),
+      ...(Array.isArray(body.tags) ? { tags: JSON.stringify(body.tags) } : {}),
       ...(body.scheduledAt !== undefined
         ? { scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null }
         : {}),
