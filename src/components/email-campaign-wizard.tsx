@@ -161,6 +161,7 @@ export function EmailCampaignWizard({
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [copied, setCopied] = useState(false);
+  const [editingCampaignDetails, setEditingCampaignDetails] = useState(false);
   const [editingSendingInfo, setEditingSendingInfo] = useState(true);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
   const [dragDropEditorOpen, setDragDropEditorOpen] = useState(false);
@@ -521,45 +522,97 @@ export function EmailCampaignWizard({
       <div className="mx-auto max-w-4xl px-8 py-8 pb-28">
         {step === 1 ? (
           <div className="space-y-6">
-            <Card className="space-y-5 p-6">
-              <h2 className="text-lg font-semibold text-foreground">Campaign Details</h2>
-              <Field label="Campaign Name">
-                <input
-                  className={`${inputClass} ${nameError ? "border-error focus:border-error" : ""}`}
-                  value={campaign.name}
-                  onChange={(e) => {
-                    setCampaign({ ...campaign, name: e.target.value });
-                    if (nameError) setNameError(null);
-                  }}
-                />
-                {nameError ? <p className="mt-1.5 text-sm text-error">{nameError}</p> : null}
-              </Field>
-              {showDescription ? (
-                <Field label="Description">
-                  <textarea
-                    className={`${inputClass} min-h-20`}
-                    value={campaign.description ?? ""}
-                    onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
-                  />
-                </Field>
-              ) : (
+            <Card className="p-6">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Campaign Details</h2>
                 <button
                   type="button"
-                  onClick={() => setShowDescription(true)}
-                  className="text-sm font-medium text-primary hover:underline"
+                  onClick={() => setEditingCampaignDetails((value) => !value)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-foreground"
+                  aria-label="Edit campaign details"
                 >
-                  + Add description
+                  <Pencil size={16} />
                 </button>
-              )}
-              <TagsPicker
-                value={campaign.tags}
-                onChange={(tags) => {
-                  setCampaign({ ...campaign, tags });
-                  void saveCampaign({ tags });
-                }}
-              />
+              </div>
 
-              <hr className="border-border" />
+              {editingCampaignDetails ? (
+                <div className="mt-4 space-y-4">
+                  <Field label="Campaign Name">
+                    <input
+                      className={`${inputClass} ${nameError ? "border-error focus:border-error" : ""}`}
+                      value={campaign.name}
+                      onChange={(e) => {
+                        setCampaign({ ...campaign, name: e.target.value });
+                        if (nameError) setNameError(null);
+                      }}
+                    />
+                    {nameError ? <p className="mt-1.5 text-sm text-error">{nameError}</p> : null}
+                  </Field>
+                  {showDescription ? (
+                    <Field label="Description">
+                      <textarea
+                        className={`${inputClass} min-h-20`}
+                        value={campaign.description ?? ""}
+                        onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
+                      />
+                    </Field>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowDescription(true)}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      + Add description
+                    </button>
+                  )}
+                  <TagsPicker
+                    value={campaign.tags}
+                    onChange={(tags) => {
+                      setCampaign({ ...campaign, tags });
+                      void saveCampaign({ tags });
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditingCampaignDetails(false)}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Done editing
+                  </button>
+                </div>
+              ) : (
+                <dl className="mt-4 space-y-3 text-sm">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Campaign Name</dt>
+                    <dd className="mt-1 text-foreground">{campaign.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Description</dt>
+                    <dd className={`mt-1 ${campaign.description?.trim() ? "text-foreground" : "text-muted"}`}>
+                      {campaign.description?.trim() || "No description"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Tags</dt>
+                    {campaign.tags.length > 0 ? (
+                      <dd className="mt-2 flex flex-wrap gap-2">
+                        {campaign.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </dd>
+                    ) : (
+                      <dd className="mt-1 text-muted">No tags</dd>
+                    )}
+                  </div>
+                </dl>
+              )}
+
+              <hr className="my-5 border-border" />
 
               <div>
                 <div className="text-sm font-semibold text-foreground">Campaign ID</div>
