@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { addLocalDays, formatIsoDateLocal, parseIsoDateLocal, startOfLocalDay } from "./dates";
 import { parseJson } from "./types";
 import { getDefaultWorkspace } from "./workspace";
 
@@ -15,13 +16,11 @@ export type HomeActivity = {
 };
 
 function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return startOfLocalDay(date);
 }
 
 function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+  return addLocalDays(date, days);
 }
 
 export function defaultRange() {
@@ -32,8 +31,8 @@ export function defaultRange() {
 
 export function parseRange(fromParam?: string, toParam?: string) {
   const fallback = defaultRange();
-  const from = fromParam ? startOfDay(new Date(fromParam)) : fallback.from;
-  const toExclusive = toParam ? addDays(startOfDay(new Date(toParam)), 1) : fallback.to;
+  const from = fromParam ? parseIsoDateLocal(fromParam) : fallback.from;
+  const toExclusive = toParam ? addDays(parseIsoDateLocal(toParam), 1) : fallback.to;
   return { from, to: toExclusive };
 }
 
@@ -50,7 +49,7 @@ function purchaseAmount(properties: string) {
 }
 
 function isoDay(date: Date) {
-  return date.toISOString().slice(0, 10);
+  return formatIsoDateLocal(date);
 }
 
 function formatAxis(date: Date) {

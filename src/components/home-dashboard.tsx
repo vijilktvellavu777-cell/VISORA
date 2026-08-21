@@ -11,6 +11,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui";
 import { DateRangePicker, GrainSelect } from "@/components/home-controls";
+import { parseIsoDateLocal } from "@/lib/dates";
 import { Sparkline } from "@/components/sparkline";
 import { RevenueChart } from "@/components/revenue-chart";
 import type { getHomeDashboard } from "@/lib/home";
@@ -162,6 +163,6 @@ export function HomeDashboard({ data }: { data: HomeData }) {
 }
 
 function formatShort(iso: string) {
-  const date = new Date(`${iso}T00:00:00`);
+  const date = parseIsoDateLocal(iso);
   return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 }
