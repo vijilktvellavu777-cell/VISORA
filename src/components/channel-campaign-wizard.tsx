@@ -150,6 +150,7 @@ export function ChannelCampaignWizard({
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState(false);
   const [targeting, setTargeting] = useState<CampaignTargeting>(emptyTargeting());
   const [pushMessage, setPushMessage] = useState<PushMessagePayload>(defaultPushMessage());
   const [inAppMessage, setInAppMessage] = useState<InAppMessagePayload>(defaultInAppMessage());
@@ -364,9 +365,8 @@ export function ChannelCampaignWizard({
       status: "draft",
     });
     if (ok) {
-      clearChannelWizardDraftSession(channel);
-      router.push("/campaigns");
-      router.refresh();
+      setSaveNotice(true);
+      setTimeout(() => setSaveNotice(false), 3000);
     }
   }
 
@@ -585,6 +585,10 @@ export function ChannelCampaignWizard({
           >
             <ChevronRight size={20} />
           </button>
+
+          {saveNotice ? (
+            <span className="ml-2 shrink-0 text-sm text-success">Changes saved</span>
+          ) : null}
 
           <button
             type="button"

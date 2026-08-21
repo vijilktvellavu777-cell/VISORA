@@ -158,6 +158,7 @@ export function EmailCampaignWizard({
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState(false);
   const [targeting, setTargeting] = useState<CampaignTargeting>(emptyTargeting());
 
   useEffect(() => {
@@ -422,9 +423,8 @@ export function EmailCampaignWizard({
       status: "draft",
     });
     if (ok) {
-      clearEmailWizardDraftSession();
-      router.push("/campaigns");
-      router.refresh();
+      setSaveNotice(true);
+      setTimeout(() => setSaveNotice(false), 3000);
     }
   }
 
@@ -858,6 +858,10 @@ export function EmailCampaignWizard({
           >
             <ChevronRight size={20} />
           </button>
+
+          {saveNotice ? (
+            <span className="ml-2 shrink-0 text-sm text-success">Changes saved</span>
+          ) : null}
 
           <button
             type="button"
