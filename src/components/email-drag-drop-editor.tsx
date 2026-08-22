@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   AlignJustify,
   AlignLeft,
@@ -29,26 +29,20 @@ import {
   Upload,
   Wand2,
 } from "lucide-react";
+import { EmailDragDropBlockProperties } from "@/components/email-drag-drop-block-properties";
+import {
+  type BlockType,
+  type CanvasBlock,
+  type TextBlockStyle,
+  blocksToHtml,
+  defaultContent,
+  defaultStyleForType,
+  getBlockStyle,
+  isTextBlock,
+} from "@/lib/email-drag-drop-blocks";
 
-export type BlockType =
-  | "title"
-  | "paragraph"
-  | "list"
-  | "button"
-  | "divider"
-  | "spacer"
-  | "image"
-  | "video"
-  | "social"
-  | "icons"
-  | "html"
-  | "menu";
-
-export type CanvasBlock = {
-  id: string;
-  type: BlockType;
-  content: string;
-};
+export type { BlockType, CanvasBlock } from "@/lib/email-drag-drop-blocks";
+export { blocksToHtml } from "@/lib/email-drag-drop-blocks";
 
 type Props = {
   campaignName: string;
@@ -89,107 +83,113 @@ const ROW_LAYOUTS = [
   { id: "3-col", label: "3 columns", cols: 3 },
 ];
 
-function defaultContent(type: BlockType): string {
-  switch (type) {
-    case "title":
-      return "Your headline here";
-    case "paragraph":
-      return "Write your message here. Add personalization with {{ first_name }}.";
-    case "list":
-      return "First item\nSecond item\nThird item";
-    case "button":
-      return "Call to action";
-    case "html":
-      return "<p>Custom HTML block</p>";
-    case "menu":
-      return "Home | Products | Contact";
-    default:
-      return "";
-  }
+function previewTypographyStyle(block: CanvasBlock): React.CSSProperties {
+  const style = getBlockStyle(block);
+  return {
+    fontFamily: style.fontFamily === "Global font" ? "Segoe UI, Helvetica, Arial, sans-serif" : style.fontFamily,
+    fontWeight: style.fontWeight === "bold" ? 700 : style.fontWeight === "light" ? 300 : 400,
+    fontSize: style.fontSize,
+    color: style.textColor,
+    textAlign: style.textAlign,
+    lineHeight: style.lineHeightMode === "auto" ? "normal" : style.lineHeight,
+    letterSpacing: style.letterSpacing,
+    direction: style.textDirection,
+  };
 }
 
-function blockToHtml(block: CanvasBlock): string {
+function previewPaddingStyle(block: CanvasBlock): React.CSSProperties {
+  const options = getBlockStyle(block).blockOptions;
+  if (options.paddingMoreOptions) {
+    return {
+      paddingTop: options.paddingTop,
+      paddingRight: options.paddingRight,
+      paddingBottom: options.paddingBottom,
+      paddingLeft: options.paddingLeft,
+    };
+  }
+  return { padding: options.paddingAll };
+}
+
+function isBlockHiddenOnDevice(block: CanvasBlock, deviceView: DeviceView) {
+  const options = getBlockStyle(block).blockOptions;
+  if (deviceView === "desktop" && options.hideOnDesktop) return true;
+  if (deviceView === "mobile" && options.hideOnMobile) return true;
+  return false;
+}
+
+function BlockPreview({
+  block,
+  onChange,
+}: {
+  block: CanvasBlock;
+  onChange: (content: string) => void;
+}) {
+  const typography = previewTypographyStyle(block);
+  const padding = previewPaddingStyle(block);
+  const style = getBlockStyle(block);
+
   switch (block.type) {
     case "title":
-      return `<h1 style="font-size:28px;font-weight:700;margin:0 0 16px;color:#0f172a;">${block.content}</h1>`;
+      return (
+        <div style={padding}>
+          <input
+            value={block.content}
+            onChange={(event) => onChange(event.target.value)}
+            style={{ ...typography, margin: 0, width: "100%", border: 0, background: "transparent", outline: "none" }}
+            placeholder="Your headline here"
+          />
+        </div>
+      );
     case "paragraph":
-      return `<p style="font-size:16px;line-height:1.6;margin:0 0 16px;color:#334155;">${block.content.replace(/\n/g, "<br/>")}</p>`;
+      return (
+        <div style={padding}>
+          <textarea
+            value={block.content}
+            onChange={(event) => onChange(event.target.value)}
+            style={{
+              ...typography,
+              margin: 0,
+              marginBottom: style.paragraphSpacing ?? 0,
+              width: "100%",
+              resize: "none",
+              border: 0,
+              background: "transparent",
+              outline: "none",
+            }}
+            rows={3}
+            placeholder="Write your message here"
+          />
+        </div>
+      );
     case "list": {
       const items = block.content.split("\n").filter(Boolean);
-      return `<ul style="margin:0 0 16px;padding-left:20px;color:#334155;">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+      const ListTag = style.listType === "ordered" ? "ol" : "ul";
+      return (
+        <div style={padding}>
+          <ListTag
+            style={{
+              ...typography,
+              margin: 0,
+              paddingLeft: style.nestedItemsIndent ?? 40,
+              listStyleType: style.listStyleType === "default" ? undefined : style.listStyleType,
+            }}
+          >
+            {items.map((item, index) => (
+              <li key={index} style={{ marginBottom: style.listItemsSpacing ?? 0 }}>
+                {item}
+              </li>
+            ))}
+          </ListTag>
+          <textarea
+            value={block.content}
+            onChange={(event) => onChange(event.target.value)}
+            className="mt-2 w-full resize-none rounded border border-dashed border-border bg-background/60 p-2 text-xs text-muted outline-none"
+            rows={3}
+            placeholder="One item per line"
+          />
+        </div>
+      );
     }
-    case "button":
-      return `<p style="margin:0 0 16px;"><a href="#" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">${block.content}</a></p>`;
-    case "divider":
-      return `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />`;
-    case "spacer":
-      return `<div style="height:32px;"></div>`;
-    case "image":
-      return `<p style="margin:0 0 16px;text-align:center;"><img src="https://placehold.co/600x240/e2e8f0/64748b?text=Image" alt="Image" style="max-width:100%;border-radius:8px;" /></p>`;
-    case "video":
-      return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Video placeholder ]</p>`;
-    case "social":
-      return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Social links ]</p>`;
-    case "icons":
-      return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Icon row ]</p>`;
-    case "html":
-      return block.content;
-    case "menu":
-      return `<p style="margin:0 0 16px;text-align:center;font-size:14px;color:#64748b;">${block.content}</p>`;
-    default:
-      return "";
-  }
-}
-
-export function blocksToHtml(blocks: CanvasBlock[]): string {
-  const inner = blocks.map(blockToHtml).join("\n");
-  return `<!DOCTYPE html>
-<html>
-  <body style="margin:0;padding:0;background:#f8fafc;font-family:Segoe UI,sans-serif;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;">
-      <tr>
-        <td align="center" style="padding:24px;">
-          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:12px;padding:32px;">
-            <tr><td>${inner}</td></tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
-}
-
-function BlockPreview({ block, onChange }: { block: CanvasBlock; onChange: (content: string) => void }) {
-  switch (block.type) {
-    case "title":
-      return (
-        <input
-          value={block.content}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full border-0 bg-transparent text-2xl font-bold text-foreground outline-none"
-          placeholder="Your headline here"
-        />
-      );
-    case "paragraph":
-      return (
-        <textarea
-          value={block.content}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full resize-none border-0 bg-transparent text-base leading-relaxed text-foreground outline-none"
-          rows={3}
-          placeholder="Write your message here"
-        />
-      );
-    case "list":
-      return (
-        <textarea
-          value={block.content}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full resize-none border-0 bg-transparent text-base text-foreground outline-none"
-          rows={3}
-          placeholder="One item per line"
-        />
-      );
     case "button":
       return (
         <div className="py-2">
@@ -305,25 +305,65 @@ function CollapsibleSection({
 
 export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose }: Props) {
   const [blocks, setBlocks] = useState<CanvasBlock[]>([]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("content");
   const [leftMode, setLeftMode] = useState<LeftMode>("edit");
   const [deviceView, setDeviceView] = useState<DeviceView>("desktop");
   const [dragOver, setDragOver] = useState(false);
   const [contentNav, setContentNav] = useState<"design" | "links">("design");
 
+  const selectedBlock = useMemo(
+    () => blocks.find((block) => block.id === selectedBlockId) ?? null,
+    [blocks, selectedBlockId],
+  );
+
   const addBlock = useCallback((type: BlockType) => {
+    const id = crypto.randomUUID();
+    const blockStyle = defaultStyleForType(type);
     setBlocks((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), type, content: defaultContent(type) },
+      {
+        id,
+        type,
+        content: defaultContent(type),
+        ...(blockStyle ? { style: blockStyle } : {}),
+      },
     ]);
+    if (isTextBlock(type)) {
+      setSelectedBlockId(id);
+      setSidebarTab("content");
+    }
   }, []);
 
   const updateBlock = useCallback((id: string, content: string) => {
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, content } : block)));
   }, []);
 
+  const updateBlockStyle = useCallback((id: string, style: TextBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, style } : block)));
+  }, []);
+
   const removeBlock = useCallback((id: string) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
+    setSelectedBlockId((current) => (current === id ? null : current));
+  }, []);
+
+  const duplicateBlock = useCallback((id: string) => {
+    setBlocks((prev) => {
+      const index = prev.findIndex((block) => block.id === id);
+      if (index === -1) return prev;
+      const source = prev[index];
+      const copy: CanvasBlock = {
+        ...source,
+        id: crypto.randomUUID(),
+        style: source.style ? { ...source.style, blockOptions: { ...source.style.blockOptions } } : source.style,
+      };
+      const next = [...prev];
+      next.splice(index + 1, 0, copy);
+      setSelectedBlockId(copy.id);
+      return next;
+    });
+    setSidebarTab("content");
   }, []);
 
   function handleDrop(e: React.DragEvent) {
@@ -495,32 +535,48 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               ) : null}
 
               <div className={`space-y-1 p-6 pb-8 ${blocks.length === 0 && !previewMode ? "pt-4" : ""}`}>
-                {blocks.map((block) => (
-                  <div
-                    key={block.id}
-                    className={`group relative rounded-lg border border-transparent p-3 transition hover:border-primary/20 hover:bg-background/60 ${
-                      previewMode ? "pointer-events-none" : ""
-                    }`}
-                  >
-                    {!previewMode ? (
-                      <button
-                        type="button"
-                        onClick={() => removeBlock(block.id)}
-                        className="absolute right-2 top-2 hidden rounded bg-background px-2 py-0.5 text-[10px] text-muted shadow group-hover:inline-block"
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                    <BlockPreview block={block} onChange={(content) => updateBlock(block.id, content)} />
-                  </div>
-                ))}
+                {blocks.map((block) => {
+                  if (isBlockHiddenOnDevice(block, deviceView)) return null;
+                  const selected = selectedBlockId === block.id;
+
+                  return (
+                    <div
+                      key={block.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        if (previewMode) return;
+                        setSelectedBlockId(block.id);
+                        setSidebarTab("content");
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          if (!previewMode) {
+                            setSelectedBlockId(block.id);
+                            setSidebarTab("content");
+                          }
+                        }
+                      }}
+                      className={`relative rounded-lg border p-1 transition ${
+                        previewMode ? "pointer-events-none border-transparent" : "cursor-pointer"
+                      } ${
+                        selected
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-transparent hover:border-primary/20 hover:bg-background/60"
+                      }`}
+                    >
+                      <BlockPreview block={block} onChange={(content) => updateBlock(block.id, content)} />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </main>
 
         {/* Right sidebar */}
-        <aside className="flex w-72 shrink-0 flex-col border-l border-border bg-surface">
+        <aside className="flex w-80 shrink-0 flex-col border-l border-border bg-surface">
           <div className="flex border-b border-border">
             {(
               [
@@ -547,7 +603,17 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {sidebarTab === "content" ? (
+            {sidebarTab === "content" && selectedBlock && isTextBlock(selectedBlock.type) ? (
+              <EmailDragDropBlockProperties
+                block={selectedBlock}
+                onStyleChange={(style) => updateBlockStyle(selectedBlock.id, style)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
+            {sidebarTab === "content" && (!selectedBlock || !isTextBlock(selectedBlock.type)) ? (
               <>
                 <CollapsibleSection title="BASIC BLOCKS">
                   <div className="grid grid-cols-3 gap-2">
