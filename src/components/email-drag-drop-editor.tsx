@@ -110,6 +110,16 @@ function previewPaddingStyle(block: CanvasBlock): React.CSSProperties {
   return { padding: options.paddingAll };
 }
 
+function isEditableElement(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
+}
+
+function stopEditorEventPropagation(event: React.SyntheticEvent) {
+  event.stopPropagation();
+}
+
 function isBlockHiddenOnDevice(block: CanvasBlock, deviceView: DeviceView) {
   const options = getBlockStyle(block).blockOptions;
   if (deviceView === "desktop" && options.hideOnDesktop) return true;
@@ -135,6 +145,8 @@ function BlockPreview({
           <input
             value={block.content}
             onChange={(event) => onChange(event.target.value)}
+            onClick={stopEditorEventPropagation}
+            onKeyDown={stopEditorEventPropagation}
             style={{ ...typography, margin: 0, width: "100%", border: 0, background: "transparent", outline: "none" }}
             placeholder="Your headline here"
           />
@@ -146,6 +158,8 @@ function BlockPreview({
           <textarea
             value={block.content}
             onChange={(event) => onChange(event.target.value)}
+            onClick={stopEditorEventPropagation}
+            onKeyDown={stopEditorEventPropagation}
             style={{
               ...typography,
               margin: 0,
@@ -183,6 +197,8 @@ function BlockPreview({
           <textarea
             value={block.content}
             onChange={(event) => onChange(event.target.value)}
+            onClick={stopEditorEventPropagation}
+            onKeyDown={stopEditorEventPropagation}
             className="mt-2 w-full resize-none rounded border border-dashed border-border bg-background/60 p-2 text-xs text-muted outline-none"
             rows={3}
             placeholder="One item per line"
@@ -550,6 +566,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
                         setSidebarTab("content");
                       }}
                       onKeyDown={(event) => {
+                        if (isEditableElement(event.target)) return;
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           if (!previewMode) {
