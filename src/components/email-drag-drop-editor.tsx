@@ -38,6 +38,7 @@ import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-butt
 import { EmailDragDropDividerProperties } from "@/components/email-drag-drop-divider-properties";
 import { EmailDragDropImageProperties } from "@/components/email-drag-drop-image-properties";
 import { EmailDragDropSpacerProperties } from "@/components/email-drag-drop-spacer-properties";
+import { EmailDragDropVideoProperties } from "@/components/email-drag-drop-video-properties";
 import {
   type BlockType,
   type ButtonBlockStyle,
@@ -46,6 +47,7 @@ import {
   type ImageBlockStyle,
   type SpacerBlockStyle,
   type TextBlockStyle,
+  type VideoBlockStyle,
   blocksToHtml,
   defaultButtonStyle,
   defaultContent,
@@ -53,12 +55,15 @@ import {
   defaultImageStyle,
   defaultSpacerStyle,
   defaultStyleForType,
+  defaultVideoStyle,
   getBlockStyle,
   getBlockWrapperOptions,
   getButtonStyle,
   getDividerStyle,
   getImageStyle,
   getSpacerStyle,
+  getVideoStyle,
+  getVideoThumbnailUrl,
   isPropertiesBlock,
   isTextBlock,
 } from "@/lib/email-drag-drop-blocks";
@@ -153,10 +158,12 @@ function BlockPreview({
   block,
   onChange,
   onImageStyleChange,
+  onVideoStyleChange,
 }: {
   block: CanvasBlock;
   onChange: (content: string) => void;
   onImageStyleChange?: (style: ImageBlockStyle) => void;
+  onVideoStyleChange?: (style: VideoBlockStyle) => void;
 }) {
   const typography = previewTypographyStyle(block);
   const padding = previewPaddingStyle(block);
@@ -364,12 +371,54 @@ function BlockPreview({
         </div>
       );
     }
-    case "video":
+    case "video": {
+      const videoStyle = getVideoStyle(block);
+      const padding = previewPaddingStyle(block);
+      const thumbnail = getVideoThumbnailUrl(videoStyle.url);
+
+      function handleEnterUrlClick(event: React.MouseEvent) {
+        event.stopPropagation();
+        const nextUrl = window.prompt("Enter YouTube or Vimeo URL", videoStyle.url);
+        if (nextUrl === null || !onVideoStyleChange) return;
+        onVideoStyleChange({ ...videoStyle, url: nextUrl });
+      }
+
+      if (thumbnail) {
+        return (
+          <div style={{ ...padding, textAlign: "center" }}>
+            <div className="relative inline-block max-w-full">
+              <img
+                src={thumbnail}
+                alt={videoStyle.title || "Video"}
+                className="max-w-full rounded-lg"
+                style={{ height: "auto", display: "block" }}
+              />
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white">
+                  <Play size={22} fill="currentColor" />
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       return (
-        <div className="flex aspect-video items-center justify-center rounded-lg bg-background text-muted">
-          <Play size={32} />
+        <div style={{ ...padding, textAlign: "center" }}>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-background px-6 py-8">
+            <Play size={32} className="text-muted" />
+            <p className="mt-3 text-sm font-medium text-foreground">Video</p>
+            <button
+              type="button"
+              onClick={handleEnterUrlClick}
+              className="mt-4 rounded bg-[#4a5568] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#3d4654]"
+            >
+              Enter URL
+            </button>
+          </div>
         </div>
       );
+    }
     case "social":
       return (
         <div className="flex justify-center gap-3 py-2">
@@ -532,6 +581,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         ...(type === "divider" ? { dividerStyle: defaultDividerStyle() } : {}),
         ...(type === "spacer" ? { spacerStyle: defaultSpacerStyle() } : {}),
         ...(type === "image" ? { imageStyle: defaultImageStyle() } : {}),
+        ...(type === "video" ? { videoStyle: defaultVideoStyle() } : {}),
       },
     ]);
     if (isPropertiesBlock(type)) {
@@ -562,6 +612,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
 
   const updateImageStyle = useCallback((id: string, imageStyle: ImageBlockStyle) => {
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, imageStyle } : block)));
+  }, []);
+
+  const updateVideoStyle = useCallback((id: string, videoStyle: VideoBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, videoStyle } : block)));
   }, []);
 
   const removeBlock = useCallback((id: string) => {
@@ -597,6 +651,13 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               blockOptions: { ...source.imageStyle.blockOptions },
             }
           : source.imageStyle,
+        videoStyle: source.videoStyle
+          ? {
+              ...source.videoStyle,
+              blockOptions: { ...source.videoStyle.blockOptions },
+              attributes: source.videoStyle.attributes.map((attribute) => ({ ...attribute })),
+            }
+          : source.videoStyle,
       };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
@@ -817,6 +878,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
                         block={block}
                         onChange={(content) => updateBlock(block.id, content)}
                         onImageStyleChange={(imageStyle) => updateImageStyle(block.id, imageStyle)}
+                        onVideoStyleChange={(videoStyle) => updateVideoStyle(block.id, videoStyle)}
                       />
                     </div>
                   );
@@ -878,6 +940,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               <EmailDragDropImageProperties
                 block={selectedBlock}
                 onStyleChange={(imageStyle) => updateImageStyle(selectedBlock.id, imageStyle)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
+            {sidebarTab === "content" && selectedBlock?.type === "video" ? (
+              <EmailDragDropVideoProperties
+                block={selectedBlock}
+                onStyleChange={(videoStyle) => updateVideoStyle(selectedBlock.id, videoStyle)}
                 onDelete={() => removeBlock(selectedBlock.id)}
                 onDuplicate={() => duplicateBlock(selectedBlock.id)}
                 onClose={() => setSelectedBlockId(null)}

@@ -101,6 +101,19 @@ export type ImageBlockStyle = {
   blockOptions: BlockOptions;
 };
 
+export type VideoBlockAttribute = {
+  id: string;
+  name: string;
+  value: string;
+};
+
+export type VideoBlockStyle = {
+  url: string;
+  title: string;
+  blockOptions: BlockOptions;
+  attributes: VideoBlockAttribute[];
+};
+
 export type TextBlockStyle = {
   fontFamily: string;
   fontWeight: FontWeight;
@@ -130,6 +143,7 @@ export type CanvasBlock = {
   dividerStyle?: DividerBlockStyle;
   spacerStyle?: SpacerBlockStyle;
   imageStyle?: ImageBlockStyle;
+  videoStyle?: VideoBlockStyle;
 };
 
 export const TEXT_BLOCK_TYPES: BlockType[] = ["title", "paragraph", "list"];
@@ -139,7 +153,14 @@ export function isTextBlock(type: BlockType) {
 }
 
 export function isPropertiesBlock(type: BlockType) {
-  return isTextBlock(type) || type === "button" || type === "divider" || type === "spacer" || type === "image";
+  return (
+    isTextBlock(type) ||
+    type === "button" ||
+    type === "divider" ||
+    type === "spacer" ||
+    type === "image" ||
+    type === "video"
+  );
 }
 
 export function defaultPaddingOptions(all = 10): PaddingOptions {
@@ -308,6 +329,23 @@ export function defaultImageStyle(): ImageBlockStyle {
   };
 }
 
+export function defaultVideoBlockOptions(): BlockOptions {
+  return {
+    ...defaultPaddingOptions(0),
+    hideOnDesktop: false,
+    hideOnMobile: false,
+  };
+}
+
+export function defaultVideoStyle(): VideoBlockStyle {
+  return {
+    url: "",
+    title: "",
+    blockOptions: defaultVideoBlockOptions(),
+    attributes: [],
+  };
+}
+
 export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined {
   if (type === "title") return defaultTitleStyle();
   if (type === "paragraph") return defaultParagraphStyle();
@@ -340,10 +378,35 @@ export function getImageStyle(block: CanvasBlock): ImageBlockStyle {
   return defaultImageStyle();
 }
 
+export function getVideoStyle(block: CanvasBlock): VideoBlockStyle {
+  if (block.videoStyle) return block.videoStyle;
+  return defaultVideoStyle();
+}
+
+export function getVideoThumbnailUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const youtubeMatch = trimmed.match(
+    /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/,
+  );
+  if (youtubeMatch?.[1]) {
+    return `https://img.youtube.com/vi/${youtubeMatch[1]}/hqdefault.jpg`;
+  }
+
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(?:.*\/)?(\d+)/);
+  if (vimeoMatch?.[1]) {
+    return `https://vumbnail.com/${vimeoMatch[1]}.jpg`;
+  }
+
+  return null;
+}
+
 export function getBlockWrapperOptions(block: CanvasBlock): BlockOptions {
   if (block.type === "button") return getButtonStyle(block).blockOptions;
   if (block.type === "divider") return getDividerStyle(block).blockOptions;
   if (block.type === "image") return getImageStyle(block).blockOptions;
+  if (block.type === "video") return getVideoStyle(block).blockOptions;
   if (block.type === "spacer") {
     const spacerStyle = getSpacerStyle(block);
     return {
@@ -519,8 +582,22 @@ export function blockToHtml(block: CanvasBlock): string {
         : imgTag;
       return `<div class="${wrapperClass(block)}" style="${paddingCss(imageStyle.blockOptions)};text-align:${imageStyle.textAlign};">${linked}</div>`;
     }
-    case "video":
-      return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Video placeholder ]</p>`;
+    case "video": {
+      const videoStyle = getVideoStyle(block);
+      const thumbnail = getVideoThumbnailUrl(videoStyle.url);
+      const alt = videoStyle.title || "Video";
+      const imgSrc =
+        thumbnail || "https://placehold.co/600x338/e2e8f0/64748b?text=Video";
+      const linked = videoStyle.url
+        ? `<a href="${videoStyle.url}" style="text-decoration:none;display:inline-block;"><img src="${imgSrc}" alt="${alt}" style="max-width:100%;height:auto;display:block;" /></a>`
+        : `<img src="${imgSrc}" alt="${alt}" style="max-width:100%;height:auto;display:block;" />`;
+      const attrs = videoStyle.attributes
+        .filter((attribute) => attribute.name.trim())
+        .map((attribute) => `data-${attribute.name}="${attribute.value}"`)
+        .join(" ");
+      const attrSuffix = attrs ? ` ${attrs}` : "";
+      return `<div class="${wrapperClass(block)}" style="${paddingCss(videoStyle.blockOptions)};text-align:center;"${attrSuffix}>${linked}</div>`;
+    }
     case "social":
       return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Social links ]</p>`;
     case "icons":
@@ -571,5 +648,6 @@ export function blockPropertiesTitle(type: BlockType) {
   if (type === "divider") return "DIVIDER PROPERTIES";
   if (type === "spacer") return "SPACER PROPERTIES";
   if (type === "image") return "IMAGE PROPERTIES";
+  if (type === "video") return "VIDEO PROPERTIES";
   return "BLOCK PROPERTIES";
 }
