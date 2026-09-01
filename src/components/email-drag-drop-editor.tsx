@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronUp,
   Code,
+  Copy,
   Download,
   ExternalLink,
   Eye,
@@ -16,8 +17,10 @@ import {
   List,
   Mail,
   Menu,
+  MessageSquare,
   Minus,
   Monitor,
+  Move,
   MoveVertical,
   Pencil,
   Play,
@@ -26,6 +29,7 @@ import {
   Sparkles,
   Square,
   Star,
+  Trash2,
   Upload,
   Wand2,
 } from "lucide-react";
@@ -270,6 +274,53 @@ function BlockPreview({
     default:
       return null;
   }
+}
+
+function BlockCanvasActions({
+  onDelete,
+  onCopy,
+}: {
+  onDelete: () => void;
+  onCopy: () => void;
+}) {
+  function handleAction(event: React.MouseEvent, action: () => void) {
+    event.stopPropagation();
+    action();
+  }
+
+  return (
+    <>
+      <div className="pointer-events-none absolute -right-2 top-6 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-md">
+        <Move size={12} />
+      </div>
+      <div className="absolute right-0 top-full z-10 mt-1 flex overflow-hidden rounded-md shadow-lg">
+        <button
+          type="button"
+          onClick={(event) => handleAction(event, () => undefined)}
+          className="flex h-8 w-8 items-center justify-center bg-primary text-white hover:bg-primary-dark"
+          aria-label="Comment"
+        >
+          <MessageSquare size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={(event) => handleAction(event, onDelete)}
+          className="flex h-8 w-8 items-center justify-center bg-primary text-white hover:bg-primary-dark"
+          aria-label="Delete block"
+        >
+          <Trash2 size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={(event) => handleAction(event, onCopy)}
+          className="flex h-8 w-8 items-center justify-center bg-primary text-white hover:bg-primary-dark"
+          aria-label="Copy block"
+        >
+          <Copy size={14} />
+        </button>
+      </div>
+    </>
+  );
 }
 
 function BlockLibraryItem({ type, onAdd }: { type: BlockType; onAdd: (type: BlockType) => void }) {
@@ -579,10 +630,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
                         previewMode ? "pointer-events-none border-transparent" : "cursor-pointer"
                       } ${
                         selected
-                          ? "border-primary ring-2 ring-primary/20"
+                          ? "mb-8 border-primary ring-2 ring-primary/20"
                           : "border-transparent hover:border-primary/20 hover:bg-background/60"
                       }`}
                     >
+                      {selected && !previewMode ? (
+                        <BlockCanvasActions
+                          onDelete={() => removeBlock(block.id)}
+                          onCopy={() => duplicateBlock(block.id)}
+                        />
+                      ) : null}
                       <BlockPreview block={block} onChange={(content) => updateBlock(block.id, content)} />
                     </div>
                   );
