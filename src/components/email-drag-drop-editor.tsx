@@ -38,13 +38,16 @@ import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-butt
 import { EmailDragDropDividerProperties } from "@/components/email-drag-drop-divider-properties";
 import { EmailDragDropImageProperties } from "@/components/email-drag-drop-image-properties";
 import { EmailDragDropSpacerProperties } from "@/components/email-drag-drop-spacer-properties";
+import { EmailDragDropSocialProperties } from "@/components/email-drag-drop-social-properties";
 import { EmailDragDropVideoProperties } from "@/components/email-drag-drop-video-properties";
+import { SocialIconBadge } from "@/components/social-icon-badge";
 import {
   type BlockType,
   type ButtonBlockStyle,
   type CanvasBlock,
   type DividerBlockStyle,
   type ImageBlockStyle,
+  type SocialBlockStyle,
   type SpacerBlockStyle,
   type TextBlockStyle,
   type VideoBlockStyle,
@@ -53,6 +56,7 @@ import {
   defaultContent,
   defaultDividerStyle,
   defaultImageStyle,
+  defaultSocialStyle,
   defaultSpacerStyle,
   defaultStyleForType,
   defaultVideoStyle,
@@ -61,6 +65,7 @@ import {
   getButtonStyle,
   getDividerStyle,
   getImageStyle,
+  getSocialStyle,
   getSpacerStyle,
   getVideoStyle,
   getVideoThumbnailUrl,
@@ -419,16 +424,31 @@ function BlockPreview({
         </div>
       );
     }
-    case "social":
+    case "social": {
+      const socialStyle = getSocialStyle(block);
+      const padding = previewPaddingStyle(block);
+      const justify =
+        socialStyle.textAlign === "left"
+          ? "flex-start"
+          : socialStyle.textAlign === "right"
+            ? "flex-end"
+            : "center";
+
       return (
-        <div className="flex justify-center gap-3 py-2">
-          {[1, 2, 3].map((n) => (
-            <span key={n} className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-background text-muted">
-              <Plus size={16} />
-            </span>
-          ))}
+        <div style={padding}>
+          <div className="flex flex-wrap py-2" style={{ justifyContent: justify, gap: socialStyle.iconSpacing }}>
+            {socialStyle.icons.map((icon) => (
+              <SocialIconBadge
+                key={icon.id}
+                platform={icon.platform}
+                collection={socialStyle.iconCollection}
+                size={32}
+              />
+            ))}
+          </div>
         </div>
       );
+    }
     case "icons":
       return (
         <div className="flex justify-center gap-4 py-2 text-primary">
@@ -582,6 +602,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         ...(type === "spacer" ? { spacerStyle: defaultSpacerStyle() } : {}),
         ...(type === "image" ? { imageStyle: defaultImageStyle() } : {}),
         ...(type === "video" ? { videoStyle: defaultVideoStyle() } : {}),
+        ...(type === "social" ? { socialStyle: defaultSocialStyle() } : {}),
       },
     ]);
     if (isPropertiesBlock(type)) {
@@ -616,6 +637,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
 
   const updateVideoStyle = useCallback((id: string, videoStyle: VideoBlockStyle) => {
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, videoStyle } : block)));
+  }, []);
+
+  const updateSocialStyle = useCallback((id: string, socialStyle: SocialBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, socialStyle } : block)));
   }, []);
 
   const removeBlock = useCallback((id: string) => {
@@ -658,6 +683,13 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               attributes: source.videoStyle.attributes.map((attribute) => ({ ...attribute })),
             }
           : source.videoStyle,
+        socialStyle: source.socialStyle
+          ? {
+              ...source.socialStyle,
+              blockOptions: { ...source.socialStyle.blockOptions },
+              icons: source.socialStyle.icons.map((icon) => ({ ...icon })),
+            }
+          : source.socialStyle,
       };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
@@ -950,6 +982,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               <EmailDragDropVideoProperties
                 block={selectedBlock}
                 onStyleChange={(videoStyle) => updateVideoStyle(selectedBlock.id, videoStyle)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
+            {sidebarTab === "content" && selectedBlock?.type === "social" ? (
+              <EmailDragDropSocialProperties
+                block={selectedBlock}
+                onStyleChange={(socialStyle) => updateSocialStyle(selectedBlock.id, socialStyle)}
                 onDelete={() => removeBlock(selectedBlock.id)}
                 onDuplicate={() => duplicateBlock(selectedBlock.id)}
                 onClose={() => setSelectedBlockId(null)}

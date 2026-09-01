@@ -1,3 +1,5 @@
+import { SOCIAL_PLATFORM_META, socialIconInlineStyle } from "@/lib/social-block-icons";
+
 export type BlockType =
   | "title"
   | "paragraph"
@@ -114,6 +116,43 @@ export type VideoBlockStyle = {
   attributes: VideoBlockAttribute[];
 };
 
+export type SocialPlatform =
+  | "facebook"
+  | "x"
+  | "instagram"
+  | "linkedin"
+  | "youtube"
+  | "pinterest"
+  | "tiktok"
+  | "snapchat"
+  | "whatsapp"
+  | "custom";
+
+export type SocialIconCollection =
+  | "colored_circle"
+  | "colored_square"
+  | "black_circle"
+  | "black_square"
+  | "white_circle"
+  | "white_square";
+
+export type SocialIconItem = {
+  id: string;
+  platform: SocialPlatform;
+  url: string;
+  moreOptions: boolean;
+  customLabel?: string;
+  openInNewTab?: boolean;
+};
+
+export type SocialBlockStyle = {
+  iconCollection: SocialIconCollection;
+  icons: SocialIconItem[];
+  textAlign: TextAlign;
+  iconSpacing: number;
+  blockOptions: BlockOptions;
+};
+
 export type TextBlockStyle = {
   fontFamily: string;
   fontWeight: FontWeight;
@@ -144,6 +183,7 @@ export type CanvasBlock = {
   spacerStyle?: SpacerBlockStyle;
   imageStyle?: ImageBlockStyle;
   videoStyle?: VideoBlockStyle;
+  socialStyle?: SocialBlockStyle;
 };
 
 export const TEXT_BLOCK_TYPES: BlockType[] = ["title", "paragraph", "list"];
@@ -159,7 +199,8 @@ export function isPropertiesBlock(type: BlockType) {
     type === "divider" ||
     type === "spacer" ||
     type === "image" ||
-    type === "video"
+    type === "video" ||
+    type === "social"
   );
 }
 
@@ -346,6 +387,31 @@ export function defaultVideoStyle(): VideoBlockStyle {
   };
 }
 
+function createDefaultSocialIcon(platform: SocialPlatform, url: string): SocialIconItem {
+  return {
+    id: crypto.randomUUID(),
+    platform,
+    url,
+    moreOptions: false,
+    openInNewTab: true,
+  };
+}
+
+export function defaultSocialStyle(): SocialBlockStyle {
+  return {
+    iconCollection: "colored_circle",
+    icons: [
+      createDefaultSocialIcon("facebook", "https://www.facebook.com/"),
+      createDefaultSocialIcon("x", "https://x.com/"),
+      createDefaultSocialIcon("instagram", "https://www.instagram.com/"),
+      createDefaultSocialIcon("linkedin", "https://www.linkedin.com/"),
+    ],
+    textAlign: "center",
+    iconSpacing: 5,
+    blockOptions: defaultBlockOptions(),
+  };
+}
+
 export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined {
   if (type === "title") return defaultTitleStyle();
   if (type === "paragraph") return defaultParagraphStyle();
@@ -383,6 +449,11 @@ export function getVideoStyle(block: CanvasBlock): VideoBlockStyle {
   return defaultVideoStyle();
 }
 
+export function getSocialStyle(block: CanvasBlock): SocialBlockStyle {
+  if (block.socialStyle) return block.socialStyle;
+  return defaultSocialStyle();
+}
+
 export function getVideoThumbnailUrl(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -407,6 +478,7 @@ export function getBlockWrapperOptions(block: CanvasBlock): BlockOptions {
   if (block.type === "divider") return getDividerStyle(block).blockOptions;
   if (block.type === "image") return getImageStyle(block).blockOptions;
   if (block.type === "video") return getVideoStyle(block).blockOptions;
+  if (block.type === "social") return getSocialStyle(block).blockOptions;
   if (block.type === "spacer") {
     const spacerStyle = getSpacerStyle(block);
     return {
@@ -598,8 +670,18 @@ export function blockToHtml(block: CanvasBlock): string {
       const attrSuffix = attrs ? ` ${attrs}` : "";
       return `<div class="${wrapperClass(block)}" style="${paddingCss(videoStyle.blockOptions)};text-align:center;"${attrSuffix}>${linked}</div>`;
     }
-    case "social":
-      return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Social links ]</p>`;
+    case "social": {
+      const socialStyle = getSocialStyle(block);
+      const icons = socialStyle.icons
+        .map((icon) => {
+          const meta = SOCIAL_PLATFORM_META[icon.platform];
+          const target = icon.openInNewTab === false ? "" : ' target="_blank" rel="noopener noreferrer"';
+          const label = icon.customLabel || meta.label;
+          return `<a href="${icon.url}" aria-label="${label}"${target} style="display:inline-block;text-decoration:none;margin:0 ${socialStyle.iconSpacing}px;"><span style="${socialIconInlineStyle(socialStyle.iconCollection, meta.color)}">${meta.glyph}</span></a>`;
+        })
+        .join("");
+      return `<div class="${wrapperClass(block)}" style="${paddingCss(socialStyle.blockOptions)};text-align:${socialStyle.textAlign};line-height:0;">${icons}</div>`;
+    }
     case "icons":
       return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Icon row ]</p>`;
     case "html":
@@ -649,5 +731,6 @@ export function blockPropertiesTitle(type: BlockType) {
   if (type === "spacer") return "SPACER PROPERTIES";
   if (type === "image") return "IMAGE PROPERTIES";
   if (type === "video") return "VIDEO PROPERTIES";
+  if (type === "social") return "SOCIAL PROPERTIES";
   return "BLOCK PROPERTIES";
 }
