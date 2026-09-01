@@ -73,6 +73,12 @@ export type DividerBlockStyle = {
   blockOptions: BlockOptions;
 };
 
+export type SpacerBlockStyle = {
+  height: number;
+  hideOnDesktop: boolean;
+  hideOnMobile: boolean;
+};
+
 export type TextBlockStyle = {
   fontFamily: string;
   fontWeight: FontWeight;
@@ -100,6 +106,7 @@ export type CanvasBlock = {
   style?: TextBlockStyle;
   buttonStyle?: ButtonBlockStyle;
   dividerStyle?: DividerBlockStyle;
+  spacerStyle?: SpacerBlockStyle;
 };
 
 export const TEXT_BLOCK_TYPES: BlockType[] = ["title", "paragraph", "list"];
@@ -109,7 +116,7 @@ export function isTextBlock(type: BlockType) {
 }
 
 export function isPropertiesBlock(type: BlockType) {
-  return isTextBlock(type) || type === "button" || type === "divider";
+  return isTextBlock(type) || type === "button" || type === "divider" || type === "spacer";
 }
 
 export function defaultPaddingOptions(all = 10): PaddingOptions {
@@ -236,6 +243,14 @@ export function defaultDividerStyle(): DividerBlockStyle {
   };
 }
 
+export function defaultSpacerStyle(): SpacerBlockStyle {
+  return {
+    height: 60,
+    hideOnDesktop: false,
+    hideOnMobile: false,
+  };
+}
+
 export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined {
   if (type === "title") return defaultTitleStyle();
   if (type === "paragraph") return defaultParagraphStyle();
@@ -258,9 +273,22 @@ export function getDividerStyle(block: CanvasBlock): DividerBlockStyle {
   return defaultDividerStyle();
 }
 
+export function getSpacerStyle(block: CanvasBlock): SpacerBlockStyle {
+  if (block.spacerStyle) return block.spacerStyle;
+  return defaultSpacerStyle();
+}
+
 export function getBlockWrapperOptions(block: CanvasBlock): BlockOptions {
   if (block.type === "button") return getButtonStyle(block).blockOptions;
   if (block.type === "divider") return getDividerStyle(block).blockOptions;
+  if (block.type === "spacer") {
+    const spacerStyle = getSpacerStyle(block);
+    return {
+      ...defaultPaddingOptions(0),
+      hideOnDesktop: spacerStyle.hideOnDesktop,
+      hideOnMobile: spacerStyle.hideOnMobile,
+    };
+  }
   return getBlockStyle(block).blockOptions;
 }
 
@@ -398,8 +426,10 @@ export function blockToHtml(block: CanvasBlock): string {
       const dividerStyle = getDividerStyle(block);
       return `<div class="${wrapperClass(block)}" style="${paddingCss(dividerStyle.blockOptions)};text-align:${dividerStyle.textAlign};"><hr style="${dividerLineCss(dividerStyle)}" /></div>`;
     }
-    case "spacer":
-      return `<div style="height:32px;"></div>`;
+    case "spacer": {
+      const spacerStyle = getSpacerStyle(block);
+      return `<div class="${wrapperClass(block)}" style="height:${spacerStyle.height}px;line-height:${spacerStyle.height}px;font-size:1px;">&nbsp;</div>`;
+    }
     case "image":
       return `<p style="margin:0 0 16px;text-align:center;"><img src="https://placehold.co/600x240/e2e8f0/64748b?text=Image" alt="Image" style="max-width:100%;border-radius:8px;" /></p>`;
     case "video":
@@ -451,5 +481,6 @@ export function blockPropertiesTitle(type: BlockType) {
   if (type === "list") return "LIST PROPERTIES";
   if (type === "button") return "BUTTON PROPERTIES";
   if (type === "divider") return "DIVIDER PROPERTIES";
+  if (type === "spacer") return "SPACER PROPERTIES";
   return "BLOCK PROPERTIES";
 }

@@ -36,21 +36,25 @@ import {
 import { EmailDragDropBlockProperties } from "@/components/email-drag-drop-block-properties";
 import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-button-properties";
 import { EmailDragDropDividerProperties } from "@/components/email-drag-drop-divider-properties";
+import { EmailDragDropSpacerProperties } from "@/components/email-drag-drop-spacer-properties";
 import {
   type BlockType,
   type ButtonBlockStyle,
   type CanvasBlock,
   type DividerBlockStyle,
+  type SpacerBlockStyle,
   type TextBlockStyle,
   blocksToHtml,
   defaultButtonStyle,
   defaultContent,
   defaultDividerStyle,
+  defaultSpacerStyle,
   defaultStyleForType,
   getBlockStyle,
   getBlockWrapperOptions,
   getButtonStyle,
   getDividerStyle,
+  getSpacerStyle,
   isPropertiesBlock,
   isTextBlock,
 } from "@/lib/email-drag-drop-blocks";
@@ -284,8 +288,17 @@ function BlockPreview({
         </div>
       );
     }
-    case "spacer":
-      return <div className="flex h-8 items-center justify-center text-xs text-muted">Spacer</div>;
+    case "spacer": {
+      const spacerStyle = getSpacerStyle(block);
+      return (
+        <div
+          className="flex items-center justify-center text-xs text-muted"
+          style={{ height: spacerStyle.height, minHeight: spacerStyle.height }}
+        >
+          Spacer
+        </div>
+      );
+    }
     case "image":
       return (
         <div className="flex aspect-[5/2] items-center justify-center rounded-lg bg-background text-muted">
@@ -458,6 +471,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         ...(blockStyle ? { style: blockStyle } : {}),
         ...(type === "button" ? { buttonStyle: defaultButtonStyle() } : {}),
         ...(type === "divider" ? { dividerStyle: defaultDividerStyle() } : {}),
+        ...(type === "spacer" ? { spacerStyle: defaultSpacerStyle() } : {}),
       },
     ]);
     if (isPropertiesBlock(type)) {
@@ -480,6 +494,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
 
   const updateDividerStyle = useCallback((id: string, dividerStyle: DividerBlockStyle) => {
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, dividerStyle } : block)));
+  }, []);
+
+  const updateSpacerStyle = useCallback((id: string, spacerStyle: SpacerBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, spacerStyle } : block)));
   }, []);
 
   const removeBlock = useCallback((id: string) => {
@@ -507,6 +525,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         dividerStyle: source.dividerStyle
           ? { ...source.dividerStyle, blockOptions: { ...source.dividerStyle.blockOptions } }
           : source.dividerStyle,
+        spacerStyle: source.spacerStyle ? { ...source.spacerStyle } : source.spacerStyle,
       };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
@@ -764,6 +783,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               <EmailDragDropDividerProperties
                 block={selectedBlock}
                 onStyleChange={(dividerStyle) => updateDividerStyle(selectedBlock.id, dividerStyle)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
+            {sidebarTab === "content" && selectedBlock?.type === "spacer" ? (
+              <EmailDragDropSpacerProperties
+                block={selectedBlock}
+                onStyleChange={(spacerStyle) => updateSpacerStyle(selectedBlock.id, spacerStyle)}
                 onDelete={() => removeBlock(selectedBlock.id)}
                 onDuplicate={() => duplicateBlock(selectedBlock.id)}
                 onClose={() => setSelectedBlockId(null)}
