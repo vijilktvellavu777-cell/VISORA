@@ -35,18 +35,22 @@ import {
 } from "lucide-react";
 import { EmailDragDropBlockProperties } from "@/components/email-drag-drop-block-properties";
 import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-button-properties";
+import { EmailDragDropDividerProperties } from "@/components/email-drag-drop-divider-properties";
 import {
   type BlockType,
   type ButtonBlockStyle,
   type CanvasBlock,
+  type DividerBlockStyle,
   type TextBlockStyle,
   blocksToHtml,
   defaultButtonStyle,
   defaultContent,
+  defaultDividerStyle,
   defaultStyleForType,
   getBlockStyle,
   getBlockWrapperOptions,
   getButtonStyle,
+  getDividerStyle,
   isPropertiesBlock,
   isTextBlock,
 } from "@/lib/email-drag-drop-blocks";
@@ -256,8 +260,30 @@ function BlockPreview({
         </div>
       );
     }
-    case "divider":
-      return <hr className="my-4 border-border" />;
+    case "divider": {
+      const dividerStyle = getDividerStyle(block);
+      const padding = previewPaddingStyle(block);
+      const lineColor = dividerStyle.transparent ? "transparent" : dividerStyle.lineColor;
+      const margin =
+        dividerStyle.textAlign === "left"
+          ? "0 auto 0 0"
+          : dividerStyle.textAlign === "right"
+            ? "0 0 0 auto"
+            : "0 auto";
+
+      return (
+        <div style={{ ...padding, textAlign: dividerStyle.textAlign }}>
+          <hr
+            style={{
+              border: "none",
+              borderTop: `${dividerStyle.lineWidth}px ${dividerStyle.lineStyle} ${lineColor}`,
+              width: `${dividerStyle.width}%`,
+              margin,
+            }}
+          />
+        </div>
+      );
+    }
     case "spacer":
       return <div className="flex h-8 items-center justify-center text-xs text-muted">Spacer</div>;
     case "image":
@@ -431,6 +457,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         content: defaultContent(type),
         ...(blockStyle ? { style: blockStyle } : {}),
         ...(type === "button" ? { buttonStyle: defaultButtonStyle() } : {}),
+        ...(type === "divider" ? { dividerStyle: defaultDividerStyle() } : {}),
       },
     ]);
     if (isPropertiesBlock(type)) {
@@ -449,6 +476,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
 
   const updateButtonStyle = useCallback((id: string, buttonStyle: ButtonBlockStyle) => {
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, buttonStyle } : block)));
+  }, []);
+
+  const updateDividerStyle = useCallback((id: string, dividerStyle: DividerBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, dividerStyle } : block)));
   }, []);
 
   const removeBlock = useCallback((id: string) => {
@@ -473,6 +504,9 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               blockOptions: { ...source.buttonStyle.blockOptions },
             }
           : source.buttonStyle,
+        dividerStyle: source.dividerStyle
+          ? { ...source.dividerStyle, blockOptions: { ...source.dividerStyle.blockOptions } }
+          : source.dividerStyle,
       };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
@@ -726,6 +760,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
+            {sidebarTab === "content" && selectedBlock?.type === "divider" ? (
+              <EmailDragDropDividerProperties
+                block={selectedBlock}
+                onStyleChange={(dividerStyle) => updateDividerStyle(selectedBlock.id, dividerStyle)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
             {sidebarTab === "content" && selectedBlock?.type === "button" ? (
               <EmailDragDropButtonProperties
                 block={selectedBlock}

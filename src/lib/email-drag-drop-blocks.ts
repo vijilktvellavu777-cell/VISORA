@@ -63,6 +63,16 @@ export type ButtonBlockStyle = {
   blockOptions: BlockOptions;
 };
 
+export type DividerBlockStyle = {
+  transparent: boolean;
+  lineStyle: BorderStyle;
+  lineWidth: number;
+  lineColor: string;
+  width: number;
+  textAlign: TextAlign;
+  blockOptions: BlockOptions;
+};
+
 export type TextBlockStyle = {
   fontFamily: string;
   fontWeight: FontWeight;
@@ -89,6 +99,7 @@ export type CanvasBlock = {
   content: string;
   style?: TextBlockStyle;
   buttonStyle?: ButtonBlockStyle;
+  dividerStyle?: DividerBlockStyle;
 };
 
 export const TEXT_BLOCK_TYPES: BlockType[] = ["title", "paragraph", "list"];
@@ -98,7 +109,7 @@ export function isTextBlock(type: BlockType) {
 }
 
 export function isPropertiesBlock(type: BlockType) {
-  return isTextBlock(type) || type === "button";
+  return isTextBlock(type) || type === "button" || type === "divider";
 }
 
 export function defaultPaddingOptions(all = 10): PaddingOptions {
@@ -213,6 +224,18 @@ export function defaultButtonStyle(): ButtonBlockStyle {
   };
 }
 
+export function defaultDividerStyle(): DividerBlockStyle {
+  return {
+    transparent: false,
+    lineStyle: "solid",
+    lineWidth: 1,
+    lineColor: "#bbbbbb",
+    width: 100,
+    textAlign: "center",
+    blockOptions: defaultBlockOptions(),
+  };
+}
+
 export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined {
   if (type === "title") return defaultTitleStyle();
   if (type === "paragraph") return defaultParagraphStyle();
@@ -230,8 +253,14 @@ export function getButtonStyle(block: CanvasBlock): ButtonBlockStyle {
   return defaultButtonStyle();
 }
 
+export function getDividerStyle(block: CanvasBlock): DividerBlockStyle {
+  if (block.dividerStyle) return block.dividerStyle;
+  return defaultDividerStyle();
+}
+
 export function getBlockWrapperOptions(block: CanvasBlock): BlockOptions {
   if (block.type === "button") return getButtonStyle(block).blockOptions;
+  if (block.type === "divider") return getDividerStyle(block).blockOptions;
   return getBlockStyle(block).blockOptions;
 }
 
@@ -322,6 +351,17 @@ function buttonCss(style: ButtonBlockStyle) {
   ].join(";");
 }
 
+function dividerMargin(align: TextAlign) {
+  if (align === "left") return "margin:0 auto 0 0;";
+  if (align === "right") return "margin:0 0 0 auto;";
+  return "margin:0 auto;";
+}
+
+function dividerLineCss(dividerStyle: DividerBlockStyle) {
+  const color = dividerStyle.transparent ? "transparent" : dividerStyle.lineColor;
+  return `border:none;border-top:${dividerStyle.lineWidth}px ${dividerStyle.lineStyle} ${color};width:${dividerStyle.width}%;${dividerMargin(dividerStyle.textAlign)}`;
+}
+
 export function blockToHtml(block: CanvasBlock): string {
   const style = getBlockStyle(block);
   const wrapperStyle = paddingCss(style.blockOptions);
@@ -354,8 +394,10 @@ export function blockToHtml(block: CanvasBlock): string {
       const align = buttonStyle.textAlign;
       return `<div class="${wrapperClass(block)}" style="${paddingCss(buttonStyle.blockOptions)};text-align:${align};"><a href="${href}" style="${buttonCss(buttonStyle)}">${block.content}</a></div>`;
     }
-    case "divider":
-      return `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />`;
+    case "divider": {
+      const dividerStyle = getDividerStyle(block);
+      return `<div class="${wrapperClass(block)}" style="${paddingCss(dividerStyle.blockOptions)};text-align:${dividerStyle.textAlign};"><hr style="${dividerLineCss(dividerStyle)}" /></div>`;
+    }
     case "spacer":
       return `<div style="height:32px;"></div>`;
     case "image":
@@ -408,5 +450,6 @@ export function blockPropertiesTitle(type: BlockType) {
   if (type === "paragraph") return "PARAGRAPH PROPERTIES";
   if (type === "list") return "LIST PROPERTIES";
   if (type === "button") return "BUTTON PROPERTIES";
+  if (type === "divider") return "DIVIDER PROPERTIES";
   return "BLOCK PROPERTIES";
 }
