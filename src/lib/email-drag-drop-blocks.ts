@@ -79,6 +79,28 @@ export type SpacerBlockStyle = {
   hideOnMobile: boolean;
 };
 
+export type CornerRadiusOptions = {
+  radiusAll: number;
+  radiusTopLeft: number;
+  radiusTopRight: number;
+  radiusBottomRight: number;
+  radiusBottomLeft: number;
+  moreOptions: boolean;
+};
+
+export type ImageBlockStyle = {
+  autoWidth: boolean;
+  fullWidthOnMobile: boolean;
+  textAlign: TextAlign;
+  imageWithLiquid: boolean;
+  url: string;
+  altText: string;
+  cornerRadius: CornerRadiusOptions;
+  linkType: ButtonLinkType;
+  linkUrl: string;
+  blockOptions: BlockOptions;
+};
+
 export type TextBlockStyle = {
   fontFamily: string;
   fontWeight: FontWeight;
@@ -107,6 +129,7 @@ export type CanvasBlock = {
   buttonStyle?: ButtonBlockStyle;
   dividerStyle?: DividerBlockStyle;
   spacerStyle?: SpacerBlockStyle;
+  imageStyle?: ImageBlockStyle;
 };
 
 export const TEXT_BLOCK_TYPES: BlockType[] = ["title", "paragraph", "list"];
@@ -116,7 +139,7 @@ export function isTextBlock(type: BlockType) {
 }
 
 export function isPropertiesBlock(type: BlockType) {
-  return isTextBlock(type) || type === "button" || type === "divider" || type === "spacer";
+  return isTextBlock(type) || type === "button" || type === "divider" || type === "spacer" || type === "image";
 }
 
 export function defaultPaddingOptions(all = 10): PaddingOptions {
@@ -251,6 +274,40 @@ export function defaultSpacerStyle(): SpacerBlockStyle {
   };
 }
 
+export function defaultImageBlockOptions(): BlockOptions {
+  return {
+    ...defaultPaddingOptions(0),
+    hideOnDesktop: false,
+    hideOnMobile: false,
+  };
+}
+
+export function defaultCornerRadiusOptions(): CornerRadiusOptions {
+  return {
+    radiusAll: 0,
+    radiusTopLeft: 0,
+    radiusTopRight: 0,
+    radiusBottomRight: 0,
+    radiusBottomLeft: 0,
+    moreOptions: false,
+  };
+}
+
+export function defaultImageStyle(): ImageBlockStyle {
+  return {
+    autoWidth: true,
+    fullWidthOnMobile: false,
+    textAlign: "center",
+    imageWithLiquid: false,
+    url: "",
+    altText: "",
+    cornerRadius: defaultCornerRadiusOptions(),
+    linkType: "web_page",
+    linkUrl: "",
+    blockOptions: defaultImageBlockOptions(),
+  };
+}
+
 export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined {
   if (type === "title") return defaultTitleStyle();
   if (type === "paragraph") return defaultParagraphStyle();
@@ -278,9 +335,15 @@ export function getSpacerStyle(block: CanvasBlock): SpacerBlockStyle {
   return defaultSpacerStyle();
 }
 
+export function getImageStyle(block: CanvasBlock): ImageBlockStyle {
+  if (block.imageStyle) return block.imageStyle;
+  return defaultImageStyle();
+}
+
 export function getBlockWrapperOptions(block: CanvasBlock): BlockOptions {
   if (block.type === "button") return getButtonStyle(block).blockOptions;
   if (block.type === "divider") return getDividerStyle(block).blockOptions;
+  if (block.type === "image") return getImageStyle(block).blockOptions;
   if (block.type === "spacer") {
     const spacerStyle = getSpacerStyle(block);
     return {
@@ -390,6 +453,19 @@ function dividerLineCss(dividerStyle: DividerBlockStyle) {
   return `border:none;border-top:${dividerStyle.lineWidth}px ${dividerStyle.lineStyle} ${color};width:${dividerStyle.width}%;${dividerMargin(dividerStyle.textAlign)}`;
 }
 
+function cornerRadiusCss(options: CornerRadiusOptions) {
+  if (options.moreOptions) {
+    return `border-radius:${options.radiusTopLeft}px ${options.radiusTopRight}px ${options.radiusBottomRight}px ${options.radiusBottomLeft}px;`;
+  }
+  return `border-radius:${options.radiusAll}px;`;
+}
+
+function imageWidthCss(imageStyle: ImageBlockStyle) {
+  if (imageStyle.imageWithLiquid) return "width:100%;max-width:100%;";
+  if (imageStyle.autoWidth) return "max-width:100%;height:auto;";
+  return "width:100%;max-width:100%;height:auto;";
+}
+
 export function blockToHtml(block: CanvasBlock): string {
   const style = getBlockStyle(block);
   const wrapperStyle = paddingCss(style.blockOptions);
@@ -430,8 +506,19 @@ export function blockToHtml(block: CanvasBlock): string {
       const spacerStyle = getSpacerStyle(block);
       return `<div class="${wrapperClass(block)}" style="height:${spacerStyle.height}px;line-height:${spacerStyle.height}px;font-size:1px;">&nbsp;</div>`;
     }
-    case "image":
-      return `<p style="margin:0 0 16px;text-align:center;"><img src="https://placehold.co/600x240/e2e8f0/64748b?text=Image" alt="Image" style="max-width:100%;border-radius:8px;" /></p>`;
+    case "image": {
+      const imageStyle = getImageStyle(block);
+      const src =
+        imageStyle.url ||
+        "https://placehold.co/600x240/e2e8f0/64748b?text=Image";
+      const alt = imageStyle.altText || "Image";
+      const mobileClass = imageStyle.fullWidthOnMobile ? " full-width-mobile" : "";
+      const imgTag = `<img src="${src}" alt="${alt}" class="visora-image${mobileClass}" style="${imageWidthCss(imageStyle)}${cornerRadiusCss(imageStyle.cornerRadius)}display:block;" />`;
+      const linked = imageStyle.linkUrl
+        ? `<a href="${imageStyle.linkUrl}" style="text-decoration:none;">${imgTag}</a>`
+        : imgTag;
+      return `<div class="${wrapperClass(block)}" style="${paddingCss(imageStyle.blockOptions)};text-align:${imageStyle.textAlign};">${linked}</div>`;
+    }
     case "video":
       return `<p style="margin:0 0 16px;text-align:center;color:#64748b;">[ Video placeholder ]</p>`;
     case "social":
@@ -455,6 +542,7 @@ export function blocksToHtml(blocks: CanvasBlock[]): string {
     <style>
       @media only screen and (max-width: 600px) {
         .hide-mobile { display: none !important; }
+        .full-width-mobile { width: 100% !important; max-width: 100% !important; }
       }
       @media only screen and (min-width: 601px) {
         .hide-desktop { display: none !important; }
@@ -482,5 +570,6 @@ export function blockPropertiesTitle(type: BlockType) {
   if (type === "button") return "BUTTON PROPERTIES";
   if (type === "divider") return "DIVIDER PROPERTIES";
   if (type === "spacer") return "SPACER PROPERTIES";
+  if (type === "image") return "IMAGE PROPERTIES";
   return "BLOCK PROPERTIES";
 }

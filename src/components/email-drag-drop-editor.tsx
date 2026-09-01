@@ -36,24 +36,28 @@ import {
 import { EmailDragDropBlockProperties } from "@/components/email-drag-drop-block-properties";
 import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-button-properties";
 import { EmailDragDropDividerProperties } from "@/components/email-drag-drop-divider-properties";
+import { EmailDragDropImageProperties } from "@/components/email-drag-drop-image-properties";
 import { EmailDragDropSpacerProperties } from "@/components/email-drag-drop-spacer-properties";
 import {
   type BlockType,
   type ButtonBlockStyle,
   type CanvasBlock,
   type DividerBlockStyle,
+  type ImageBlockStyle,
   type SpacerBlockStyle,
   type TextBlockStyle,
   blocksToHtml,
   defaultButtonStyle,
   defaultContent,
   defaultDividerStyle,
+  defaultImageStyle,
   defaultSpacerStyle,
   defaultStyleForType,
   getBlockStyle,
   getBlockWrapperOptions,
   getButtonStyle,
   getDividerStyle,
+  getImageStyle,
   getSpacerStyle,
   isPropertiesBlock,
   isTextBlock,
@@ -148,9 +152,11 @@ function isBlockHiddenOnDevice(block: CanvasBlock, deviceView: DeviceView) {
 function BlockPreview({
   block,
   onChange,
+  onImageStyleChange,
 }: {
   block: CanvasBlock;
   onChange: (content: string) => void;
+  onImageStyleChange?: (style: ImageBlockStyle) => void;
 }) {
   const typography = previewTypographyStyle(block);
   const padding = previewPaddingStyle(block);
@@ -299,12 +305,65 @@ function BlockPreview({
         </div>
       );
     }
-    case "image":
+    case "image": {
+      const imageStyle = getImageStyle(block);
+      const padding = previewPaddingStyle(block);
+      const cornerRadius = imageStyle.cornerRadius.moreOptions
+        ? `${imageStyle.cornerRadius.radiusTopLeft}px ${imageStyle.cornerRadius.radiusTopRight}px ${imageStyle.cornerRadius.radiusBottomRight}px ${imageStyle.cornerRadius.radiusBottomLeft}px`
+        : `${imageStyle.cornerRadius.radiusAll}px`;
+
+      function handleBrowseClick(event: React.MouseEvent) {
+        event.stopPropagation();
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (!file || !onImageStyleChange) return;
+          onImageStyleChange({
+            ...imageStyle,
+            url: URL.createObjectURL(file),
+            altText: imageStyle.altText || file.name,
+          });
+        };
+        input.click();
+      }
+
+      if (imageStyle.url) {
+        return (
+          <div style={{ ...padding, textAlign: imageStyle.textAlign }}>
+            <img
+              src={imageStyle.url}
+              alt={imageStyle.altText || "Image"}
+              style={{
+                maxWidth: imageStyle.autoWidth ? "100%" : "100%",
+                width: imageStyle.autoWidth ? "auto" : "100%",
+                height: "auto",
+                borderRadius: cornerRadius,
+                display: "inline-block",
+              }}
+            />
+          </div>
+        );
+      }
+
       return (
-        <div className="flex aspect-[5/2] items-center justify-center rounded-lg bg-background text-muted">
-          <ImageIcon size={32} />
+        <div style={{ ...padding, textAlign: imageStyle.textAlign }}>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-background px-6 py-8">
+            <ImageIcon size={32} className="text-muted" />
+            <p className="mt-3 text-sm font-medium text-foreground">Image</p>
+            <p className="mt-1 text-center text-xs text-muted">Click &apos;Browse&apos; button to add an image</p>
+            <button
+              type="button"
+              onClick={handleBrowseClick}
+              className="mt-4 rounded bg-[#4a5568] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#3d4654]"
+            >
+              Browse
+            </button>
+          </div>
         </div>
       );
+    }
     case "video":
       return (
         <div className="flex aspect-video items-center justify-center rounded-lg bg-background text-muted">
@@ -472,6 +531,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         ...(type === "button" ? { buttonStyle: defaultButtonStyle() } : {}),
         ...(type === "divider" ? { dividerStyle: defaultDividerStyle() } : {}),
         ...(type === "spacer" ? { spacerStyle: defaultSpacerStyle() } : {}),
+        ...(type === "image" ? { imageStyle: defaultImageStyle() } : {}),
       },
     ]);
     if (isPropertiesBlock(type)) {
@@ -500,6 +560,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, spacerStyle } : block)));
   }, []);
 
+  const updateImageStyle = useCallback((id: string, imageStyle: ImageBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, imageStyle } : block)));
+  }, []);
+
   const removeBlock = useCallback((id: string) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
     setSelectedBlockId((current) => (current === id ? null : current));
@@ -526,6 +590,13 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
           ? { ...source.dividerStyle, blockOptions: { ...source.dividerStyle.blockOptions } }
           : source.dividerStyle,
         spacerStyle: source.spacerStyle ? { ...source.spacerStyle } : source.spacerStyle,
+        imageStyle: source.imageStyle
+          ? {
+              ...source.imageStyle,
+              cornerRadius: { ...source.imageStyle.cornerRadius },
+              blockOptions: { ...source.imageStyle.blockOptions },
+            }
+          : source.imageStyle,
       };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
@@ -742,7 +813,11 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
                           onCopy={() => duplicateBlock(block.id)}
                         />
                       ) : null}
-                      <BlockPreview block={block} onChange={(content) => updateBlock(block.id, content)} />
+                      <BlockPreview
+                        block={block}
+                        onChange={(content) => updateBlock(block.id, content)}
+                        onImageStyleChange={(imageStyle) => updateImageStyle(block.id, imageStyle)}
+                      />
                     </div>
                   );
                 })}
@@ -793,6 +868,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               <EmailDragDropSpacerProperties
                 block={selectedBlock}
                 onStyleChange={(spacerStyle) => updateSpacerStyle(selectedBlock.id, spacerStyle)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
+            {sidebarTab === "content" && selectedBlock?.type === "image" ? (
+              <EmailDragDropImageProperties
+                block={selectedBlock}
+                onStyleChange={(imageStyle) => updateImageStyle(selectedBlock.id, imageStyle)}
                 onDelete={() => removeBlock(selectedBlock.id)}
                 onDuplicate={() => duplicateBlock(selectedBlock.id)}
                 onClose={() => setSelectedBlockId(null)}
