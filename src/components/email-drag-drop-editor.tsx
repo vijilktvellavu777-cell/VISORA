@@ -34,14 +34,20 @@ import {
   Wand2,
 } from "lucide-react";
 import { EmailDragDropBlockProperties } from "@/components/email-drag-drop-block-properties";
+import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-button-properties";
 import {
   type BlockType,
+  type ButtonBlockStyle,
   type CanvasBlock,
   type TextBlockStyle,
   blocksToHtml,
+  defaultButtonStyle,
   defaultContent,
   defaultStyleForType,
   getBlockStyle,
+  getBlockWrapperOptions,
+  getButtonStyle,
+  isPropertiesBlock,
   isTextBlock,
 } from "@/lib/email-drag-drop-blocks";
 
@@ -102,7 +108,7 @@ function previewTypographyStyle(block: CanvasBlock): React.CSSProperties {
 }
 
 function previewPaddingStyle(block: CanvasBlock): React.CSSProperties {
-  const options = getBlockStyle(block).blockOptions;
+  const options = getBlockWrapperOptions(block);
   if (options.paddingMoreOptions) {
     return {
       paddingTop: options.paddingTop,
@@ -125,7 +131,7 @@ function stopEditorEventPropagation(event: React.SyntheticEvent) {
 }
 
 function isBlockHiddenOnDevice(block: CanvasBlock, deviceView: DeviceView) {
-  const options = getBlockStyle(block).blockOptions;
+  const options = getBlockWrapperOptions(block);
   if (deviceView === "desktop" && options.hideOnDesktop) return true;
   if (deviceView === "mobile" && options.hideOnMobile) return true;
   return false;
@@ -210,16 +216,46 @@ function BlockPreview({
         </div>
       );
     }
-    case "button":
+    case "button": {
+      const buttonStyle = getButtonStyle(block);
+      const padding = previewPaddingStyle(block);
       return (
-        <div className="py-2">
+        <div style={{ ...padding, textAlign: buttonStyle.textAlign }}>
           <input
             value={block.content}
-            onChange={(e) => onChange(e.target.value)}
-            className="rounded-lg bg-primary px-6 py-3 text-center text-sm font-semibold text-white outline-none"
+            onChange={(event) => onChange(event.target.value)}
+            onClick={stopEditorEventPropagation}
+            onKeyDown={stopEditorEventPropagation}
+            style={{
+              fontFamily:
+                buttonStyle.fontFamily === "Global font"
+                  ? "Segoe UI, Helvetica, Arial, sans-serif"
+                  : buttonStyle.fontFamily,
+              fontWeight: buttonStyle.fontWeight === "bold" ? 700 : buttonStyle.fontWeight === "light" ? 300 : 400,
+              fontSize: buttonStyle.fontSize,
+              color: buttonStyle.textColor,
+              backgroundColor: buttonStyle.backgroundColor,
+              lineHeight: buttonStyle.lineHeight,
+              letterSpacing: buttonStyle.letterSpacing,
+              direction: buttonStyle.textDirection,
+              borderRadius: buttonStyle.borderRadius,
+              border:
+                buttonStyle.border.style === "none"
+                  ? "none"
+                  : `${buttonStyle.border.width}px ${buttonStyle.border.style} ${buttonStyle.border.color}`,
+              padding: buttonStyle.contentPadding.paddingMoreOptions
+                ? `${buttonStyle.contentPadding.paddingTop}px ${buttonStyle.contentPadding.paddingRight}px ${buttonStyle.contentPadding.paddingBottom}px ${buttonStyle.contentPadding.paddingLeft}px`
+                : `${buttonStyle.contentPadding.paddingAll}px`,
+              width: buttonStyle.autoWidth ? "auto" : "100%",
+              display: buttonStyle.autoWidth ? "inline-block" : "block",
+              textAlign: "center",
+              outline: "none",
+            }}
+            className="min-w-[120px]"
           />
         </div>
       );
+    }
     case "divider":
       return <hr className="my-4 border-border" />;
     case "spacer":
@@ -394,9 +430,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         type,
         content: defaultContent(type),
         ...(blockStyle ? { style: blockStyle } : {}),
+        ...(type === "button" ? { buttonStyle: defaultButtonStyle() } : {}),
       },
     ]);
-    if (isTextBlock(type)) {
+    if (isPropertiesBlock(type)) {
       setSelectedBlockId(id);
       setSidebarTab("content");
     }
@@ -408,6 +445,10 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
 
   const updateBlockStyle = useCallback((id: string, style: TextBlockStyle) => {
     setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, style } : block)));
+  }, []);
+
+  const updateButtonStyle = useCallback((id: string, buttonStyle: ButtonBlockStyle) => {
+    setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, buttonStyle } : block)));
   }, []);
 
   const removeBlock = useCallback((id: string) => {
@@ -424,6 +465,14 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
         ...source,
         id: crypto.randomUUID(),
         style: source.style ? { ...source.style, blockOptions: { ...source.style.blockOptions } } : source.style,
+        buttonStyle: source.buttonStyle
+          ? {
+              ...source.buttonStyle,
+              contentPadding: { ...source.buttonStyle.contentPadding },
+              border: { ...source.buttonStyle.border },
+              blockOptions: { ...source.buttonStyle.blockOptions },
+            }
+          : source.buttonStyle,
       };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
@@ -677,6 +726,16 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
+            {sidebarTab === "content" && selectedBlock?.type === "button" ? (
+              <EmailDragDropButtonProperties
+                block={selectedBlock}
+                onStyleChange={(buttonStyle) => updateButtonStyle(selectedBlock.id, buttonStyle)}
+                onDelete={() => removeBlock(selectedBlock.id)}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onClose={() => setSelectedBlockId(null)}
+              />
+            ) : null}
+
             {sidebarTab === "content" && selectedBlock && isTextBlock(selectedBlock.type) ? (
               <EmailDragDropBlockProperties
                 block={selectedBlock}
@@ -687,7 +746,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
               />
             ) : null}
 
-            {sidebarTab === "content" && (!selectedBlock || !isTextBlock(selectedBlock.type)) ? (
+            {sidebarTab === "content" && (!selectedBlock || !isPropertiesBlock(selectedBlock.type)) ? (
               <>
                 <CollapsibleSection title="BASIC BLOCKS">
                   <div className="grid grid-cols-3 gap-2">

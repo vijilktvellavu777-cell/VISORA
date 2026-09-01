@@ -19,16 +19,48 @@ export type LineHeightMode = "custom" | "auto";
 export type TitleLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 export type ListType = "unordered" | "ordered";
 export type ListStyleType = "default" | "disc" | "circle" | "square" | "decimal";
+export type ButtonLinkType = "web_page" | "email" | "phone" | "file";
+export type BorderStyle = "solid" | "dashed" | "dotted" | "none";
 
-export type BlockOptions = {
+export type PaddingOptions = {
   paddingAll: number;
   paddingTop: number;
   paddingRight: number;
   paddingBottom: number;
   paddingLeft: number;
   paddingMoreOptions: boolean;
+};
+
+export type BorderOptions = {
+  style: BorderStyle;
+  width: number;
+  color: string;
+  moreOptions: boolean;
+};
+
+export type BlockOptions = PaddingOptions & {
   hideOnDesktop: boolean;
   hideOnMobile: boolean;
+};
+
+export type ButtonBlockStyle = {
+  linkType: ButtonLinkType;
+  url: string;
+  autoWidth: boolean;
+  fontFamily: string;
+  fontWeight: FontWeight;
+  fontSize: number;
+  backgroundColor: string;
+  textColor: string;
+  textAlign: TextAlign;
+  lineHeight: number;
+  letterSpacing: number;
+  textDirection: TextDirection;
+  borderRadius: number;
+  contentPadding: PaddingOptions;
+  border: BorderOptions;
+  hoverEnabled: boolean;
+  blockOptions: BlockOptions;
 };
 
 export type TextBlockStyle = {
@@ -56,12 +88,28 @@ export type CanvasBlock = {
   type: BlockType;
   content: string;
   style?: TextBlockStyle;
+  buttonStyle?: ButtonBlockStyle;
 };
 
 export const TEXT_BLOCK_TYPES: BlockType[] = ["title", "paragraph", "list"];
 
 export function isTextBlock(type: BlockType) {
   return TEXT_BLOCK_TYPES.includes(type);
+}
+
+export function isPropertiesBlock(type: BlockType) {
+  return isTextBlock(type) || type === "button";
+}
+
+export function defaultPaddingOptions(all = 10): PaddingOptions {
+  return {
+    paddingAll: all,
+    paddingTop: all,
+    paddingRight: all,
+    paddingBottom: all,
+    paddingLeft: all,
+    paddingMoreOptions: false,
+  };
 }
 
 export function defaultBlockOptions(): BlockOptions {
@@ -131,6 +179,40 @@ export function defaultListStyle(): TextBlockStyle {
   };
 }
 
+export function defaultButtonStyle(): ButtonBlockStyle {
+  return {
+    linkType: "web_page",
+    url: "",
+    autoWidth: true,
+    fontFamily: "Global font",
+    fontWeight: "regular",
+    fontSize: 14,
+    backgroundColor: "#1871d8",
+    textColor: "#ffffff",
+    textAlign: "center",
+    lineHeight: 2,
+    letterSpacing: 0,
+    textDirection: "ltr",
+    borderRadius: 2,
+    contentPadding: {
+      paddingAll: 10,
+      paddingTop: 5,
+      paddingRight: 10,
+      paddingBottom: 5,
+      paddingLeft: 10,
+      paddingMoreOptions: true,
+    },
+    border: {
+      style: "solid",
+      width: 1,
+      color: "#1871d8",
+      moreOptions: false,
+    },
+    hoverEnabled: false,
+    blockOptions: defaultBlockOptions(),
+  };
+}
+
 export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined {
   if (type === "title") return defaultTitleStyle();
   if (type === "paragraph") return defaultParagraphStyle();
@@ -141,6 +223,16 @@ export function defaultStyleForType(type: BlockType): TextBlockStyle | undefined
 export function getBlockStyle(block: CanvasBlock): TextBlockStyle {
   if (block.style) return block.style;
   return defaultStyleForType(block.type) ?? defaultParagraphStyle();
+}
+
+export function getButtonStyle(block: CanvasBlock): ButtonBlockStyle {
+  if (block.buttonStyle) return block.buttonStyle;
+  return defaultButtonStyle();
+}
+
+export function getBlockWrapperOptions(block: CanvasBlock): BlockOptions {
+  if (block.type === "button") return getButtonStyle(block).blockOptions;
+  return getBlockStyle(block).blockOptions;
 }
 
 export function defaultContent(type: BlockType): string {
@@ -173,11 +265,15 @@ function fontFamilyValue(fontFamily: string) {
   return fontFamily;
 }
 
-function paddingCss(options: BlockOptions) {
+function paddingOptionsCss(options: PaddingOptions) {
   if (options.paddingMoreOptions) {
     return `padding:${options.paddingTop}px ${options.paddingRight}px ${options.paddingBottom}px ${options.paddingLeft}px;`;
   }
   return `padding:${options.paddingAll}px;`;
+}
+
+function paddingCss(options: BlockOptions) {
+  return paddingOptionsCss(options);
 }
 
 function typographyCss(style: TextBlockStyle) {
@@ -194,11 +290,36 @@ function typographyCss(style: TextBlockStyle) {
 }
 
 function wrapperClass(block: CanvasBlock) {
-  const options = getBlockStyle(block).blockOptions;
+  const options = getBlockWrapperOptions(block);
   const classes = ["visora-block"];
   if (options.hideOnDesktop) classes.push("hide-desktop");
   if (options.hideOnMobile) classes.push("hide-mobile");
   return classes.join(" ");
+}
+
+function buttonCss(style: ButtonBlockStyle) {
+  const border =
+    style.border.style === "none"
+      ? "border:none;"
+      : `border:${style.border.width}px ${style.border.style} ${style.border.color};`;
+  const width = style.autoWidth ? "display:inline-block;" : "display:block;width:100%;";
+  return [
+    width,
+    paddingOptionsCss(style.contentPadding),
+    `background:${style.backgroundColor}`,
+    `color:${style.textColor}`,
+    `font-family:${fontFamilyValue(style.fontFamily)}`,
+    `font-weight:${fontWeightValue(style.fontWeight)}`,
+    `font-size:${style.fontSize}px`,
+    `line-height:${style.lineHeight}`,
+    `letter-spacing:${style.letterSpacing}px`,
+    `direction:${style.textDirection}`,
+    `border-radius:${style.borderRadius}px`,
+    border,
+    "text-decoration:none",
+    "text-align:center",
+    "box-sizing:border-box",
+  ].join(";");
 }
 
 export function blockToHtml(block: CanvasBlock): string {
@@ -227,8 +348,12 @@ export function blockToHtml(block: CanvasBlock): string {
         )
         .join("")}</${tag}></div>`;
     }
-    case "button":
-      return `<p style="margin:0 0 16px;"><a href="#" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">${block.content}</a></p>`;
+    case "button": {
+      const buttonStyle = getButtonStyle(block);
+      const href = buttonStyle.url || "#";
+      const align = buttonStyle.textAlign;
+      return `<div class="${wrapperClass(block)}" style="${paddingCss(buttonStyle.blockOptions)};text-align:${align};"><a href="${href}" style="${buttonCss(buttonStyle)}">${block.content}</a></div>`;
+    }
     case "divider":
       return `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />`;
     case "spacer":
@@ -282,5 +407,6 @@ export function blockPropertiesTitle(type: BlockType) {
   if (type === "title") return "TITLE PROPERTIES";
   if (type === "paragraph") return "PARAGRAPH PROPERTIES";
   if (type === "list") return "LIST PROPERTIES";
+  if (type === "button") return "BUTTON PROPERTIES";
   return "BLOCK PROPERTIES";
 }
