@@ -14,6 +14,11 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
+import {
+  DEFAULT_PREVIEW_USER,
+  EmailDragDropPreviewPanel,
+  type PreviewUserProfile,
+} from "@/components/email-drag-drop-preview-panel";
 
 type Props = {
   campaignName: string;
@@ -66,6 +71,7 @@ export function EmailHtmlEditor({ campaignName, initialBody, onDone, onClose }: 
   const [code, setCode] = useState(initialBody?.trim() ? initialBody : DEFAULT_HTML);
   const [tab, setTab] = useState<EditorTab>("html");
   const [leftMode, setLeftMode] = useState<LeftMode>("edit");
+  const [previewProfile, setPreviewProfile] = useState<PreviewUserProfile>(DEFAULT_PREVIEW_USER);
   const [expandBlocks, setExpandBlocks] = useState(true);
   const [editorWidth, setEditorWidth] = useState(58);
   const [isResizing, setIsResizing] = useState(false);
@@ -80,7 +86,7 @@ export function EmailHtmlEditor({ campaignName, initialBody, onDone, onClose }: 
   );
 
   const previewHtml = useMemo(() => buildPreviewDocument(code, tab), [code, tab]);
-  const previewOnly = leftMode === "preview";
+  const previewMode = leftMode === "preview";
 
   const syncScroll = useCallback(() => {
     if (textareaRef.current && lineNumbersRef.current) {
@@ -167,6 +173,15 @@ export function EmailHtmlEditor({ campaignName, initialBody, onDone, onClose }: 
           })}
         </aside>
 
+        {previewMode ? (
+          <EmailDragDropPreviewPanel
+            blocks={[]}
+            profile={previewProfile}
+            onProfileChange={setPreviewProfile}
+            htmlOverride={previewHtml}
+          />
+        ) : (
+          <>
         <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-surface">
           <div className="px-4 py-4 text-[11px] font-semibold tracking-[0.2em] text-muted">CONTENT</div>
           <nav className="flex-1 space-y-1 px-2">
@@ -214,9 +229,7 @@ export function EmailHtmlEditor({ campaignName, initialBody, onDone, onClose }: 
         </aside>
 
         <div id="html-editor-workspace" className="flex min-h-0 min-w-0 flex-1 bg-background">
-          {!previewOnly ? (
-            <>
-              <section className="flex min-h-0 min-w-0 flex-col border-r border-border bg-surface" style={{ width: `${editorWidth}%` }}>
+          <section className="flex min-h-0 min-w-0 flex-col border-r border-border bg-surface" style={{ width: `${editorWidth}%` }}>
                 <div className="flex shrink-0 items-center justify-between border-b border-border px-4">
                   <div className="flex items-center gap-6">
                     {(
@@ -276,20 +289,18 @@ export function EmailHtmlEditor({ campaignName, initialBody, onDone, onClose }: 
                 </div>
               </section>
 
-              <button
-                type="button"
-                aria-label="Resize editor"
-                onMouseDown={() => setIsResizing(true)}
-                className={`flex w-2 shrink-0 cursor-col-resize items-center justify-center bg-border/60 hover:bg-primary/30 ${
-                  isResizing ? "bg-primary/40" : ""
-                }`}
-              >
-                <span className="h-10 w-1 rounded-full bg-muted" />
-              </button>
-            </>
-          ) : null}
+          <button
+            type="button"
+            aria-label="Resize editor"
+            onMouseDown={() => setIsResizing(true)}
+            className={`flex w-2 shrink-0 cursor-col-resize items-center justify-center bg-border/60 hover:bg-primary/30 ${
+              isResizing ? "bg-primary/40" : ""
+            }`}
+          >
+            <span className="h-10 w-1 rounded-full bg-muted" />
+          </button>
 
-          <section className={`flex min-h-0 min-w-0 flex-1 flex-col bg-surface ${previewOnly ? "w-full" : ""}`}>
+          <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
             <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold text-foreground">Preview</h2>
               <label className="flex items-center gap-2 text-sm text-muted">
@@ -337,6 +348,8 @@ export function EmailHtmlEditor({ campaignName, initialBody, onDone, onClose }: 
             </div>
           </section>
         </div>
+          </>
+        )}
       </div>
 
       <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-white/10 bg-[#1a1d24] px-6 py-3">
