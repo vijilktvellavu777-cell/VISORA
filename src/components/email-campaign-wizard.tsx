@@ -31,6 +31,7 @@ import {
   serializeCampaignTargeting,
   type CampaignTargeting,
 } from "@/lib/campaign-targeting";
+import { EmailComposeSummary } from "@/components/email-compose-summary";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
 import { EmailTemplatesPicker, type EmailTemplateItem } from "@/components/email-templates-picker";
@@ -164,6 +165,8 @@ export function EmailCampaignWizard({
   const [editingCampaignDetails, setEditingCampaignDetails] = useState(false);
   const [editingSendingInfo, setEditingSendingInfo] = useState(true);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
+  const [showEmailSummary, setShowEmailSummary] = useState(false);
+  const [summarySendingInfoEditing, setSummarySendingInfoEditing] = useState(false);
   const [dragDropEditorOpen, setDragDropEditorOpen] = useState(false);
   const [htmlEditorOpen, setHtmlEditorOpen] = useState(false);
   const [templatesPickerOpen, setTemplatesPickerOpen] = useState(false);
@@ -196,6 +199,10 @@ export function EmailCampaignWizard({
         setCampaign(draft);
         setTargeting(targetingFromCampaign(draft));
         if (draft.description) setShowDescription(true);
+        if (draft.body.trim()) {
+          setShowEmailSummary(true);
+          setEditorMode("drag-drop");
+        }
         if (draft.scheduledAt) {
           setScheduleMode("scheduled");
           const dt = new Date(draft.scheduledAt);
@@ -324,6 +331,21 @@ export function EmailCampaignWizard({
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleChooseNewTemplate() {
+    setShowEmailSummary(false);
+    setEditorMode(null);
+    setSummarySendingInfoEditing(false);
+  }
+
+  function handleEmailEditorDone(html: string, mode: "drag-drop" | "html") {
+    setCampaign((prev) => (prev ? { ...prev, body: html } : prev));
+    setEditorMode(mode);
+    setShowEmailSummary(true);
+    setSummarySendingInfoEditing(false);
+    if (mode === "drag-drop") setDragDropEditorOpen(false);
+    if (mode === "html") setHtmlEditorOpen(false);
+  }
+
   async function selectEditorMode(mode: "drag-drop" | "html" | "templates") {
     setEditorMode(mode);
     if (mode === "drag-drop") {
@@ -361,6 +383,9 @@ export function EmailCampaignWizard({
         : prev,
     );
     setSelectedTemplateName(template.name);
+    setEditorMode("templates");
+    setShowEmailSummary(true);
+    setSummarySendingInfoEditing(false);
   }
 
   function handleUploadFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -639,6 +664,7 @@ export function EmailCampaignWizard({
               </div>
             </Card>
 
+            {!showEmailSummary ? (
             <Card className="p-6">
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-lg font-semibold text-foreground">Sending info</h2>
@@ -711,7 +737,38 @@ export function EmailCampaignWizard({
                 </dl>
               )}
             </Card>
+            ) : null}
 
+            {showEmailSummary ? (
+            <Card className="p-6">
+              <EmailComposeSummary
+                subject={campaign.subject ?? ""}
+                fromAddress={campaign.fromAddress ?? ""}
+                preheader={campaign.preheader ?? ""}
+                bodyHtml={campaign.body}
+                editorLabel={
+                  editorMode === "html"
+                    ? "HTML Code Editor"
+                    : editorMode === "templates"
+                      ? "Template"
+                      : "Drag-And-Drop Editor"
+                }
+                sendingInfoEditing={summarySendingInfoEditing}
+                onSendingInfoEditingChange={setSummarySendingInfoEditing}
+                onSubjectChange={(value) => setCampaign({ ...campaign, subject: value })}
+                onFromAddressChange={(value) => setCampaign({ ...campaign, fromAddress: value })}
+                onPreheaderChange={(value) => setCampaign({ ...campaign, preheader: value })}
+                onEditMessage={() => {
+                  if (editorMode === "html") setHtmlEditorOpen(true);
+                  else setDragDropEditorOpen(true);
+                }}
+                onChooseNewTemplate={handleChooseNewTemplate}
+                subjectPlaceholder={SUBJECT_PLACEHOLDER}
+                fromPlaceholder={FROM_ADDRESS_PLACEHOLDER}
+                preheaderPlaceholder={PREHEADER_PLACEHOLDER}
+              />
+            </Card>
+            ) : (
             <Card className="p-6">
               <div className="text-center">
                 <h2 className="text-xl font-semibold text-foreground">Create new email</h2>
@@ -827,6 +884,7 @@ export function EmailCampaignWizard({
                 </div>
               ) : null}
             </Card>
+            )}
           </div>
         ) : null}
 
@@ -988,10 +1046,7 @@ export function EmailCampaignWizard({
         <EmailHtmlEditor
           campaignName={campaign.name}
           initialBody={campaign.body}
-          onDone={(html) => {
-            setCampaign((prev) => (prev ? { ...prev, body: html } : prev));
-            setHtmlEditorOpen(false);
-          }}
+          onDone={(html) => handleEmailEditorDone(html, "html")}
           onClose={() => setHtmlEditorOpen(false)}
         />
       ) : null}
@@ -1000,10 +1055,7 @@ export function EmailCampaignWizard({
         <EmailDragDropEditor
           campaignName={campaign.name}
           initialBody={campaign.body}
-          onDone={(html) => {
-            setCampaign((prev) => (prev ? { ...prev, body: html } : prev));
-            setDragDropEditorOpen(false);
-          }}
+          onDone={(html) => handleEmailEditorDone(html, "drag-drop")}
           onClose={() => setDragDropEditorOpen(false)}
         />
       ) : null}

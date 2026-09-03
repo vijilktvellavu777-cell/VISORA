@@ -241,6 +241,7 @@ type Props = {
   blocks: CanvasBlock[];
   profile: PreviewUserProfile;
   onProfileChange: (profile: PreviewUserProfile) => void;
+  htmlOverride?: string;
 };
 
 function applyPersonalization(html: string, profile: PreviewUserProfile) {
@@ -390,6 +391,7 @@ function PreviewMainArea({
   onPreviewViewChange,
   darkMode,
   onDarkModeChange,
+  htmlOverride,
 }: {
   blocks: CanvasBlock[];
   profile: PreviewUserProfile;
@@ -397,8 +399,12 @@ function PreviewMainArea({
   onPreviewViewChange: (view: PreviewView) => void;
   darkMode: boolean;
   onDarkModeChange: (value: boolean) => void;
+  htmlOverride?: string;
 }) {
-  const personalizedHtml = useMemo(() => applyPersonalization(blocksToHtml(blocks), profile), [blocks, profile]);
+  const personalizedHtml = useMemo(() => {
+    const html = htmlOverride ?? blocksToHtml(blocks);
+    return applyPersonalization(html, profile);
+  }, [blocks, profile, htmlOverride]);
   const plainText = useMemo(() => htmlToPlainText(personalizedHtml), [personalizedHtml]);
 
   function handleCopyPreviewLink() {
@@ -472,7 +478,7 @@ function PreviewMainArea({
           <div className="flex-1 overflow-auto p-6">
             {previewView === "plaintext" ? (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-inherit">{plainText}</pre>
-            ) : blocks.length === 0 ? (
+            ) : blocks.length === 0 && !htmlOverride ? (
               <div className="flex h-full min-h-[420px] items-center justify-center text-sm text-muted">
                 Add content blocks in the editor to preview your message.
               </div>
@@ -494,7 +500,7 @@ function PreviewMainArea({
   );
 }
 
-export function EmailDragDropPreviewPanel({ blocks, profile, onProfileChange }: Props) {
+export function EmailDragDropPreviewPanel({ blocks, profile, onProfileChange, htmlOverride }: Props) {
   const [activeTab, setActiveTab] = useState<PreviewTab>("preview_user");
   const [previewView, setPreviewView] = useState<PreviewView>("desktop");
   const [darkMode, setDarkMode] = useState(false);
@@ -517,6 +523,7 @@ export function EmailDragDropPreviewPanel({ blocks, profile, onProfileChange }: 
         onPreviewViewChange={setPreviewView}
         darkMode={darkMode}
         onDarkModeChange={setDarkMode}
+        htmlOverride={htmlOverride}
       />
     </>
   );
