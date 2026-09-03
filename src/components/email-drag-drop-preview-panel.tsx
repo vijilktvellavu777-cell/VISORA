@@ -74,6 +74,169 @@ const PERSONALIZATION_KEYS: Record<keyof PreviewUserProfile, string[]> = {
 type PreviewTab = "preview_user" | "test_send";
 type PreviewView = "desktop" | "mobile" | "plaintext";
 
+const CONTENT_TEST_GROUPS = [
+  { id: "marketing", label: "Marketing Team" },
+  { id: "qa", label: "QA Testers" },
+  { id: "internal", label: "Internal Review" },
+  { id: "stakeholders", label: "Stakeholders" },
+];
+
+type TestSendState = {
+  selectedGroups: string[];
+  individualEmails: string;
+  overrideWithPreviewUser: boolean;
+};
+
+const DEFAULT_TEST_SEND_STATE: TestSendState = {
+  selectedGroups: [],
+  individualEmails: "",
+  overrideWithPreviewUser: false,
+};
+
+function InfoIcon({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-bold leading-none ${className ?? "border-muted text-muted"}`}
+      aria-hidden="true"
+    >
+      i
+    </span>
+  );
+}
+
+function TestSendPanel({
+  testSend,
+  onTestSendChange,
+}: {
+  testSend: TestSendState;
+  onTestSendChange: (state: TestSendState) => void;
+}) {
+  const [sendStatus, setSendStatus] = useState<"idle" | "sent">("idle");
+
+  const hasRecipients =
+    testSend.selectedGroups.length > 0 || testSend.individualEmails.trim().length > 0;
+
+  const availableGroups = CONTENT_TEST_GROUPS.filter(
+    (group) => !testSend.selectedGroups.includes(group.id),
+  );
+
+  function update(partial: Partial<TestSendState>) {
+    onTestSendChange({ ...testSend, ...partial });
+    setSendStatus("idle");
+  }
+
+  function addGroup(groupId: string) {
+    if (!groupId || testSend.selectedGroups.includes(groupId)) return;
+    update({ selectedGroups: [...testSend.selectedGroups, groupId] });
+  }
+
+  function removeGroup(groupId: string) {
+    update({ selectedGroups: testSend.selectedGroups.filter((id) => id !== groupId) });
+  }
+
+  function handleSendTest() {
+    if (!hasRecipients) return;
+    setSendStatus("sent");
+  }
+
+  return (
+    <div className="flex h-full flex-col p-4">
+      <h3 className="text-sm font-semibold text-foreground">Test Recipients</h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        Select at least one Content Test Group or individual user to receive this test message. Messages will be
+        customized with recipients&apos; attributes by default.
+      </p>
+
+      <div className="mt-6">
+        <label className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+          Add content test group
+          <InfoIcon />
+        </label>
+        <select
+          value=""
+          onChange={(event) => addGroup(event.target.value)}
+          className="mt-2 w-full appearance-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm italic text-muted outline-none focus:border-primary"
+        >
+          <option value="" disabled>
+            *Select Content Test Groups*
+          </option>
+          {availableGroups.map((group) => (
+            <option key={group.id} value={group.id} className="not-italic text-foreground">
+              {group.label}
+            </option>
+          ))}
+        </select>
+        {testSend.selectedGroups.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {testSend.selectedGroups.map((groupId) => {
+              const group = CONTENT_TEST_GROUPS.find((item) => item.id === groupId);
+              if (!group) return null;
+              return (
+                <span
+                  key={groupId}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                >
+                  {group.label}
+                  <button
+                    type="button"
+                    onClick={() => removeGroup(groupId)}
+                    className="text-primary/70 hover:text-primary"
+                    aria-label={`Remove ${group.label}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-6">
+        <label className="text-sm font-medium text-foreground">Add individual users</label>
+        <input
+          type="text"
+          value={testSend.individualEmails}
+          onChange={(event) => update({ individualEmails: event.target.value })}
+          placeholder="Add emails"
+          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none placeholder:text-muted focus:border-primary"
+        />
+      </div>
+
+      <label className="mt-6 flex items-start gap-2 text-sm text-foreground">
+        <input
+          type="checkbox"
+          checked={testSend.overrideWithPreviewUser}
+          onChange={(event) => update({ overrideWithPreviewUser: event.target.checked })}
+          className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+        />
+        <span className="inline-flex items-start gap-1.5 leading-relaxed">
+          Override recipients&apos; attributes with current preview user&apos;s attributes
+          <InfoIcon className="border-primary text-primary" />
+        </span>
+      </label>
+
+      <div className="mt-auto pt-8">
+        {sendStatus === "sent" ? (
+          <p className="mb-3 text-sm text-primary">Test message sent successfully.</p>
+        ) : null}
+        <button
+          type="button"
+          onClick={handleSendTest}
+          disabled={!hasRecipients}
+          className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+            hasRecipients
+              ? "bg-primary text-white hover:bg-primary/90"
+              : "cursor-not-allowed bg-[#d1d5db] text-white"
+          }`}
+        >
+          Send Test
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   blocks: CanvasBlock[];
   profile: PreviewUserProfile;
@@ -119,11 +282,15 @@ function PreviewConfigSidebar({
   onProfileChange,
   activeTab,
   onTabChange,
+  testSend,
+  onTestSendChange,
 }: {
   profile: PreviewUserProfile;
   onProfileChange: (profile: PreviewUserProfile) => void;
   activeTab: PreviewTab;
   onTabChange: (tab: PreviewTab) => void;
+  testSend: TestSendState;
+  onTestSendChange: (state: TestSendState) => void;
 }) {
   const [profileOpen, setProfileOpen] = useState(true);
 
@@ -209,9 +376,7 @@ function PreviewConfigSidebar({
             </div>
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted">
-            Test send configuration will be available here.
-          </div>
+          <TestSendPanel testSend={testSend} onTestSendChange={onTestSendChange} />
         )}
       </div>
     </aside>
@@ -333,6 +498,7 @@ export function EmailDragDropPreviewPanel({ blocks, profile, onProfileChange }: 
   const [activeTab, setActiveTab] = useState<PreviewTab>("preview_user");
   const [previewView, setPreviewView] = useState<PreviewView>("desktop");
   const [darkMode, setDarkMode] = useState(false);
+  const [testSend, setTestSend] = useState<TestSendState>(DEFAULT_TEST_SEND_STATE);
 
   return (
     <>
@@ -341,6 +507,8 @@ export function EmailDragDropPreviewPanel({ blocks, profile, onProfileChange }: 
         onProfileChange={onProfileChange}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        testSend={testSend}
+        onTestSendChange={setTestSend}
       />
       <PreviewMainArea
         blocks={blocks}
