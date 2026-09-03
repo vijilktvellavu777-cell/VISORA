@@ -23,6 +23,7 @@ export function channelLabel(channel: string) {
       push: "Push",
       sms: "SMS",
       in_app: "In-app",
+      whatsapp: "WhatsApp",
       content_card: "Content card",
     }[channel] ?? channel
   );

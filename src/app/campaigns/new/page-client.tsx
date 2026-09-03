@@ -22,5 +22,9 @@ export default function NewCampaignRouter() {
     return <ChannelCampaignWizard channel="in_app" fresh={fresh} />;
   }
 
+  if (type === "whatsapp") {
+    return <ChannelCampaignWizard channel="whatsapp" fresh={fresh} />;
+  }
+
   return <NewCampaignPage />;
 }

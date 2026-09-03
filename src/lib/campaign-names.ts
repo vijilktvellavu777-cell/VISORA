@@ -114,17 +114,21 @@ export const PUSH_WIZARD_DRAFT_KEY = "visora-push-wizard-draft-id";
 export const PUSH_WIZARD_CREATING_KEY = "visora-push-wizard-creating";
 export const IN_APP_WIZARD_DRAFT_KEY = "visora-in-app-wizard-draft-id";
 export const IN_APP_WIZARD_CREATING_KEY = "visora-in-app-wizard-creating";
+export const WHATSAPP_WIZARD_DRAFT_KEY = "visora-whatsapp-wizard-draft-id";
+export const WHATSAPP_WIZARD_CREATING_KEY = "visora-whatsapp-wizard-creating";
 
-type WizardChannel = "push" | "in_app";
+type WizardChannel = "push" | "in_app" | "whatsapp";
 
 const WIZARD_DRAFT_KEYS: Record<WizardChannel, string> = {
   push: PUSH_WIZARD_DRAFT_KEY,
   in_app: IN_APP_WIZARD_DRAFT_KEY,
+  whatsapp: WHATSAPP_WIZARD_DRAFT_KEY,
 };
 
 const WIZARD_CREATING_KEYS: Record<WizardChannel, string> = {
   push: PUSH_WIZARD_CREATING_KEY,
   in_app: IN_APP_WIZARD_CREATING_KEY,
+  whatsapp: WHATSAPP_WIZARD_CREATING_KEY,
 };
 
 export function clearChannelWizardDraftSession(channel: WizardChannel) {

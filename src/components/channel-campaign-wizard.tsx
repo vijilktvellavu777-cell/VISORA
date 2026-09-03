@@ -17,24 +17,31 @@ import { CampaignReviewSummaryStep } from "@/components/campaign-review-summary-
 import { CampaignScheduleStep } from "@/components/campaign-schedule-step";
 import { PushPlatformStep } from "@/components/push-platform-step";
 import { InAppMessageComposer } from "@/components/in-app-message-composer";
+import { WhatsAppMessageComposer } from "@/components/whatsapp-message-composer";
 import {
   clearChannelWizardDraftSession,
   IN_APP_WIZARD_CREATING_KEY,
   IN_APP_WIZARD_DRAFT_KEY,
   PUSH_WIZARD_CREATING_KEY,
   PUSH_WIZARD_DRAFT_KEY,
+  WHATSAPP_WIZARD_CREATING_KEY,
+  WHATSAPP_WIZARD_DRAFT_KEY,
   waitForChannelWizardDraftId,
 } from "@/lib/campaign-names";
 import { CAMPAIGN_STATUS_CREATING, CAMPAIGN_STATUS_DRAFT, isWizardEditableStatus } from "@/lib/campaign-status";
 import {
   defaultInAppMessage,
   defaultPushMessage,
+  defaultWhatsAppMessage,
   parseInAppPayload,
   parsePushPayload,
+  parseWhatsAppPayload,
   serializeInAppPayload,
   serializePushPayload,
+  serializeWhatsAppPayload,
   type InAppMessagePayload,
   type PushMessagePayload,
+  type WhatsAppMessagePayload,
 } from "@/lib/campaign-message";
 import {
   emptyTargeting,
@@ -50,7 +57,7 @@ import {
 } from "@/lib/campaign-schedule";
 
 type SegmentOption = { id: string; name: string };
-type Channel = "push" | "in_app";
+type Channel = "push" | "in_app" | "whatsapp";
 
 type CampaignDraft = {
   id: string;
@@ -92,6 +99,12 @@ const CHANNEL_CONFIG: Record<
     draftKey: IN_APP_WIZARD_DRAFT_KEY,
     creatingKey: IN_APP_WIZARD_CREATING_KEY,
     defaultName: "New In-app Campaign",
+  },
+  whatsapp: {
+    label: "WhatsApp",
+    draftKey: WHATSAPP_WIZARD_DRAFT_KEY,
+    creatingKey: WHATSAPP_WIZARD_CREATING_KEY,
+    defaultName: "New WhatsApp Campaign",
   },
 };
 
@@ -163,6 +176,7 @@ export function ChannelCampaignWizard({
   const [targeting, setTargeting] = useState<CampaignTargeting>(emptyTargeting());
   const [pushMessage, setPushMessage] = useState<PushMessagePayload>(defaultPushMessage());
   const [inAppMessage, setInAppMessage] = useState<InAppMessagePayload>(defaultInAppMessage());
+  const [whatsAppMessage, setWhatsAppMessage] = useState<WhatsAppMessagePayload>(defaultWhatsAppMessage());
 
   useEffect(() => {
     let cancelled = false;
@@ -182,8 +196,10 @@ export function ChannelCampaignWizard({
       setSchedule(campaignScheduleFromRecord(draft.scheduleConfig, draft.scheduledAt));
       if (channel === "push") {
         setPushMessage(parsePushPayload(draft.subject, draft.body));
-      } else {
+      } else if (channel === "in_app") {
         setInAppMessage(parseInAppPayload(draft.subject, draft.body));
+      } else {
+        setWhatsAppMessage(parseWhatsAppPayload(draft.subject, draft.body));
       }
     }
 
@@ -240,7 +256,12 @@ export function ChannelCampaignWizard({
             name: defaultCampaignName(config.defaultName),
             channel,
             subject: "",
-            body: channel === "push" ? JSON.stringify({ message: "", platforms: ["ios", "android", "web"] }) : "",
+            body:
+              channel === "push"
+                ? JSON.stringify({ message: "", platforms: ["ios", "android", "web"] })
+                : channel === "whatsapp"
+                  ? JSON.stringify({ message: "" })
+                  : "",
             status: CAMPAIGN_STATUS_CREATING,
             autoUniqueName: true,
           }),
@@ -315,6 +336,9 @@ export function ChannelCampaignWizard({
   function composePayload() {
     if (channel === "push") {
       return serializePushPayload(pushMessage);
+    }
+    if (channel === "whatsapp") {
+      return serializeWhatsAppPayload(whatsAppMessage);
     }
     return serializeInAppPayload(inAppMessage);
   }
@@ -459,8 +483,10 @@ export function ChannelCampaignWizard({
             />
             {channel === "push" ? (
               <PushPlatformStep value={pushMessage} onChange={setPushMessage} />
-            ) : (
+            ) : channel === "in_app" ? (
               <InAppMessageComposer value={inAppMessage} onChange={setInAppMessage} />
+            ) : (
+              <WhatsAppMessageComposer value={whatsAppMessage} onChange={setWhatsAppMessage} />
             )}
           </div>
         ) : null}
@@ -477,6 +503,7 @@ export function ChannelCampaignWizard({
             segments={segments}
             pushMessage={pushMessage}
             inAppMessage={inAppMessage}
+            whatsAppMessage={whatsAppMessage}
             onEditStep={goToStep}
           />
         ) : null}
