@@ -5,12 +5,16 @@ import {
   DuplicateCampaignNameError,
   createCampaignRecord,
 } from "@/lib/campaign-names";
+import { CAMPAIGN_STATUS_CREATING } from "@/lib/campaign-status";
 import { getDefaultWorkspace } from "@/lib/workspace";
 
 export async function GET() {
   const workspace = await getDefaultWorkspace();
   const campaigns = await prisma.campaign.findMany({
-    where: { workspaceId: workspace.id },
+    where: {
+      workspaceId: workspace.id,
+      status: { not: CAMPAIGN_STATUS_CREATING },
+    },
     include: { segment: true, _count: { select: { sends: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -28,7 +32,7 @@ export async function POST(request: NextRequest) {
       {
         description: body.description ?? null,
         channel: body.channel,
-        status: "draft",
+        status: typeof body.status === "string" ? body.status : CAMPAIGN_STATUS_CREATING,
         subject: body.subject ?? null,
         fromAddress: body.fromAddress ?? "VISORA <noreply@visora.app>",
         body: body.body ?? "",

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { isWizardEditableStatus } from "@/lib/campaign-status";
 import { ChannelCampaignWizard } from "@/components/channel-campaign-wizard";
 import { EmailCampaignWizard } from "@/components/email-campaign-wizard";
 
@@ -10,7 +11,7 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
   const campaign = await prisma.campaign.findUnique({ where: { id } });
 
   if (!campaign) notFound();
-  if (campaign.status !== "draft") redirect(`/campaigns/${id}`);
+  if (!isWizardEditableStatus(campaign.status)) redirect(`/campaigns/${id}`);
 
   if (campaign.channel === "email") {
     return <EmailCampaignWizard campaignId={id} />;
