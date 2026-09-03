@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, Card, Field, PageHeader, inputClass } from "@/components/ui";
+import { CAMPAIGN_STATUS_DRAFT } from "@/lib/campaign-status";
 import { channelLabel } from "@/lib/messaging";
 
 type SegmentOption = { id: string; name: string };
@@ -37,7 +38,15 @@ export default function NewCampaignPage() {
     const response = await fetch("/api/campaigns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, channel, segmentId, subject, body }),
+      body: JSON.stringify({
+        name,
+        description,
+        channel,
+        segmentId,
+        subject,
+        body,
+        status: CAMPAIGN_STATUS_DRAFT,
+      }),
     });
     if (!response.ok) {
       const json = await response.json().catch(() => ({}));
