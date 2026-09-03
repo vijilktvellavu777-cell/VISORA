@@ -9,8 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Code,
-  Copy,
-  Info,
   LayoutGrid,
   MousePointerClick,
   Pencil,
@@ -18,6 +16,7 @@ import {
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
 import { CampaignTargetingStep } from "@/components/campaign-targeting-step";
+import { CampaignDetailsCard } from "@/components/campaign-details-card";
 import { CampaignReviewSummaryStep } from "@/components/campaign-review-summary-step";
 import {
   clearEmailWizardDraftSession,
@@ -40,7 +39,6 @@ import { EmailComposeSummary } from "@/components/email-compose-summary";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
 import { EmailTemplatesPicker, type EmailTemplateItem } from "@/components/email-templates-picker";
-import { TagsPicker } from "@/components/tags-picker";
 import { parseTags } from "@/lib/tags";
 
 type SegmentOption = { id: string; name: string };
@@ -167,7 +165,6 @@ export function EmailCampaignWizard({
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [copied, setCopied] = useState(false);
-  const [editingCampaignDetails, setEditingCampaignDetails] = useState(false);
   const [editingSendingInfo, setEditingSendingInfo] = useState(true);
   const [editorMode, setEditorMode] = useState<"drag-drop" | "html" | "templates" | null>(null);
   const [showEmailSummary, setShowEmailSummary] = useState(false);
@@ -553,122 +550,24 @@ export function EmailCampaignWizard({
       <div className="mx-auto max-w-4xl px-8 py-8 pb-28">
         {step === 1 ? (
           <div className="space-y-6">
-            <Card className="p-6">
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-lg font-semibold text-foreground">Campaign Details</h2>
-                <button
-                  type="button"
-                  onClick={() => setEditingCampaignDetails((value) => !value)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-foreground"
-                  aria-label="Edit campaign details"
-                >
-                  <Pencil size={16} />
-                </button>
-              </div>
-
-              {editingCampaignDetails ? (
-                <div className="mt-4 space-y-4">
-                  <Field label="Campaign Name">
-                    <input
-                      className={`${inputClass} ${nameError ? "border-error focus:border-error" : ""}`}
-                      value={campaign.name}
-                      onChange={(e) => {
-                        setCampaign({ ...campaign, name: e.target.value });
-                        if (nameError) setNameError(null);
-                      }}
-                    />
-                    {nameError ? <p className="mt-1.5 text-sm text-error">{nameError}</p> : null}
-                  </Field>
-                  {showDescription ? (
-                    <Field label="Description">
-                      <textarea
-                        className={`${inputClass} min-h-20`}
-                        value={campaign.description ?? ""}
-                        onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
-                      />
-                    </Field>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowDescription(true)}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      + Add description
-                    </button>
-                  )}
-                  <TagsPicker
-                    value={campaign.tags}
-                    onChange={(tags) => {
-                      setCampaign({ ...campaign, tags });
-                      void saveCampaign({ tags });
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setEditingCampaignDetails(false)}
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    Done editing
-                  </button>
-                </div>
-              ) : (
-                <dl className="mt-4 space-y-3 text-sm">
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Campaign Name</dt>
-                    <dd className="mt-1 text-foreground">{campaign.name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Description</dt>
-                    <dd className={`mt-1 ${campaign.description?.trim() ? "text-foreground" : "text-muted"}`}>
-                      {campaign.description?.trim() || "No description"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">Tags</dt>
-                    {campaign.tags.length > 0 ? (
-                      <dd className="mt-2 flex flex-wrap gap-2">
-                        {campaign.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </dd>
-                    ) : (
-                      <dd className="mt-1 text-muted">No tags</dd>
-                    )}
-                  </div>
-                </dl>
-              )}
-
-              <hr className="my-5 border-border" />
-
-              <div>
-                <div className="text-sm font-semibold text-foreground">Campaign ID</div>
-                <div className="mt-2 flex overflow-hidden rounded-lg border border-border">
-                  <input
-                    readOnly
-                    value={campaign.id}
-                    className="min-w-0 flex-1 border-0 bg-surface px-3 py-2 text-sm text-muted outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={copyId}
-                    className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-                  >
-                    <Copy size={14} />
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-                </div>
-                <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
-                  <Info size={14} className="mt-0.5 shrink-0 text-primary" />
-                  This is the unique key for this Campaign. Use it to identify which Campaign to send in a request to
-                  the Campaign Trigger API.
-                </p>
-              </div>
-            </Card>
+            <CampaignDetailsCard
+              campaign={campaign}
+              showDescription={showDescription}
+              nameError={nameError}
+              copied={copied}
+              tags={campaign.tags}
+              onNameChange={(name) => {
+                setCampaign({ ...campaign, name });
+                if (nameError) setNameError(null);
+              }}
+              onDescriptionChange={(description) => setCampaign({ ...campaign, description })}
+              onShowDescription={() => setShowDescription(true)}
+              onCopyId={copyId}
+              onTagsChange={(tags) => {
+                setCampaign({ ...campaign, tags });
+                void saveCampaign({ tags });
+              }}
+            />
 
             {!showEmailSummary ? (
             <Card className="p-6">
