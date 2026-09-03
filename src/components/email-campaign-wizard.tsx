@@ -26,6 +26,11 @@ import {
   waitForEmailWizardDraftId,
 } from "@/lib/campaign-names";
 import {
+  CAMPAIGN_STATUS_CREATING,
+  CAMPAIGN_STATUS_DRAFT,
+  isWizardEditableStatus,
+} from "@/lib/campaign-status";
+import {
   emptyTargeting,
   parseCampaignTargeting,
   serializeCampaignTargeting,
@@ -186,7 +191,7 @@ export function EmailCampaignWizard({
       const response = await fetch(`/api/campaigns/${draftId}`);
       if (!response.ok) return null;
       const draft = await response.json();
-      if (draft.status !== "draft" || draft.channel !== "email") return null;
+      if (!isWizardEditableStatus(draft.status) || draft.channel !== "email") return null;
       return mapCampaignDraft(draft);
     }
 
@@ -261,6 +266,7 @@ export function EmailCampaignWizard({
             subject: "",
             fromAddress: DEFAULT_FROM,
             body: "",
+            status: CAMPAIGN_STATUS_CREATING,
             autoUniqueName: true,
           }),
         });
@@ -469,7 +475,7 @@ export function EmailCampaignWizard({
       segmentId: targeting.segmentIds[0] ?? null,
       targetingRules: serializeCampaignTargeting(targeting),
       tags: campaign.tags,
-      status: "draft",
+      status: CAMPAIGN_STATUS_DRAFT,
     });
     if (ok) {
       setSaveNotice(true);

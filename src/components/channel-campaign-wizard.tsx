@@ -24,6 +24,7 @@ import {
   PUSH_WIZARD_DRAFT_KEY,
   waitForChannelWizardDraftId,
 } from "@/lib/campaign-names";
+import { CAMPAIGN_STATUS_CREATING, CAMPAIGN_STATUS_DRAFT, isWizardEditableStatus } from "@/lib/campaign-status";
 import {
   defaultInAppMessage,
   defaultPushMessage,
@@ -162,7 +163,7 @@ export function ChannelCampaignWizard({
       const response = await fetch(`/api/campaigns/${draftId}`);
       if (!response.ok) return null;
       const draft = await response.json();
-      if (draft.status !== "draft" || draft.channel !== channel) return null;
+      if (!isWizardEditableStatus(draft.status) || draft.channel !== channel) return null;
       return mapCampaignDraft(draft);
     }
 
@@ -237,6 +238,7 @@ export function ChannelCampaignWizard({
             channel,
             subject: "",
             body: channel === "push" ? JSON.stringify({ message: "", platforms: ["ios", "android", "web"] }) : "",
+            status: CAMPAIGN_STATUS_CREATING,
             autoUniqueName: true,
           }),
         });
@@ -362,7 +364,7 @@ export function ChannelCampaignWizard({
       body: messagePayload.body,
       segmentId: targeting.segmentIds[0] ?? null,
       targetingRules: serializeCampaignTargeting(targeting),
-      status: "draft",
+      status: CAMPAIGN_STATUS_DRAFT,
     });
     if (ok) {
       setSaveNotice(true);
