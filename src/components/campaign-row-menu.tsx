@@ -27,7 +27,7 @@ export function CampaignRowMenu({ campaignId, campaignName, status, channel }: P
   }, []);
 
   const editHref =
-    status === "draft" && ["email", "push", "in_app"].includes(channel ?? "")
+    status === "draft" && ["email", "push", "in_app", "whatsapp"].includes(channel ?? "")
       ? `/campaigns/${campaignId}/edit`
       : `/campaigns/${campaignId}`;
 

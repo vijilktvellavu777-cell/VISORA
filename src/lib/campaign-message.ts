@@ -23,6 +23,10 @@ export type InAppMessagePayload = {
   buttonUrl: string;
 };
 
+export type WhatsAppMessagePayload = {
+  message: string;
+};
+
 const DEFAULT_PUSH_PLATFORMS: PushPlatform[] = ["ios", "android", "web"];
 
 export function defaultPushMessage(): PushMessagePayload {
@@ -39,6 +43,12 @@ export function defaultInAppMessage(): InAppMessagePayload {
     message: "",
     buttonText: "",
     buttonUrl: "",
+  };
+}
+
+export function defaultWhatsAppMessage(): WhatsAppMessagePayload {
+  return {
+    message: "",
   };
 }
 
@@ -117,6 +127,28 @@ export function serializeInAppPayload(payload: InAppMessagePayload) {
       buttonText: payload.buttonText,
       buttonUrl: payload.buttonUrl,
     }),
+  };
+}
+
+export function parseWhatsAppPayload(_subject: string | null, body: string): WhatsAppMessagePayload {
+  if (!body.trim()) return defaultWhatsAppMessage();
+
+  try {
+    const parsed = JSON.parse(body) as Partial<WhatsAppMessagePayload>;
+    if (parsed && typeof parsed === "object" && typeof parsed.message === "string") {
+      return { message: parsed.message };
+    }
+  } catch {
+    // Plain text body fallback
+  }
+
+  return { message: body };
+}
+
+export function serializeWhatsAppPayload(payload: WhatsAppMessagePayload) {
+  return {
+    subject: null,
+    body: JSON.stringify({ message: payload.message }),
   };
 }
 

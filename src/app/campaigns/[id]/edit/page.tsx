@@ -25,5 +25,9 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
     return <ChannelCampaignWizard channel="in_app" campaignId={id} />;
   }
 
+  if (campaign.channel === "whatsapp") {
+    return <ChannelCampaignWizard channel="whatsapp" campaignId={id} />;
+  }
+
   redirect(`/campaigns/${id}`);
 }

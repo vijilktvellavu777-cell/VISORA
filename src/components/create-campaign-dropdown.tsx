@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Mail, Bell, Smartphone } from "lucide-react";
+import { WhatsAppIcon } from "@/components/whatsapp-icon";
 
 const OPTIONS = [
   { channel: "email", label: "Email", icon: Mail },
   { channel: "push", label: "Push", icon: Bell },
   { channel: "in_app", label: "In-app", icon: Smartphone },
+  { channel: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon },
 ] as const;
 
 export function CreateCampaignDropdown({ className = "" }: { className?: string }) {

@@ -1,4 +1,4 @@
-export const CHANNELS = ["email", "push", "sms", "in_app"] as const;
+export const CHANNELS = ["email", "push", "sms", "in_app", "whatsapp"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 export const CAMPAIGN_STATUSES = ["draft", "scheduled", "sending", "sent", "paused"] as const;

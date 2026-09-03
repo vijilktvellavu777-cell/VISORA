@@ -44,7 +44,7 @@ function isDraft(campaign: CampaignRow) {
 }
 
 function draftEditHref(campaign: CampaignRow) {
-  if (["email", "push", "in_app"].includes(campaign.channel)) {
+  if (["email", "push", "in_app", "whatsapp"].includes(campaign.channel)) {
     return `/campaigns/${campaign.id}/edit`;
   }
   return `/campaigns/${campaign.id}`;

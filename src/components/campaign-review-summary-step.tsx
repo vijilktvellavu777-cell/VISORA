@@ -2,14 +2,14 @@
 
 import { Pencil } from "lucide-react";
 import { Card } from "@/components/ui";
-import type { InAppMessagePayload, PushMessagePayload } from "@/lib/campaign-message";
+import type { InAppMessagePayload, PushMessagePayload, WhatsAppMessagePayload } from "@/lib/campaign-message";
 import { pushPlatformLabels } from "@/lib/campaign-message";
 import type { CampaignTargeting, TargetingFilterGroup } from "@/lib/campaign-targeting";
 
 type SegmentOption = { id: string; name: string };
 
 type Props = {
-  channel?: "email" | "push" | "in_app";
+  channel?: "email" | "push" | "in_app" | "whatsapp";
   campaign: {
     name: string;
     description: string | null;
@@ -24,6 +24,7 @@ type Props = {
   defaultFrom?: string;
   pushMessage?: PushMessagePayload;
   inAppMessage?: InAppMessagePayload;
+  whatsAppMessage?: WhatsAppMessagePayload;
   onEditStep: (step: number) => void;
 };
 
@@ -219,6 +220,32 @@ function InAppMessageSummary({
   );
 }
 
+function WhatsAppMessageSummary({
+  campaignName,
+  whatsAppMessage,
+}: {
+  campaignName: string;
+  whatsAppMessage: WhatsAppMessagePayload;
+}) {
+  return (
+    <>
+      <dl className="space-y-4">
+        <SummaryField label="Campaign name" value={campaignName} />
+        <SummaryField label="Message" value={whatsAppMessage.message.trim() || "No message yet"} />
+      </dl>
+
+      <div>
+        <div className="text-xs font-medium uppercase tracking-wide text-muted">WhatsApp preview</div>
+        <div className="mt-2 max-w-md rounded-xl border border-border bg-[#e7ffdb] p-4 shadow-sm">
+          <p className="text-sm text-foreground">
+            {whatsAppMessage.message.trim() || "WhatsApp message preview"}
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function CampaignReviewSummaryStep({
   channel = "email",
   campaign,
@@ -228,6 +255,7 @@ export function CampaignReviewSummaryStep({
   defaultFrom = "VISORA <noreply@visora.app>",
   pushMessage,
   inAppMessage,
+  whatsAppMessage,
   onEditStep,
 }: Props) {
   const selectedSegments = segments.filter((segment) => targeting.segmentIds.includes(segment.id));
@@ -249,6 +277,9 @@ export function CampaignReviewSummaryStep({
         ) : null}
         {channel === "in_app" && inAppMessage ? (
           <InAppMessageSummary campaignName={campaign.name} inAppMessage={inAppMessage} />
+        ) : null}
+        {channel === "whatsapp" && whatsAppMessage ? (
+          <WhatsAppMessageSummary campaignName={campaign.name} whatsAppMessage={whatsAppMessage} />
         ) : null}
         {channel === "email" ? (
           <EmailMessageSummary
