@@ -34,6 +34,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { EmailDragDropBlockProperties } from "@/components/email-drag-drop-block-properties";
+import { EmailDragDropPreviewPanel, DEFAULT_PREVIEW_USER, type PreviewUserProfile } from "@/components/email-drag-drop-preview-panel";
 import { EmailDragDropButtonProperties } from "@/components/email-drag-drop-button-properties";
 import { EmailDragDropDividerProperties } from "@/components/email-drag-drop-divider-properties";
 import { EmailDragDropImageProperties } from "@/components/email-drag-drop-image-properties";
@@ -581,6 +582,7 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
   const [deviceView, setDeviceView] = useState<DeviceView>("desktop");
   const [dragOver, setDragOver] = useState(false);
   const [contentNav, setContentNav] = useState<"design" | "links">("design");
+  const [previewProfile, setPreviewProfile] = useState<PreviewUserProfile>(DEFAULT_PREVIEW_USER);
 
   const selectedBlock = useMemo(
     () => blocks.find((block) => block.id === selectedBlockId) ?? null,
@@ -765,6 +767,14 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
           })}
         </aside>
 
+        {leftMode === "preview" ? (
+          <EmailDragDropPreviewPanel
+            blocks={blocks}
+            profile={previewProfile}
+            onProfileChange={setPreviewProfile}
+          />
+        ) : (
+          <>
         {/* Left content menu */}
         <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-surface">
           <div className="px-4 py-4 text-[11px] font-semibold tracking-[0.2em] text-muted">CONTENT</div>
@@ -1084,6 +1094,8 @@ export function EmailDragDropEditor({ campaignName, initialBody, onDone, onClose
             ) : null}
           </div>
         </aside>
+          </>
+        )}
       </div>
 
       {/* Bottom action bar */}
