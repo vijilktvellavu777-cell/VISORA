@@ -10,10 +10,11 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import { Card, Field, inputClass } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { CampaignDetailsCard } from "@/components/campaign-details-card";
 import { CampaignTargetingStep } from "@/components/campaign-targeting-step";
 import { CampaignReviewSummaryStep } from "@/components/campaign-review-summary-step";
+import { CampaignScheduleStep } from "@/components/campaign-schedule-step";
 import { PushPlatformStep } from "@/components/push-platform-step";
 import { InAppMessageComposer } from "@/components/in-app-message-composer";
 import {
@@ -40,6 +41,12 @@ import {
   serializeCampaignTargeting,
   type CampaignTargeting,
 } from "@/lib/campaign-targeting";
+import {
+  campaignScheduleFromRecord,
+  DEFAULT_CAMPAIGN_SCHEDULE,
+  resolveCampaignScheduleOutcome,
+  type CampaignSchedule,
+} from "@/lib/campaign-schedule";
 
 type SegmentOption = { id: string; name: string };
 type Channel = "push" | "in_app";
@@ -53,6 +60,7 @@ type CampaignDraft = {
   segmentId: string | null;
   targetingRules: string;
   scheduledAt: string | null;
+  scheduleConfig: string | null;
   status: string;
 };
 
@@ -114,6 +122,7 @@ function mapCampaignDraft(created: {
   scheduledAt: string | null;
   status: string;
   targetingRules?: string | null;
+  scheduleConfig?: string | null;
 }): CampaignDraft {
   return {
     id: created.id,
@@ -124,6 +133,7 @@ function mapCampaignDraft(created: {
     segmentId: created.segmentId,
     targetingRules: created.targetingRules ?? "{}",
     scheduledAt: created.scheduledAt,
+    scheduleConfig: created.scheduleConfig ?? null,
     status: created.status,
   };
 }
@@ -143,9 +153,7 @@ export function ChannelCampaignWizard({
   const [campaign, setCampaign] = useState<CampaignDraft | null>(null);
   const [segments, setSegments] = useState<SegmentOption[]>([]);
   const [showDescription, setShowDescription] = useState(false);
-  const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled">("immediate");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("09:00");
+  const [schedule, setSchedule] = useState<CampaignSchedule>(DEFAULT_CAMPAIGN_SCHEDULE);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -170,12 +178,7 @@ export function ChannelCampaignWizard({
       setCampaign(draft);
       setTargeting(targetingFromCampaign(draft));
       if (draft.description) setShowDescription(true);
-      if (draft.scheduledAt) {
-        setScheduleMode("scheduled");
-        const dt = new Date(draft.scheduledAt);
-        setScheduledDate(format(dt, "yyyy-MM-dd"));
-        setScheduledTime(format(dt, "HH:mm"));
-      }
+      setSchedule(campaignScheduleFromRecord(draft.scheduleConfig, draft.scheduledAt));
       if (channel === "push") {
         setPushMessage(parsePushPayload(draft.subject, draft.body));
       } else {
@@ -265,7 +268,12 @@ export function ChannelCampaignWizard({
     };
   }, [campaignId, channel, config.creatingKey, config.defaultName, config.draftKey, fresh]);
 
-  async function saveCampaign(data: Partial<CampaignDraft> & { status?: string }) {
+  async function saveCampaign(
+    data: Partial<Omit<CampaignDraft, "scheduleConfig">> & {
+      status?: string;
+      scheduleConfig?: CampaignSchedule;
+    },
+  ) {
     if (!campaign) return false;
     setSaving(true);
     const response = await fetch(`/api/campaigns/${campaign.id}`, {
@@ -337,15 +345,9 @@ export function ChannelCampaignWizard({
 
   async function finish() {
     if (!campaign) return;
-    let scheduledAt: string | null = null;
-    let status = "draft";
+    const { scheduledAt, status } = resolveCampaignScheduleOutcome(schedule);
 
-    if (scheduleMode === "scheduled" && scheduledDate) {
-      scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-      status = "scheduled";
-    }
-
-    const ok = await saveCampaign({ scheduledAt, status });
+    const ok = await saveCampaign({ scheduledAt, status, scheduleConfig: schedule });
     if (!ok) return;
     clearChannelWizardDraftSession(channel);
     router.push(`/campaigns/${campaign.id}`);
@@ -478,50 +480,7 @@ export function ChannelCampaignWizard({
         ) : null}
 
         {step === 4 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Schedule delivery</h2>
-            <p className="text-sm text-muted">Send immediately or schedule this campaign for later.</p>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="schedule"
-                  checked={scheduleMode === "immediate"}
-                  onChange={() => setScheduleMode("immediate")}
-                />
-                Send immediately when launched
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="schedule"
-                  checked={scheduleMode === "scheduled"}
-                  onChange={() => setScheduleMode("scheduled")}
-                />
-                Schedule for a specific date and time
-              </label>
-            </div>
-            {scheduleMode === "scheduled" ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Date">
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={scheduledDate}
-                    onChange={(event) => setScheduledDate(event.target.value)}
-                  />
-                </Field>
-                <Field label="Time">
-                  <input
-                    type="time"
-                    className={inputClass}
-                    value={scheduledTime}
-                    onChange={(event) => setScheduledTime(event.target.value)}
-                  />
-                </Field>
-              </div>
-            ) : null}
-          </Card>
+          <CampaignScheduleStep value={schedule} onChange={setSchedule} />
         ) : null}
 
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}

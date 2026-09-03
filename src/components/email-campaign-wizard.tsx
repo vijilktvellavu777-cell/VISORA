@@ -19,6 +19,7 @@ import {
 import { Card, Field, inputClass } from "@/components/ui";
 import { CampaignTargetingStep } from "@/components/campaign-targeting-step";
 import { CampaignReviewSummaryStep } from "@/components/campaign-review-summary-step";
+import { CampaignScheduleStep } from "@/components/campaign-schedule-step";
 import {
   clearEmailWizardDraftSession,
   EMAIL_WIZARD_CREATING_KEY,
@@ -31,6 +32,12 @@ import {
   serializeCampaignTargeting,
   type CampaignTargeting,
 } from "@/lib/campaign-targeting";
+import {
+  campaignScheduleFromRecord,
+  DEFAULT_CAMPAIGN_SCHEDULE,
+  resolveCampaignScheduleOutcome,
+  type CampaignSchedule,
+} from "@/lib/campaign-schedule";
 import { EmailComposeSummary } from "@/components/email-compose-summary";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
@@ -52,6 +59,7 @@ type CampaignDraft = {
   targetingRules: string;
   conversionEvent: string | null;
   scheduledAt: string | null;
+  scheduleConfig: string | null;
   status: string;
   tags: string[];
 };
@@ -128,6 +136,7 @@ function mapCampaignDraft(created: {
   scheduledAt: string | null;
   status: string;
   tags?: string | unknown[] | null;
+  scheduleConfig?: string | null;
 }): CampaignDraft {
   return {
     id: created.id,
@@ -141,6 +150,7 @@ function mapCampaignDraft(created: {
     targetingRules: created.targetingRules ?? "{}",
     conversionEvent: created.conversionEvent,
     scheduledAt: created.scheduledAt,
+    scheduleConfig: created.scheduleConfig ?? null,
     status: created.status,
     tags: parseTags(created.tags),
   };
@@ -158,9 +168,7 @@ export function EmailCampaignWizard({
   const [campaign, setCampaign] = useState<CampaignDraft | null>(null);
   const [segments, setSegments] = useState<SegmentOption[]>([]);
   const [showDescription, setShowDescription] = useState(false);
-  const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled">("immediate");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("09:00");
+  const [schedule, setSchedule] = useState<CampaignSchedule>(DEFAULT_CAMPAIGN_SCHEDULE);
   const [copied, setCopied] = useState(false);
   const [editingCampaignDetails, setEditingCampaignDetails] = useState(false);
   const [editingSendingInfo, setEditingSendingInfo] = useState(true);
@@ -203,12 +211,7 @@ export function EmailCampaignWizard({
           setShowEmailSummary(true);
           setEditorMode("drag-drop");
         }
-        if (draft.scheduledAt) {
-          setScheduleMode("scheduled");
-          const dt = new Date(draft.scheduledAt);
-          setScheduledDate(format(dt, "yyyy-MM-dd"));
-          setScheduledTime(format(dt, "HH:mm"));
-        }
+        setSchedule(campaignScheduleFromRecord(draft.scheduleConfig, draft.scheduledAt));
       }
 
       if (campaignId) {
@@ -289,7 +292,13 @@ export function EmailCampaignWizard({
     };
   }, [fresh, campaignId]);
 
-  async function saveCampaign(data: Partial<CampaignDraft> & { status?: string; tags?: string[] }) {
+  async function saveCampaign(
+    data: Partial<Omit<CampaignDraft, "scheduleConfig">> & {
+      status?: string;
+      tags?: string[];
+      scheduleConfig?: CampaignSchedule;
+    },
+  ) {
     if (!campaign) return false;
     setSaving(true);
     const response = await fetch(`/api/campaigns/${campaign.id}`, {
@@ -437,15 +446,9 @@ export function EmailCampaignWizard({
 
   async function finish(saveOnly: boolean) {
     if (!campaign) return;
-    let scheduledAt: string | null = null;
-    let status = "draft";
+    const { scheduledAt, status } = resolveCampaignScheduleOutcome(schedule);
 
-    if (scheduleMode === "scheduled" && scheduledDate) {
-      scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-      status = "scheduled";
-    }
-
-    const ok = await saveCampaign({ scheduledAt, status });
+    const ok = await saveCampaign({ scheduledAt, status, scheduleConfig: schedule });
     if (!ok) return;
     clearEmailWizardDraftSession();
     if (saveOnly) {
@@ -904,50 +907,7 @@ export function EmailCampaignWizard({
         ) : null}
 
         {step === 4 ? (
-          <Card className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Schedule delivery</h2>
-            <p className="text-sm text-muted">Send immediately or schedule this campaign for later.</p>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="schedule"
-                  checked={scheduleMode === "immediate"}
-                  onChange={() => setScheduleMode("immediate")}
-                />
-                Send immediately when launched
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="schedule"
-                  checked={scheduleMode === "scheduled"}
-                  onChange={() => setScheduleMode("scheduled")}
-                />
-                Schedule for a specific date and time
-              </label>
-            </div>
-            {scheduleMode === "scheduled" ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Date">
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                  />
-                </Field>
-                <Field label="Time">
-                  <input
-                    type="time"
-                    className={inputClass}
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                  />
-                </Field>
-              </div>
-            ) : null}
-          </Card>
+          <CampaignScheduleStep value={schedule} onChange={setSchedule} />
         ) : null}
 
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}

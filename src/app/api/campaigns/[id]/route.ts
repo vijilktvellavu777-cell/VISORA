@@ -54,6 +54,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(body.scheduledAt !== undefined
         ? { scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null }
         : {}),
+      ...(body.scheduleConfig !== undefined
+        ? { scheduleConfig: JSON.stringify(body.scheduleConfig ?? {}) }
+        : {}),
       ...(body.status !== undefined ? { status: body.status } : {}),
     },
     include: { segment: true },
