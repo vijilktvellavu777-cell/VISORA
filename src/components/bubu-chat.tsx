@@ -115,14 +115,14 @@ export function BubuChat() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
+    <div className="flex h-[calc(100dvh-3.75rem)] min-h-0 flex-col overflow-hidden bg-surface">
       <PageHeader
         title="Bubu"
         subtitle="AI assistant for VISORA — campaigns, content, analytics, and more."
       />
 
-      <div className="flex flex-1 flex-col gap-4 px-8 pb-8">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 px-8 pb-6">
+        <div className="flex shrink-0 flex-wrap gap-2">
           {SUGGESTIONS.map((suggestion) => (
             <button
               key={suggestion}
@@ -136,8 +136,8 @@ export function BubuChat() {
           ))}
         </div>
 
-        <Card className="flex min-h-[60vh] flex-1 flex-col overflow-hidden p-0">
-          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+          <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
             {messages.map((message, index) => {
               const isUser = message.role === "user";
               return (
@@ -172,7 +172,7 @@ export function BubuChat() {
             ) : null}
           </div>
 
-          <div className="border-t border-border px-5 py-4">
+          <div className="shrink-0 border-t border-border bg-surface px-5 py-4">
             <div className="flex gap-2">
               <input
                 className={inputClass}
