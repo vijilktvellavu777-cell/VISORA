@@ -12,6 +12,7 @@ import {
   BarChart3,
   KanbanSquare,
   Sparkles,
+  ScanEye,
   Settings,
   ChevronDown,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/developer", label: "Developer", icon: KeyRound },
   { href: "/planly", label: "Planny", icon: KanbanSquare },
   { href: "/bubu", label: "Bubu", icon: Sparkles },
+  { href: "/renderly", label: "Renderly", icon: ScanEye },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
