@@ -5,7 +5,7 @@
   "description": "VISORA — a customer engagement platform for campaigns, segments, and event-driven messaging.",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && npm run build:sdk && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
@@ -13,6 +13,7 @@
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts",
+    "build:sdk": "esbuild packages/visora-sdk/src/index.ts --bundle --format=iife --global-name=Visora --outfile=public/visora.js --target=es2020",
     "test": "npx tsx scripts/test-segments.ts"
   },
   "prisma": {
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.1.7",
     "eslint": "^9.32.0",
     "eslint-config-next": "^15.4.6",
+    "esbuild": "^0.25.9",
     "prisma": "^6.13.0",
     "tailwindcss": "^4.1.11",
     "tsx": "^4.20.3",

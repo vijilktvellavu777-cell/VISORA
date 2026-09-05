@@ -1,0 +1,8 @@
+{
+  "name": "@visora/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VISORA browser SDK for identify, track, and device registration",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

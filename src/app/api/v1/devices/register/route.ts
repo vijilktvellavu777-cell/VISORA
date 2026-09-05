@@ -4,15 +4,11 @@ import { requireApiKey } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { errorToResponse } from "@/lib/http";
 
-const eventSchema = z.object({
-  name: z.string().min(1),
-  properties: z.record(z.string(), z.unknown()).optional(),
-  time: z.string().datetime().optional(),
-});
-
 const schema = z.object({
   external_id: z.string().min(1),
-  events: z.array(eventSchema).min(1),
+  platform: z.enum(["web", "ios", "android"]),
+  token: z.string().min(1),
+  user_agent: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -37,19 +33,34 @@ export async function POST(request: NextRequest) {
     update: { lastSeenAt: new Date() },
   });
 
-  const created = await prisma.$transaction(
-    body.events.map((event) =>
-      prisma.event.create({
-        data: {
-          workspaceId,
-          customerId: customer.id,
-          name: event.name,
-          properties: JSON.stringify(event.properties ?? {}),
-          occurredAt: event.time ? new Date(event.time) : new Date(),
-        },
-      }),
-    ),
-  );
+  const device = await prisma.device.upsert({
+    where: {
+      workspaceId_platform_token: {
+        workspaceId,
+        platform: body.platform,
+        token: body.token,
+      },
+    },
+    create: {
+      workspaceId,
+      customerId: customer.id,
+      platform: body.platform,
+      token: body.token,
+      userAgent: body.user_agent,
+      lastSeenAt: new Date(),
+    },
+    update: {
+      customerId: customer.id,
+      userAgent: body.user_agent ?? undefined,
+      lastSeenAt: new Date(),
+    },
+  });
 
-  return NextResponse.json({ accepted: created.length, customer_id: customer.id });
+  return NextResponse.json({
+    device: {
+      id: device.id,
+      platform: device.platform,
+      customer_id: customer.id,
+    },
+  });
 }

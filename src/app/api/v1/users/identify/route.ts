@@ -6,6 +6,7 @@ import { errorToResponse } from "@/lib/http";
 
 const schema = z.object({
   external_id: z.string().min(1),
+  anonymous_id: z.string().min(1).optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   first_name: z.string().optional(),
@@ -15,8 +16,31 @@ const schema = z.object({
   attributes: z.record(z.string(), z.unknown()).optional(),
 });
 
+async function mergeAnonymousCustomer(
+  workspaceId: string,
+  anonymousId: string,
+  targetCustomerId: string,
+) {
+  const anonymous = await prisma.customer.findUnique({
+    where: { workspaceId_externalId: { workspaceId, externalId: anonymousId } },
+  });
+  if (!anonymous || anonymous.id === targetCustomerId) return;
+
+  await prisma.$transaction([
+    prisma.event.updateMany({
+      where: { customerId: anonymous.id },
+      data: { customerId: targetCustomerId },
+    }),
+    prisma.device.updateMany({
+      where: { customerId: anonymous.id },
+      data: { customerId: targetCustomerId },
+    }),
+    prisma.customer.delete({ where: { id: anonymous.id } }),
+  ]);
+}
+
 export async function POST(request: NextRequest) {
-  const auth = await requireApiKey(request);
+  const auth = await requireApiKey(request, { allowPublishable: true });
   if ("error" in auth) return auth.error;
 
   let body: z.infer<typeof schema>;
@@ -61,6 +85,10 @@ export async function POST(request: NextRequest) {
       lastSeenAt: new Date(),
     },
   });
+
+  if (body.anonymous_id && body.anonymous_id !== body.external_id) {
+    await mergeAnonymousCustomer(workspaceId, body.anonymous_id, customer.id);
+  }
 
   return NextResponse.json({
     customer: {

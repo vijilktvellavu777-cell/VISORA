@@ -16,6 +16,7 @@ async function main() {
   await prisma.canvas.deleteMany();
   await prisma.campaign.deleteMany();
   await prisma.messageTemplate.deleteMany();
+  await prisma.device.deleteMany();
   await prisma.event.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.segment.deleteMany();
@@ -31,6 +32,16 @@ async function main() {
       workspaceId: workspace.id,
       name: "SDK / REST key",
       key: "visora_sk_local",
+      keyType: "secret",
+    },
+  });
+
+  const publishableKey = await prisma.apiKey.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "Browser SDK key",
+      key: "visora_pk_local",
+      keyType: "publishable",
     },
   });
 
@@ -138,7 +149,8 @@ async function main() {
   });
 
   console.log("Workspace ready:", workspace.slug);
-  console.log("API key:", apiKey.key);
+  console.log("Secret API key:", apiKey.key);
+  console.log("Publishable SDK key:", publishableKey.key);
 }
 
 main()
