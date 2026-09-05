@@ -10,7 +10,10 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
     where: { id },
     include: {
       segment: true,
-      sends: { include: { customer: true }, orderBy: { createdAt: "desc" } },
+      sends: {
+        include: { customer: true, device: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
   if (!campaign) notFound();

@@ -85,6 +85,8 @@ model Device {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  sends CampaignSend[]
+
   @@unique([workspaceId, platform, token])
   @@index([customerId, platform])
 }
@@ -179,16 +181,21 @@ model CampaignSend {
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deviceId   String?
+  device     Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   status     String   @default("queued")
   channel    String
   subject    String?
   body       String
+  /// Provider error or simulation note
+  errorMessage String?
   sentAt     DateTime?
   openedAt   DateTime?
   clickedAt  DateTime?
   createdAt  DateTime @default(now())
 
   @@index([campaignId, status])
+  @@index([deviceId])
 }
 
 model Canvas {
