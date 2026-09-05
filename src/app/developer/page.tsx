@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getPushConfig } from "@/lib/push-delivery";
 import { getDefaultWorkspace } from "@/lib/workspace";
 import { Card, PageHeader } from "@/components/ui";
 
@@ -6,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DeveloperPage() {
   const workspace = await getDefaultWorkspace();
+  const push = getPushConfig();
   const keys = await prisma.apiKey.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { createdAt: "desc" },
@@ -45,7 +47,7 @@ export default async function DeveloperPage() {
           <div className="font-medium">Browser SDK</div>
           <p className="mt-2 text-muted">
             Add the script to your site, initialize with your publishable key, then identify users and track events.
-            Anonymous sessions are merged automatically when a user signs in.
+            Enable Web Push to register real browser subscriptions for push campaigns.
           </p>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-background p-4 font-mono text-xs text-muted">{`<!-- VISORA SDK -->
 <script src="/visora.js"></script>
@@ -53,22 +55,30 @@ export default async function DeveloperPage() {
   Visora.init({
     apiKey: "${publishableKey?.key ?? "visora_pk_local"}",
     autoRegisterDevice: true,
+    enableWebPush: ${push.webPushEnabled ? "true" : "false"},
   });
 
-  // After login
   Visora.identify("user_001", {
     email: "user@example.com",
     first_name: "Alex",
-    attributes: { plan: "pro" },
   });
 
-  // Custom events
-  Visora.track("product_viewed", { sku: "SKU-42", price: 49 });
+  Visora.track("product_viewed", { sku: "SKU-42" });
 </script>`}</pre>
           <div className="mt-4 text-xs text-muted">
-            SDK methods: <code>init</code>, <code>identify</code>, <code>track</code>,{" "}
-            <code>registerDevice</code>, <code>getAnonymousId</code>, <code>flush</code>
+            Push providers: Web Push {push.webPushEnabled ? "ready" : "not configured"} · FCM{" "}
+            {push.fcmEnabled ? "ready" : "not configured"} · simulation{" "}
+            {push.simulationMode ? "on" : "off"}
           </div>
+        </Card>
+
+        <Card className="p-5 text-sm">
+          <div className="font-medium">Mobile device tokens</div>
+          <pre className="mt-3 overflow-x-auto rounded-lg bg-background p-4 font-mono text-xs text-muted">{`// Android (FCM token)
+Visora.registerDevice({ platform: "android", token: fcmToken });
+
+// iOS (APNs device token)
+Visora.registerDevice({ platform: "ios", token: apnsToken });`}</pre>
         </Card>
 
         <Card className="p-5 text-sm">
@@ -76,13 +86,8 @@ export default async function DeveloperPage() {
           <pre className="mt-3 overflow-x-auto rounded-lg bg-background p-4 font-mono text-xs text-muted">{`curl -X POST http://localhost:3000/api/v1/users/identify \\
   -H "Authorization: Bearer ${secretKey?.key ?? "visora_sk_local"}" \\
   -H "Content-Type: application/json" \\
-  -d '{"external_id":"user_001","email":"user@example.com","first_name":"Alex","attributes":{"plan":"pro"}}'`}</pre>
-          <div className="mt-6 font-medium">Track events</div>
-          <pre className="mt-3 overflow-x-auto rounded-lg bg-background p-4 font-mono text-xs text-muted">{`curl -X POST http://localhost:3000/api/v1/users/track \\
-  -H "Authorization: Bearer ${secretKey?.key ?? "visora_sk_local"}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"external_id":"user_001","events":[{"name":"purchase","properties":{"amount":49}}]}'`}</pre>
-          <div className="mt-6 font-medium">Register a device (push foundation)</div>
+  -d '{"external_id":"user_001","email":"user@example.com","first_name":"Alex"}'`}</pre>
+          <div className="mt-6 font-medium">Register a device</div>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-background p-4 font-mono text-xs text-muted">{`curl -X POST http://localhost:3000/api/v1/devices/register \\
   -H "Authorization: Bearer ${publishableKey?.key ?? "visora_pk_local"}" \\
   -H "Content-Type: application/json" \\
