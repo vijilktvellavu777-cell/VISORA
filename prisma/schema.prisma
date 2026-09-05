@@ -16,6 +16,7 @@ model Workspace {
 
   apiKeys    ApiKey[]
   customers  Customer[]
+  devices    Device[]
   events     Event[]
   segments   Segment[]
   campaigns  Campaign[]
@@ -35,6 +36,8 @@ model ApiKey {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name        String
   key         String    @unique
+  /// secret | publishable — publishable keys are safe for browser SDK embeds
+  keyType     String    @default("secret")
   lastUsedAt  DateTime?
   createdAt   DateTime  @default(now())
 }
@@ -59,11 +62,31 @@ model Customer {
   lastSeenAt   DateTime?
 
   events   Event[]
+  devices  Device[]
   sends    CampaignSend[]
   entries  CanvasEntry[]
 
   @@unique([workspaceId, externalId])
   @@index([workspaceId, email])
+}
+
+model Device {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// web | ios | android
+  platform    String
+  /// Push token or web device id / subscription payload
+  token       String
+  userAgent   String?
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, platform, token])
+  @@index([customerId, platform])
 }
 
 model Event {
