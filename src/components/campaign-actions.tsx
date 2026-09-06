@@ -10,7 +10,9 @@ type Send = {
   id: string;
   status: string;
   sentAt: string | null;
+  errorMessage: string | null;
   customer: { firstName: string | null; lastName: string | null; email: string | null; externalId: string };
+  device: { platform: string; token: string } | null;
 };
 
 type Campaign = {
@@ -25,12 +27,22 @@ type Campaign = {
   sends: Send[];
 };
 
+function deviceLabel(send: Send) {
+  if (!send.device) return null;
+  const tokenPreview = send.device.token.startsWith("{")
+    ? "Web Push"
+    : `${send.device.token.slice(0, 12)}…`;
+  return `${send.device.platform} · ${tokenPreview}`;
+}
+
 export function CampaignActions({ campaign }: { campaign: Campaign }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const isPush = campaign.channel === "push";
 
   async function send() {
+    if (busy || campaign.status === "sent") return;
     setBusy(true);
     setMessage(null);
     const response = await fetch(`/api/campaigns/${campaign.id}/send`, { method: "POST" });
@@ -40,7 +52,13 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
       setMessage(json.error ?? "Send failed");
       return;
     }
-    setMessage(json.alreadySent ? "Already sent" : `Sent to ${json.count} profiles`);
+    setMessage(
+      json.alreadySent
+        ? "Already sent"
+        : isPush
+          ? `Delivered to ${json.count} device${json.count === 1 ? "" : "s"}`
+          : `Sent to ${json.count} profile${json.count === 1 ? "" : "s"}`,
+    );
     router.refresh();
   }
 
@@ -79,19 +97,31 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
           <pre className="mt-3 whitespace-pre-wrap font-mono text-xs text-muted">{campaign.body}</pre>
         </Card>
         <Card>
-          <div className="border-b border-border px-5 py-3 text-sm font-medium">Delivery log</div>
+          <div className="border-b border-border px-5 py-3 text-sm font-medium">
+            {isPush ? "Device delivery log" : "Delivery log"}
+          </div>
           <ul className="divide-y divide-border text-sm">
             {campaign.sends.length === 0 ? (
-              <li className="px-5 py-3 text-muted">No sends yet</li>
+              <li className="px-5 py-3 text-muted">
+                {isPush ? "No devices delivered yet" : "No sends yet"}
+              </li>
             ) : (
               campaign.sends.map((send) => (
-                <li key={send.id} className="flex items-center justify-between px-5 py-3">
-                  <span>
-                    {[send.customer.firstName, send.customer.lastName].filter(Boolean).join(" ") ||
-                      send.customer.email ||
-                      send.customer.externalId}
-                  </span>
-                  <span className="text-xs text-muted">
+                <li key={send.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                  <div>
+                    <div>
+                      {[send.customer.firstName, send.customer.lastName].filter(Boolean).join(" ") ||
+                        send.customer.email ||
+                        send.customer.externalId}
+                    </div>
+                    {deviceLabel(send) ? (
+                      <div className="text-xs text-muted">{deviceLabel(send)}</div>
+                    ) : null}
+                    {send.errorMessage ? (
+                      <div className="text-xs text-muted">{send.errorMessage}</div>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 text-xs text-muted">
                     {send.status}
                     {send.sentAt ? ` · ${format(new Date(send.sentAt), "MMM d HH:mm")}` : ""}
                   </span>
