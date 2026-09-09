@@ -2,38 +2,30 @@
 
 import { useRef, useState } from "react";
 import {
-  ChevronDown,
+  AlertCircle,
+  Check,
   Info,
+  Laptop,
   Monitor,
-  Pencil,
   Plus,
   Smartphone,
-  User,
+  Sparkles,
+  Tablet,
+  X,
 } from "lucide-react";
-import { Card, Field, inputClass } from "@/components/ui";
-import {
-  PUSH_PLATFORMS,
-  type PushMessagePayload,
-  type PushPlatform,
-} from "@/lib/campaign-message";
+import { Button, Card, Field, inputClass } from "@/components/ui";
+import type { PushMessagePayload, PushPlatform, PushPlatformCategory } from "@/lib/campaign-message";
 
-const PLATFORM_ICONS = {
-  ios: Smartphone,
-  android: Smartphone,
-  web: Monitor,
-} as const;
-
-const PERSONALIZATION_TOKENS = ["{{ first_name }}", "{{ last_name }}", "{{ email }}"];
-
-const IOS_DEVICES = ["Phone", "Tablet"] as const;
-const IOS_STATES = ["Lock screen", "Banner", "Notification Center"] as const;
+const PERSONALIZATION_TOKEN = "{{ first_name }}";
 
 type Props = {
   value: PushMessagePayload;
   onChange: (value: PushMessagePayload) => void;
 };
 
-type ComposeTab = "compose" | "settings" | "test";
+type ComposePhase = "platform" | "message";
+type MessageTab = "compose" | "design" | "settings" | "test";
+type PreviewDevice = "phone" | "tablet" | "laptop";
 
 function insertAtCursor(
   element: HTMLInputElement | HTMLTextAreaElement | null,
@@ -46,183 +38,324 @@ function insertAtCursor(
   return `${currentValue.slice(0, start)}${token}${currentValue.slice(end)}`;
 }
 
-function previewTitle(title: string) {
-  return title.trim() || "Notification Title";
-}
-
-function previewMessage(message: string) {
-  return message.trim() || "Here's notification text.";
-}
-
-function IosPreview({
-  title,
-  message,
-  device,
-  notificationState,
+function FieldActions({
+  onInsert,
 }: {
-  title: string;
-  message: string;
-  device: (typeof IOS_DEVICES)[number];
-  notificationState: (typeof IOS_STATES)[number];
+  onInsert: () => void;
 }) {
-  const isLockScreen = notificationState === "Lock screen";
+  return (
+    <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+      <button
+        type="button"
+        className="rounded p-1 text-muted hover:bg-background hover:text-primary"
+        aria-label="AI assist"
+      >
+        <Sparkles size={15} />
+      </button>
+      <button
+        type="button"
+        onClick={onInsert}
+        className="rounded p-1 text-primary hover:bg-primary/10"
+        aria-label="Insert personalization"
+      >
+        <Plus size={15} />
+      </button>
+    </div>
+  );
+}
+
+function TextareaFieldActions({ onInsert }: { onInsert: () => void }) {
+  return (
+    <div className="absolute right-2 top-2 flex items-center gap-1">
+      <button type="button" className="rounded p-1 text-muted hover:bg-background hover:text-primary" aria-label="AI assist">
+        <Sparkles size={15} />
+      </button>
+      <button type="button" onClick={onInsert} className="rounded p-1 text-primary hover:bg-primary/10" aria-label="Insert personalization">
+        <Plus size={15} />
+      </button>
+    </div>
+  );
+}
+
+function PushPreview({
+  value,
+  previewDevice,
+}: {
+  value: PushMessagePayload;
+  previewDevice: PreviewDevice;
+}) {
+  const title = value.title.trim() || "Your message...";
+  const message = value.message.trim() || "Notification body preview";
+  const widthClass =
+    previewDevice === "tablet" ? "max-w-[360px]" : previewDevice === "laptop" ? "max-w-[420px]" : "max-w-[280px]";
 
   return (
-    <div
-      className={`overflow-hidden rounded-[28px] border border-border bg-[#1c1c1e] ${
-        device === "Tablet" ? "mx-auto max-w-[320px]" : "max-w-[280px]"
-      }`}
-    >
-      <div className="bg-gradient-to-b from-[#5b6cff] to-[#7b5cff] px-4 pb-6 pt-5 text-white">
-        <div className="text-[10px] font-medium opacity-80">9:41</div>
-        {isLockScreen ? (
-          <div className="mt-8 text-center">
-            <div className="text-5xl font-light">9:41</div>
-            <div className="mt-1 text-sm opacity-80">Tuesday, September 9</div>
-          </div>
-        ) : null}
-      </div>
-      <div className={`px-3 ${isLockScreen ? "pb-4" : "py-4"}`}>
-        <div className="rounded-2xl bg-white/95 p-3 shadow-lg backdrop-blur">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f5c542] text-xs font-bold text-[#7a5b00]">
-              V
-            </div>
+    <div className={`mx-auto ${widthClass}`}>
+      <div className="overflow-hidden rounded-[24px] border border-border bg-[#2f2f33] p-4 shadow-lg">
+        <div className="rounded-xl bg-white p-4 shadow-md">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs font-semibold text-[#111]">{previewTitle(title)}</span>
-                <span className="shrink-0 text-[10px] text-[#666]">now</span>
-              </div>
-              <p className="mt-0.5 line-clamp-3 text-xs text-[#444]">{previewMessage(message)}</p>
+              <div className="text-sm font-semibold text-[#111]">{title}</div>
+              <p className="mt-1 text-sm text-[#555]">{message}</p>
+              {value.button1Text.trim() ? (
+                <div className="mt-3 inline-flex rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+                  {value.button1Text}
+                </div>
+              ) : null}
+              {value.button2Text.trim() ? (
+                <div className="mt-2 inline-flex rounded-md border border-border px-3 py-1.5 text-xs font-medium text-[#444]">
+                  {value.button2Text}
+                </div>
+              ) : null}
             </div>
+            <button type="button" className="text-[#999]" aria-label="Dismiss">
+              <X size={14} />
+            </button>
           </div>
         </div>
-        {!isLockScreen ? (
-          <div className="mt-2 text-center text-[10px] text-white/50">{notificationState} preview</div>
-        ) : null}
       </div>
     </div>
   );
 }
 
-function AndroidPreview({ title, message }: { title: string; message: string }) {
-  return (
-    <div className="max-w-[320px] overflow-hidden rounded-2xl border border-border bg-[#f3f3f3]">
-      <div className="bg-[#6750a4] px-4 py-3 text-sm font-medium text-white">Notifications</div>
-      <div className="p-3">
-        <div className="rounded-xl bg-white p-3 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f5c542] text-[10px] font-bold text-[#7a5b00]">
-              V
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1 text-xs font-semibold text-[#111]">
-                <span className="truncate">{previewTitle(title)}</span>
-                <span className="shrink-0 text-[#666]">· 9m</span>
-                <ChevronDown size={14} className="ml-auto shrink-0 text-[#666]" />
-              </div>
-              <p className="mt-1 line-clamp-2 text-xs text-[#555]">{previewMessage(message)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+function PushPlatformSelect({
+  value,
+  onChange,
+  onConfirm,
+}: {
+  value: PushMessagePayload;
+  onChange: (value: PushMessagePayload) => void;
+  onConfirm: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const mobileSelected = value.platformCategory === "mobile";
+  const webSelected = value.platformCategory === "web";
+  const iosSelected = value.platforms.includes("ios");
+  const androidSelected = value.platforms.includes("android");
+  const multipleMobileDevices = iosSelected && androidSelected;
 
-export function PushPlatformStep({ value, onChange }: Props) {
-  const [activeTab, setActiveTab] = useState<ComposeTab>("compose");
-  const [iosDevice, setIosDevice] = useState<(typeof IOS_DEVICES)[number]>("Phone");
-  const [iosState, setIosState] = useState<(typeof IOS_STATES)[number]>("Lock screen");
-  const titleRef = useRef<HTMLInputElement>(null);
-  const messageRef = useRef<HTMLTextAreaElement>(null);
-
-  function togglePlatform(platform: PushPlatform) {
-    const exists = value.platforms.includes(platform);
+  function selectCategory(category: PushPlatformCategory) {
+    if (category === "mobile") {
+      onChange({
+        ...value,
+        platformCategory: "mobile",
+        platforms: value.platforms.filter((p) => p !== "web").length
+          ? value.platforms.filter((p) => p === "ios" || p === "android")
+          : ["ios", "android"],
+      });
+      return;
+    }
     onChange({
       ...value,
-      platforms: exists
-        ? value.platforms.filter((item) => item !== platform)
-        : [...value.platforms, platform],
+      platformCategory: "web",
+      platforms: ["web"],
     });
   }
 
-  function insertToken(field: "title" | "message", token: string) {
-    if (field === "title") {
-      onChange({ ...value, title: insertAtCursor(titleRef.current, value.title, token) });
-      titleRef.current?.focus();
-      return;
-    }
-    onChange({ ...value, message: insertAtCursor(messageRef.current, value.message, token) });
-    messageRef.current?.focus();
+  function toggleMobileDevice(platform: PushPlatform) {
+    const exists = value.platforms.includes(platform);
+    const next = exists
+      ? value.platforms.filter((item) => item !== platform)
+      : [...value.platforms.filter((item) => item !== "web"), platform];
+    onChange({ ...value, platformCategory: "mobile", platforms: next });
   }
 
-  const tabs: { id: ComposeTab; label: string }[] = [
+  function handleConfirm() {
+    if (!value.platformCategory) {
+      setError("Select Mobile or Web to continue.");
+      return;
+    }
+    if (value.platformCategory === "mobile" && !iosSelected && !androidSelected) {
+      setError("Select at least one mobile device.");
+      return;
+    }
+    setError(null);
+    onChange({ ...value, platformsConfirmed: true });
+    onConfirm();
+  }
+
+  return (
+    <Card className="space-y-6 p-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Push platforms</h2>
+        <p className="mt-1 text-sm text-muted">Decide which platforms to send this push notification to.</p>
+      </div>
+
+      <div>
+        <div className="mb-3 text-sm font-medium text-foreground">Select platform</div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => selectCategory("mobile")}
+            className={`rounded-xl border p-5 text-left transition ${
+              mobileSelected
+                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                : "border-border bg-surface hover:border-primary/30"
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background">
+                <Smartphone size={24} className="text-primary" />
+              </div>
+              {mobileSelected ? (
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
+                  <Check size={14} />
+                </span>
+              ) : (
+                <span className="h-5 w-5 rounded border border-border" />
+              )}
+            </div>
+            <div className="mt-4 text-base font-semibold text-foreground">Mobile</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => selectCategory("web")}
+            className={`rounded-xl border p-5 text-left transition ${
+              webSelected
+                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                : "border-border bg-surface hover:border-primary/30"
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background">
+                <Monitor size={24} className="text-primary" />
+              </div>
+              {webSelected ? (
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
+                  <Check size={14} />
+                </span>
+              ) : (
+                <span className="h-5 w-5 rounded border border-border" />
+              )}
+            </div>
+            <div className="mt-4 text-base font-semibold text-foreground">Web</div>
+          </button>
+        </div>
+      </div>
+
+      {mobileSelected ? (
+        <div>
+          <div className="mb-3 text-sm font-medium text-foreground">Select mobile devices</div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(["ios", "android"] as const).map((platform) => {
+              const selected = value.platforms.includes(platform);
+              return (
+                <button
+                  key={platform}
+                  type="button"
+                  onClick={() => toggleMobileDevice(platform)}
+                  className={`flex items-center justify-between rounded-xl border px-4 py-3 transition ${
+                    selected ? "border-primary bg-primary/5" : "border-border bg-surface hover:border-primary/30"
+                  }`}
+                >
+                  <span className="text-sm font-medium capitalize text-foreground">{platform}</span>
+                  {selected ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                      <Check size={12} />
+                    </span>
+                  ) : (
+                    <span className="h-4 w-4 rounded border border-border" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {multipleMobileDevices ? (
+        <div className="flex items-start gap-2 rounded-lg bg-background px-4 py-3 text-sm text-muted">
+          <Info size={16} className="mt-0.5 shrink-0 text-primary" />
+          Multivariate testing is not supported when multiple devices are selected.
+        </div>
+      ) : null}
+
+      {error ? <p className="text-sm text-error">{error}</p> : null}
+
+      <div className="flex justify-end border-t border-border pt-4">
+        <Button onClick={handleConfirm}>Confirm</Button>
+      </div>
+    </Card>
+  );
+}
+
+function PushMessageCompose({
+  value,
+  onChange,
+  onChangePlatforms,
+}: {
+  value: PushMessagePayload;
+  onChange: (value: PushMessagePayload) => void;
+  onChangePlatforms: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<MessageTab>("compose");
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("phone");
+  const [showBodyError, setShowBodyError] = useState(false);
+  const headerRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const button1Ref = useRef<HTMLInputElement>(null);
+  const button2Ref = useRef<HTMLInputElement>(null);
+
+  const tabs: { id: MessageTab; label: string }[] = [
     { id: "compose", label: "Compose" },
+    { id: "design", label: "Design" },
     { id: "settings", label: "Settings" },
     { id: "test", label: "Test" },
   ];
 
+  const previewIcons: { id: PreviewDevice; icon: typeof Smartphone; label: string }[] = [
+    { id: "phone", icon: Smartphone, label: "Phone" },
+    { id: "tablet", icon: Tablet, label: "Tablet" },
+    { id: "laptop", icon: Laptop, label: "Laptop" },
+  ];
+
+  function updateField<K extends keyof PushMessagePayload>(key: K, next: PushMessagePayload[K]) {
+    if (key === "message" && typeof next === "string" && next.trim()) {
+      setShowBodyError(false);
+    }
+    onChange({ ...value, [key]: next });
+  }
+
+  function insertToken(
+    field: "title" | "message" | "button1Text" | "button2Text",
+    ref: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
+  ) {
+    const current = value[field];
+    updateField(field, insertAtCursor(ref.current, current, PERSONALIZATION_TOKEN));
+    ref.current?.focus();
+  }
+
   return (
     <div className="space-y-4">
-      <div>
+      <div className="flex items-center justify-between gap-4">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">Compose push notification</h2>
-        <div className="mt-4 flex gap-6 border-b border-border">
-          <span className="border-b-2 border-primary pb-3 text-sm font-semibold text-foreground">iOS</span>
-          <span className="pb-3 text-sm font-medium text-muted">Android</span>
-        </div>
+        <button type="button" onClick={onChangePlatforms} className="text-sm font-medium text-primary hover:underline">
+          Change platforms
+        </button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <Card className="space-y-8 p-6">
-          <div>
-            <div className="mb-4 text-sm font-semibold text-foreground">iOS</div>
-            <div className="mb-4 flex flex-wrap gap-3">
-              <label className="flex items-center gap-2 text-sm text-muted">
-                <span>Device</span>
-                <select
-                  className={`${inputClass} w-auto min-w-[120px] py-1.5`}
-                  value={iosDevice}
-                  onChange={(event) => setIosDevice(event.target.value as (typeof IOS_DEVICES)[number])}
-                >
-                  {IOS_DEVICES.map((device) => (
-                    <option key={device} value={device}>
-                      {device}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex items-center gap-2 text-sm text-muted">
-                <span>Notification State</span>
-                <select
-                  className={`${inputClass} w-auto min-w-[160px] py-1.5`}
-                  value={iosState}
-                  onChange={(event) => setIosState(event.target.value as (typeof IOS_STATES)[number])}
-                >
-                  {IOS_STATES.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <IosPreview
-              title={value.title}
-              message={value.message}
-              device={iosDevice}
-              notificationState={iosState}
-            />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <Card className="p-6">
+          <div className="mb-4 text-sm font-semibold text-foreground">Preview</div>
+          <div className="mb-6 flex items-center gap-2">
+            {previewIcons.map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setPreviewDevice(id)}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+                  previewDevice === id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted hover:text-foreground"
+                }`}
+                aria-label={label}
+              >
+                <Icon size={18} />
+              </button>
+            ))}
           </div>
-
-          <div>
-            <div className="mb-4 text-sm font-semibold text-foreground">Android</div>
-            <AndroidPreview title={value.title} message={value.message} />
-          </div>
-
-          <p className="text-xs text-muted">
-            Always test your message on a real device, as actual rendering may vary.
-          </p>
+          <PushPreview value={value} previewDevice={previewDevice} />
         </Card>
 
         <Card className="overflow-hidden p-0">
@@ -243,121 +376,104 @@ export function PushPlatformStep({ value, onChange }: Props) {
             ))}
           </div>
 
-          <div className="space-y-6 p-6">
+          <div className="space-y-5 p-6">
             {activeTab === "compose" ? (
               <>
-                <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
-                  <span className="text-sm font-medium text-foreground">Language</span>
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    + Add languages
-                  </button>
-                </div>
+                <Field label="Header">
+                  <div className="relative">
+                    <input
+                      ref={headerRef}
+                      className={`${inputClass} pr-16`}
+                      value={value.title}
+                      onChange={(event) => updateField("title", event.target.value)}
+                      placeholder="Notification header"
+                    />
+                    <FieldActions onInsert={() => insertToken("title", headerRef)} />
+                  </div>
+                </Field>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">Content</h3>
-
-                  <div className="mt-4 space-y-5">
-                    <Field label="Title">
-                      <div className="relative">
-                        <input
-                          ref={titleRef}
-                          className={`${inputClass} pr-10`}
-                          value={value.title}
-                          onChange={(event) => onChange({ ...value, title: event.target.value })}
-                          placeholder="Notification Title"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => insertToken("title", PERSONALIZATION_TOKENS[0])}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-primary hover:bg-primary/10"
-                          aria-label="Insert personalization"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </Field>
-
-                    <div>
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-sm text-muted">Message</span>
-                        <div className="flex items-center gap-2 text-muted">
-                          <span className="text-xs">{value.message.length} characters</span>
-                          <button type="button" className="rounded p-1 hover:bg-background" aria-label="Message info">
-                            <Info size={14} />
-                          </button>
-                          <button type="button" className="rounded p-1 hover:bg-background" aria-label="Edit message">
-                            <Pencil size={14} />
-                          </button>
-                          <button type="button" className="rounded p-1 hover:bg-background" aria-label="Personalization">
-                            <User size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <textarea
-                          ref={messageRef}
-                          className={`${inputClass} min-h-32 pr-10`}
-                          value={value.message}
-                          onChange={(event) => onChange({ ...value, message: event.target.value })}
-                          placeholder="Here's notification text."
-                        />
-                        <button
-                          type="button"
-                          onClick={() => insertToken("message", PERSONALIZATION_TOKENS[0])}
-                          className="absolute right-2 top-3 rounded p-1 text-primary hover:bg-primary/10"
-                          aria-label="Insert personalization"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                  <Field label="Body">
+                    <div className="relative">
+                      <textarea
+                        ref={bodyRef}
+                        className={`${inputClass} min-h-28 pr-16 ${
+                          showBodyError && !value.message.trim() ? "border-error focus:border-error" : ""
+                        }`}
+                        value={value.message}
+                        onChange={(event) => updateField("message", event.target.value)}
+                        onBlur={() => setShowBodyError(true)}
+                        placeholder="Your message..."
+                      />
+                      <TextareaFieldActions onInsert={() => insertToken("message", bodyRef)} />
                     </div>
+                  </Field>
+                  {showBodyError && !value.message.trim() ? (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-sm text-error">
+                      <AlertCircle size={14} />
+                      This field is incomplete
+                    </p>
+                  ) : null}
+                </div>
+
+                <Field label="Button 1 text">
+                  <div className="relative">
+                    <input
+                      ref={button1Ref}
+                      className={`${inputClass} pr-16`}
+                      value={value.button1Text}
+                      onChange={(event) => updateField("button1Text", event.target.value)}
+                      placeholder="Primary action"
+                    />
+                    <FieldActions onInsert={() => insertToken("button1Text", button1Ref)} />
                   </div>
+                </Field>
+
+                <Field label="Button 2 text">
+                  <div className="relative">
+                    <input
+                      ref={button2Ref}
+                      className={`${inputClass} pr-16`}
+                      value={value.button2Text}
+                      onChange={(event) => updateField("button2Text", event.target.value)}
+                      placeholder="Secondary action"
+                    />
+                    <FieldActions onInsert={() => insertToken("button2Text", button2Ref)} />
+                  </div>
+                </Field>
+
+                <div className="border-t border-border pt-4">
+                  <div className="text-sm font-semibold text-foreground">Device options</div>
+                  <p className="mt-1 text-sm text-muted">
+                    Sending to{" "}
+                    {value.platformCategory === "web"
+                      ? "Web"
+                      : value.platforms.map((platform) => platform.toUpperCase()).join(" and ") || "mobile devices"}
+                    .
+                  </p>
                 </div>
               </>
             ) : null}
 
+            {activeTab === "design" ? (
+              <div className="rounded-xl border border-dashed border-border bg-background px-5 py-8 text-center text-sm text-muted">
+                Design options for rich push layouts will appear here.
+              </div>
+            ) : null}
+
             {activeTab === "settings" ? (
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Push platform</h3>
-                <p className="mt-1 text-sm text-muted">
-                  Select the platforms where this push notification should be delivered.
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {PUSH_PLATFORMS.map((platform) => {
-                    const Icon = PLATFORM_ICONS[platform.id];
-                    const selected = value.platforms.includes(platform.id);
-                    return (
-                      <button
-                        key={platform.id}
-                        type="button"
-                        onClick={() => togglePlatform(platform.id)}
-                        className={`rounded-xl border p-4 text-left transition ${
-                          selected
-                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                            : "border-border bg-background hover:border-primary/30"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface">
-                            <Icon size={20} className="text-primary" />
-                          </div>
-                          <input
-                            type="checkbox"
-                            readOnly
-                            checked={selected}
-                            className="mt-1 accent-primary"
-                            aria-label={platform.label}
-                          />
-                        </div>
-                        <div className="mt-4 text-sm font-semibold text-foreground">{platform.label}</div>
-                        <div className="mt-1 text-xs text-muted">{platform.description}</div>
-                      </button>
-                    );
-                  })}
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="font-medium text-foreground">Platform category</div>
+                  <div className="mt-1 capitalize text-muted">{value.platformCategory ?? "Not selected"}</div>
                 </div>
+                <div>
+                  <div className="font-medium text-foreground">Delivery targets</div>
+                  <div className="mt-1 text-muted">{value.platforms.join(", ") || "None"}</div>
+                </div>
+                <button type="button" onClick={onChangePlatforms} className="font-medium text-primary hover:underline">
+                  Change platform selection
+                </button>
               </div>
             ) : null}
 
@@ -380,4 +496,23 @@ export function PushPlatformStep({ value, onChange }: Props) {
       </div>
     </div>
   );
+}
+
+export function PushPlatformStep({ value, onChange }: Props) {
+  const [phase, setPhase] = useState<ComposePhase>(value.platformsConfirmed ? "message" : "platform");
+
+  function goToMessage() {
+    setPhase("message");
+  }
+
+  function goToPlatform() {
+    onChange({ ...value, platformsConfirmed: false });
+    setPhase("platform");
+  }
+
+  if (phase === "platform") {
+    return <PushPlatformSelect value={value} onChange={onChange} onConfirm={goToMessage} />;
+  }
+
+  return <PushMessageCompose value={value} onChange={onChange} onChangePlatforms={goToPlatform} />;
 }

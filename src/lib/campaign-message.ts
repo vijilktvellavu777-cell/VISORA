@@ -1,4 +1,5 @@
 export type PushPlatform = "ios" | "android" | "web";
+export type PushPlatformCategory = "mobile" | "web";
 
 export const PUSH_PLATFORMS: {
   id: PushPlatform;
@@ -13,7 +14,11 @@ export const PUSH_PLATFORMS: {
 export type PushMessagePayload = {
   title: string;
   message: string;
+  button1Text: string;
+  button2Text: string;
   platforms: PushPlatform[];
+  platformCategory: PushPlatformCategory | null;
+  platformsConfirmed: boolean;
 };
 
 export type InAppMessagePayload = {
@@ -33,7 +38,11 @@ export function defaultPushMessage(): PushMessagePayload {
   return {
     title: "",
     message: "",
-    platforms: [...DEFAULT_PUSH_PLATFORMS],
+    button1Text: "",
+    button2Text: "",
+    platforms: ["ios", "android"],
+    platformCategory: "mobile",
+    platformsConfirmed: false,
   };
 }
 
@@ -55,18 +64,37 @@ export function defaultWhatsAppMessage(): WhatsAppMessagePayload {
 export function parsePushPayload(subject: string | null, body: string): PushMessagePayload {
   const title = subject?.trim() ?? "";
   if (!body.trim()) {
-    return { title, message: "", platforms: [...DEFAULT_PUSH_PLATFORMS] };
+    return { ...defaultPushMessage(), title };
   }
 
   try {
-    const parsed = JSON.parse(body) as Partial<PushMessagePayload>;
-    if (parsed && typeof parsed === "object" && Array.isArray(parsed.platforms)) {
+    const parsed = JSON.parse(body) as Partial<PushMessagePayload> & {
+      platforms?: PushPlatform[];
+    };
+    if (parsed && typeof parsed === "object") {
+      const platforms = Array.isArray(parsed.platforms)
+        ? parsed.platforms.filter((platform): platform is PushPlatform =>
+            DEFAULT_PUSH_PLATFORMS.includes(platform as PushPlatform),
+          )
+        : defaultPushMessage().platforms;
+
+      const platformCategory =
+        parsed.platformCategory === "mobile" || parsed.platformCategory === "web"
+          ? parsed.platformCategory
+          : platforms.includes("web") && !platforms.includes("ios") && !platforms.includes("android")
+            ? "web"
+            : platforms.length > 0
+              ? "mobile"
+              : null;
+
       return {
         title,
         message: typeof parsed.message === "string" ? parsed.message : body,
-        platforms: parsed.platforms.filter((platform): platform is PushPlatform =>
-          DEFAULT_PUSH_PLATFORMS.includes(platform as PushPlatform),
-        ),
+        button1Text: typeof parsed.button1Text === "string" ? parsed.button1Text : "",
+        button2Text: typeof parsed.button2Text === "string" ? parsed.button2Text : "",
+        platforms,
+        platformCategory,
+        platformsConfirmed: Boolean(parsed.platformsConfirmed ?? platforms.length > 0),
       };
     }
   } catch {
@@ -76,7 +104,11 @@ export function parsePushPayload(subject: string | null, body: string): PushMess
   return {
     title,
     message: body,
+    button1Text: "",
+    button2Text: "",
     platforms: [...DEFAULT_PUSH_PLATFORMS],
+    platformCategory: "mobile",
+    platformsConfirmed: true,
   };
 }
 
@@ -85,7 +117,11 @@ export function serializePushPayload(payload: PushMessagePayload) {
     subject: payload.title,
     body: JSON.stringify({
       message: payload.message,
+      button1Text: payload.button1Text,
+      button2Text: payload.button2Text,
       platforms: payload.platforms,
+      platformCategory: payload.platformCategory,
+      platformsConfirmed: payload.platformsConfirmed,
     }),
   };
 }
