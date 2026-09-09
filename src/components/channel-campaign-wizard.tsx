@@ -465,7 +465,7 @@ export function ChannelCampaignWizard({
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-8 py-8 pb-28">
+      <div className={`mx-auto px-8 py-8 pb-28 ${channel === "push" && step === 1 ? "max-w-6xl" : "max-w-4xl"}`}>
         {step === 1 ? (
           <div className="space-y-6">
             <CampaignDetailsCard
