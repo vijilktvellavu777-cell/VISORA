@@ -153,6 +153,12 @@ function PushMessageSummary({
           label="Notification message"
           value={pushMessage.message.trim() || "No message yet"}
         />
+        {pushMessage.button1Text.trim() ? (
+          <SummaryField label="Button 1" value={pushMessage.button1Text} />
+        ) : null}
+        {pushMessage.button2Text.trim() ? (
+          <SummaryField label="Button 2" value={pushMessage.button2Text} />
+        ) : null}
         <SummaryField
           label="Push platform"
           value={

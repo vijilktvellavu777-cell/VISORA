@@ -258,7 +258,14 @@ export function ChannelCampaignWizard({
             subject: "",
             body:
               channel === "push"
-                ? JSON.stringify({ message: "", platforms: ["ios", "android", "web"] })
+                ? JSON.stringify({
+                    message: "",
+                    platforms: ["ios", "android"],
+                    platformCategory: "mobile",
+                    platformsConfirmed: false,
+                    button1Text: "",
+                    button2Text: "",
+                  })
                 : channel === "whatsapp"
                   ? JSON.stringify({ message: "" })
                   : "",
@@ -346,6 +353,16 @@ export function ChannelCampaignWizard({
   async function goNext() {
     if (!campaign) return;
     if (step === 1) {
+      if (channel === "push") {
+        if (!pushMessage.platformsConfirmed) {
+          setError("Confirm your push platforms before continuing.");
+          return;
+        }
+        if (!pushMessage.message.trim()) {
+          setError("Add a push notification body before continuing.");
+          return;
+        }
+      }
       const messagePayload = composePayload();
       const ok = await saveCampaign({
         name: campaign.name,
