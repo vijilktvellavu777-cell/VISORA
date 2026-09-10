@@ -35,6 +35,10 @@ const NAV = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen w-full bg-background">
       <aside className="fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 text-white">
