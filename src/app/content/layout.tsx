@@ -1,10 +1,11 @@
 import { ContentSubnav } from "@/components/content-subnav";
+import { SubnavContentOffset } from "@/components/subnav-content-offset";
 
 export default function ContentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <>
       <ContentSubnav />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+      <SubnavContentOffset>{children}</SubnavContentOffset>
+    </>
   );
 }

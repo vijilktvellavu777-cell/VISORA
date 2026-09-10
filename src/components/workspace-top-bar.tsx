@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Bell,
@@ -11,6 +12,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { isHubSubnavPath } from "@/lib/subnav";
 
 function IconButton({
   label,
@@ -34,6 +36,8 @@ function IconButton({
 }
 
 export function WorkspaceTopBar() {
+  const pathname = usePathname();
+  const hubSubnavActive = isHubSubnavPath(pathname);
   const [profileOpen, setProfileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -71,7 +75,11 @@ export function WorkspaceTopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-surface px-6 py-3">
+    <header
+      className={`sticky top-0 z-30 border-b border-border bg-surface px-6 py-3 transition-[margin] ${
+        hubSubnavActive ? "ml-[220px]" : ""
+      }`}
+    >
       <div className="flex items-center justify-between gap-4">
         <label className="relative block w-full max-w-md">
           <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />

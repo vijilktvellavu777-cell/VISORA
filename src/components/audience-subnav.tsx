@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Filter, Blocks, Ban, Search, ArrowLeftRight } from "lucide-react";
+import { isHubSubnavPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
 
 const ITEMS = [
   { href: "/audience/segments", label: "Segments", icon: Filter },
@@ -14,12 +15,10 @@ const ITEMS = [
 
 export function AudienceSubnav() {
   const pathname = usePathname();
-  const showSubnav = pathname === "/audience";
-
-  if (!showSubnav) return null;
+  if (!isHubSubnavPath(pathname) || pathname !== "/audience") return null;
 
   return (
-    <aside className="sticky top-0 h-screen w-[220px] shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-6 text-white">
+    <aside className={subnavPanelClassName} style={subnavPanelStyle}>
       <div className="px-2 text-[11px] font-semibold uppercase tracking-wide text-white/60">Audience</div>
       <nav className="mt-3 flex flex-col gap-1">
         {ITEMS.map((item) => {

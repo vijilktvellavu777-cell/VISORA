@@ -10,6 +10,7 @@ import {
   Mail,
   Smartphone,
 } from "lucide-react";
+import { isHubSubnavPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
 
 const SECTIONS = [
   {
@@ -30,12 +31,10 @@ const SECTIONS = [
 
 export function ContentSubnav() {
   const pathname = usePathname();
-  const showSubnav = pathname === "/content";
-
-  if (!showSubnav) return null;
+  if (!isHubSubnavPath(pathname) || pathname !== "/content") return null;
 
   return (
-    <aside className="sticky top-0 h-screen w-[220px] shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-6 text-white">
+    <aside className={subnavPanelClassName} style={subnavPanelStyle}>
       <div className="px-2 text-[11px] font-semibold uppercase tracking-wide text-white/60">Content</div>
       <div className="mt-3 flex flex-col gap-5">
         {SECTIONS.map((section) => (
