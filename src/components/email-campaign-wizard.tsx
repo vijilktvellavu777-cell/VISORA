@@ -39,9 +39,14 @@ import {
 import {
   campaignScheduleFromRecord,
   DEFAULT_CAMPAIGN_SCHEDULE,
-  resolveCampaignScheduleOutcome,
   type CampaignSchedule,
 } from "@/lib/campaign-schedule";
+import {
+  resolveLaunchOutcome,
+  sendCampaignNow,
+  shouldSendCampaignOnLaunch,
+  validateCampaignScheduleForLaunch,
+} from "@/lib/campaign-launch";
 import { EmailComposeSummary } from "@/components/email-compose-summary";
 import { EmailDragDropEditor } from "@/components/email-drag-drop-editor";
 import { EmailHtmlEditor } from "@/components/email-html-editor";
@@ -447,20 +452,32 @@ export function EmailCampaignWizard({
     }
   }
 
-  async function finish(saveOnly: boolean) {
+  async function launchCampaign() {
     if (!campaign) return;
-    const { scheduledAt, status } = resolveCampaignScheduleOutcome(schedule);
 
+    const validationError = validateCampaignScheduleForLaunch(schedule);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError(null);
+    const { scheduledAt, status } = resolveLaunchOutcome(schedule);
     const ok = await saveCampaign({ scheduledAt, status, scheduleConfig: schedule });
     if (!ok) return;
-    clearEmailWizardDraftSession();
-    if (saveOnly) {
-      router.push("/campaigns");
-      router.refresh();
-    } else {
-      router.push(`/campaigns/${campaign.id}`);
-      router.refresh();
+
+    try {
+      if (shouldSendCampaignOnLaunch(schedule)) {
+        await sendCampaignNow(campaign.id);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Launch failed");
+      return;
     }
+
+    clearEmailWizardDraftSession();
+    router.push(`/campaigns/${campaign.id}`);
+    router.refresh();
   }
 
   async function saveDraft() {
@@ -864,18 +881,17 @@ export function EmailCampaignWizard({
             })}
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (step < 4) goNext();
-              else finish(false);
-            }}
-            disabled={saving}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label={step === 4 ? "Review campaign" : "Next step"}
-          >
-            <ChevronRight size={20} />
-          </button>
+          {step < 4 ? (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={saving}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Next step"
+            >
+              <ChevronRight size={20} />
+            </button>
+          ) : null}
 
           {saveNotice ? (
             <span className="ml-2 shrink-0 text-sm text-success">Changes saved</span>
@@ -887,8 +903,19 @@ export function EmailCampaignWizard({
             disabled={saving}
             className="ml-2 shrink-0 rounded-lg border border-primary bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save Draft"}
+            {saving ? "Saving…" : "Save as Draft"}
           </button>
+
+          {step === 4 ? (
+            <button
+              type="button"
+              onClick={launchCampaign}
+              disabled={saving}
+              className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+            >
+              {saving ? "Launching…" : "Launch Campaign"}
+            </button>
+          ) : null}
         </div>
       </footer>
 
