@@ -35,6 +35,7 @@ function IconButton({
 
 export function WorkspaceTopBar() {
   const [profileOpen, setProfileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,6 +56,19 @@ export function WorkspaceTopBar() {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  async function signOut() {
+    setSigningOut(true);
+    setProfileOpen(false);
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+    } finally {
+      window.location.href = "/login";
+    }
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface px-6 py-3">
@@ -107,8 +121,13 @@ export function WorkspaceTopBar() {
                 <button type="button" className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-background">
                   Account settings
                 </button>
-                <button type="button" className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-background">
-                  Sign out
+                <button
+                  type="button"
+                  onClick={signOut}
+                  disabled={signingOut}
+                  className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-background disabled:opacity-60"
+                >
+                  {signingOut ? "Signing out…" : "Sign out"}
                 </button>
               </div>
             ) : null}

@@ -27,6 +27,16 @@ export function sessionMaxAgeSeconds() {
   return MAX_AGE_SECONDS;
 }
 
+export function sessionCookieOptions(maxAge = MAX_AGE_SECONDS) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge,
+  };
+}
+
 export async function createSessionToken(username: string) {
   const exp = Date.now() + MAX_AGE_SECONDS * 1000;
   const payload = `${username}:${exp}`;

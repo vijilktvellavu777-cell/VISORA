@@ -4,6 +4,7 @@ import {
   createSessionToken,
   credentialsMatch,
   sessionCookieName,
+  sessionCookieOptions,
   sessionMaxAgeSeconds,
 } from "@/lib/web-session";
 import { errorToResponse } from "@/lib/http";
@@ -27,12 +28,6 @@ export async function POST(request: NextRequest) {
 
   const token = await createSessionToken(body.username.trim());
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(sessionCookieName(), token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: sessionMaxAgeSeconds(),
-  });
+  response.cookies.set(sessionCookieName(), token, sessionCookieOptions(sessionMaxAgeSeconds()));
   return response;
 }
