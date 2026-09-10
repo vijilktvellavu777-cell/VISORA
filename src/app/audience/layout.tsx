@@ -1,10 +1,11 @@
 import { AudienceSubnav } from "@/components/audience-subnav";
+import { SubnavContentOffset } from "@/components/subnav-content-offset";
 
 export default function AudienceLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <>
       <AudienceSubnav />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+      <SubnavContentOffset>{children}</SubnavContentOffset>
+    </>
   );
 }
