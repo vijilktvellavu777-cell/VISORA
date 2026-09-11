@@ -11,6 +11,7 @@ import {
   MessagesSquare,
   Sparkles,
 } from "lucide-react";
+import { HeaderIconTooltip } from "@/components/header-icon-tooltip";
 
 const SUPPORT_LINKS = {
   status: "https://status.visora.app",
@@ -92,15 +93,17 @@ export function SupportMenu() {
 
   return (
     <div ref={menuRef} className="relative">
-      <button
-        type="button"
-        aria-label="Support"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
-      >
-        <MessageSquareWarning size={18} strokeWidth={1.75} />
-      </button>
+      <HeaderIconTooltip label="Support">
+        <button
+          type="button"
+          aria-label="Support"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
+        >
+          <MessageSquareWarning size={18} strokeWidth={1.75} />
+        </button>
+      </HeaderIconTooltip>
 
       {open ? (
         <div className="absolute right-0 top-full z-20 mt-2 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
