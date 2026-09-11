@@ -9,8 +9,8 @@ import {
   Globe,
   Search,
   Sparkles,
-  Users,
 } from "lucide-react";
+import { CommunityMenu } from "@/components/community-menu";
 import { SupportMenu } from "@/components/support-menu";
 import { isHubSubnavPath } from "@/lib/subnav";
 
@@ -96,9 +96,7 @@ export function WorkspaceTopBar() {
 
         <div className="flex shrink-0 items-center gap-1">
           <SupportMenu />
-          <IconButton label="Team">
-            <Users size={18} strokeWidth={1.75} />
-          </IconButton>
+          <CommunityMenu />
           <IconButton label="Language">
             <Globe size={18} strokeWidth={1.75} />
           </IconButton>
