@@ -7,11 +7,11 @@ import {
   Bell,
   ChevronDown,
   Globe,
-  MessageSquareWarning,
   Search,
   Sparkles,
   Users,
 } from "lucide-react";
+import { SupportMenu } from "@/components/support-menu";
 import { isHubSubnavPath } from "@/lib/subnav";
 
 function IconButton({
@@ -95,9 +95,7 @@ export function WorkspaceTopBar() {
         </label>
 
         <div className="flex shrink-0 items-center gap-1">
-          <IconButton label="Feedback">
-            <MessageSquareWarning size={18} strokeWidth={1.75} />
-          </IconButton>
+          <SupportMenu />
           <IconButton label="Team">
             <Users size={18} strokeWidth={1.75} />
           </IconButton>
