@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Users,
 } from "lucide-react";
+import { HeaderIconTooltip } from "@/components/header-icon-tooltip";
 
 const COMMUNITY_LINKS = {
   bonfire: "https://community.visora.app",
@@ -99,15 +100,17 @@ export function CommunityMenu() {
         </defs>
       </svg>
 
-      <button
-        type="button"
-        aria-label="Community"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
-      >
-        <Users size={18} strokeWidth={1.75} />
-      </button>
+      <HeaderIconTooltip label="Community">
+        <button
+          type="button"
+          aria-label="Community"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
+        >
+          <Users size={18} strokeWidth={1.75} />
+        </button>
+      </HeaderIconTooltip>
 
       {open ? (
         <div className="absolute right-0 top-full z-20 mt-2 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-xl border border-border bg-surface p-2 shadow-lg">

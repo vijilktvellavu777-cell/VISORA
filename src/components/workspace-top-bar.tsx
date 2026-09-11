@@ -11,27 +11,34 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CommunityMenu } from "@/components/community-menu";
+import { HeaderIconTooltip } from "@/components/header-icon-tooltip";
 import { SupportMenu } from "@/components/support-menu";
 import { isHubSubnavPath } from "@/lib/subnav";
 
+const ACCOUNT_USER_NAME = "VISORA User";
+
 function IconButton({
   label,
+  tooltip,
   children,
   onClick,
 }: {
   label: string;
+  tooltip: string;
   children: React.ReactNode;
   onClick?: () => void;
 }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
-    >
-      {children}
-    </button>
+    <HeaderIconTooltip label={tooltip}>
+      <button
+        type="button"
+        aria-label={label}
+        onClick={onClick}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-background hover:text-foreground"
+      >
+        {children}
+      </button>
+    </HeaderIconTooltip>
   );
 }
 
@@ -97,29 +104,31 @@ export function WorkspaceTopBar() {
         <div className="flex shrink-0 items-center gap-1">
           <SupportMenu />
           <CommunityMenu />
-          <IconButton label="Language">
+          <IconButton label="Language" tooltip="Language">
             <Globe size={18} strokeWidth={1.75} />
           </IconButton>
-          <IconButton label="Notifications">
+          <IconButton label="Notifications" tooltip="Notification">
             <Bell size={18} strokeWidth={1.75} />
           </IconButton>
 
           <div ref={profileRef} className="relative ml-1">
-            <button
-              type="button"
-              aria-label="Profile menu"
-              onClick={() => setProfileOpen((open) => !open)}
-              className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-background"
-            >
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#d1d5db] text-sm">
-                🙂
-              </span>
-              <ChevronDown size={14} className="text-muted" />
-            </button>
+            <HeaderIconTooltip label={ACCOUNT_USER_NAME}>
+              <button
+                type="button"
+                aria-label="Profile menu"
+                onClick={() => setProfileOpen((open) => !open)}
+                className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-background"
+              >
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#d1d5db] text-sm">
+                  🙂
+                </span>
+                <ChevronDown size={14} className="text-muted" />
+              </button>
+            </HeaderIconTooltip>
             {profileOpen ? (
               <div className="absolute right-0 top-full z-20 mt-2 min-w-[180px] overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg">
                 <div className="border-b border-border px-4 py-3">
-                  <div className="text-sm font-medium text-foreground">VISORA User</div>
+                  <div className="text-sm font-medium text-foreground">{ACCOUNT_USER_NAME}</div>
                   <div className="text-xs text-muted">user@visora.app</div>
                 </div>
                 <button type="button" className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-background">
