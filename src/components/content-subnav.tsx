@@ -11,7 +11,7 @@ import {
   Mail,
   Smartphone,
 } from "lucide-react";
-import { isHubSectionPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
+import { isHubSubnavPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
 
 const SECTIONS = [
   {
@@ -39,7 +39,7 @@ function isNavItemActive(pathname: string, href: string) {
 
 export function ContentSubnav() {
   const pathname = usePathname();
-  if (!isHubSectionPath(pathname, "/content")) return null;
+  if (!isHubSubnavPath(pathname)) return null;
 
   return (
     <aside className={subnavPanelClassName} style={subnavPanelStyle}>
