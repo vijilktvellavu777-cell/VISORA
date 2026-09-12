@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -11,8 +12,7 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { Badge } from "@/components/ui";
-import { CreateNewLinkDropdown } from "@/components/create-new-link-dropdown";
+import { Badge, inputClass } from "@/components/ui";
 import { LinkTableRowMenu } from "@/components/link-table-row-menu";
 
 export type LinkTableRow = {
@@ -29,18 +29,26 @@ function statusTone(status: string) {
   return "warn" as const;
 }
 
-function isActive(status: string) {
-  return status !== "archived";
+function matchesStatusFilter(status: string, statusFilter: string) {
+  if (statusFilter === "all") return true;
+  if (statusFilter === "active") return status === "active";
+  if (statusFilter === "drafts") return status === "draft";
+  return true;
 }
 
 export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
+  const [showCreateRow, setShowCreateRow] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
     return links.filter((link) => {
-      if (statusFilter === "active" && !isActive(link.status)) return false;
-      if (statusFilter === "drafts" && link.status !== "draft") return false;
+      if (!matchesStatusFilter(link.status, statusFilter)) return false;
       if (search) {
         const query = search.toLowerCase();
         if (!link.name.toLowerCase().includes(query) && !link.url.toLowerCase().includes(query)) {
@@ -50,6 +58,38 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
       return true;
     });
   }, [links, statusFilter, search]);
+
+  const hasLinks = links.length > 0;
+  const hasFilteredResults = filtered.length > 0;
+  const showTableBody = hasLinks || showCreateRow;
+
+  function resetCreateRow() {
+    setShowCreateRow(false);
+    setNewName("");
+    setNewUrl("");
+    setCreateError(null);
+  }
+
+  async function handleCreateLink() {
+    setSaving(true);
+    setCreateError(null);
+
+    const response = await fetch("/api/content/link-table", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName, url: newUrl, status: "active" }),
+    });
+    const json = await response.json().catch(() => ({}));
+    setSaving(false);
+
+    if (!response.ok) {
+      setCreateError(typeof json.error === "string" ? json.error : "Could not create link.");
+      return;
+    }
+
+    resetCreateRow();
+    router.refresh();
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -66,7 +106,17 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
             >
               <MessageSquare size={18} />
             </button>
-            <CreateNewLinkDropdown />
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreateRow(true);
+                setCreateError(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+            >
+              Create new link
+              <ChevronDown size={16} className={showCreateRow ? "rotate-180 transition" : "transition"} />
+            </button>
           </div>
         </div>
       </div>
@@ -169,12 +219,84 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {showCreateRow ? (
+              <tr className="border-b border-border bg-primary/5">
+                <td className="py-3 pr-4 align-top">
+                  <label className="sr-only" htmlFor="new-link-name">
+                    Link name
+                  </label>
+                  <input
+                    id="new-link-name"
+                    className={inputClass}
+                    value={newName}
+                    onChange={(event) => setNewName(event.target.value)}
+                    placeholder="Link name"
+                    autoFocus
+                  />
+                </td>
+                <td className="py-3 pr-4 align-top">
+                  <label className="sr-only" htmlFor="new-link-url">
+                    Link URL
+                  </label>
+                  <input
+                    id="new-link-url"
+                    className={inputClass}
+                    value={newUrl}
+                    onChange={(event) => setNewUrl(event.target.value)}
+                    placeholder="https://example.com"
+                  />
+                  {createError ? <p className="mt-2 text-xs text-error">{createError}</p> : null}
+                </td>
+                <td className="py-3 pr-4 align-top text-muted">—</td>
+                <td className="py-3 pr-4 align-top text-muted">VISORA</td>
+                <td className="py-3 pr-4 align-top text-muted">—</td>
+                <td className="py-3 align-top text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={resetCreateRow}
+                      className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-background"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={handleCreateLink}
+                      className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+                    >
+                      {saving ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : null}
+
+            {filtered.map((link) => (
+              <tr key={link.id} className="border-b border-border last:border-0">
+                <td className="py-4 pr-4 font-medium text-foreground">{link.name}</td>
+                <td className="max-w-md truncate py-4 pr-4 text-muted">{link.url}</td>
+                <td className="py-4 pr-4">
+                  <Badge tone={statusTone(link.status)}>{link.status}</Badge>
+                </td>
+                <td className="py-4 pr-4 text-muted">VISORA</td>
+                <td className="py-4 pr-4 text-muted">{format(new Date(link.updatedAt), "MMM d, yyyy")}</td>
+                <td className="py-4 text-right">
+                  <LinkTableRowMenu
+                    linkId={link.id}
+                    linkName={link.name}
+                    linkUrl={link.url}
+                    status={link.status}
+                  />
+                </td>
+              </tr>
+            ))}
+
+            {!showTableBody ? (
               <tr>
                 <td colSpan={6} className="py-16">
                   <div className="text-center">
-                    <p className="text-sm font-medium text-muted">No Results Found</p>
-                    <div className="mx-auto mt-8 flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-background">
+                    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-background">
                       <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden>
                         <rect x="12" y="10" width="40" height="48" rx="4" stroke="#CBD5E1" strokeWidth="2" />
                         <path d="M20 22h24M20 30h24M20 38h16" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round" />
@@ -187,32 +309,27 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
                       Create a new link to manage tracked URLs across your campaigns.
                     </p>
                     <div className="mt-6 flex justify-center">
-                      <CreateNewLinkDropdown />
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateRow(true)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                      >
+                        Create new link
+                        <ChevronDown size={16} />
+                      </button>
                     </div>
                   </div>
                 </td>
               </tr>
-            ) : (
-              filtered.map((link) => (
-                <tr key={link.id} className="border-b border-border last:border-0">
-                  <td className="py-4 pr-4 font-medium text-foreground">{link.name}</td>
-                  <td className="max-w-md truncate py-4 pr-4 text-muted">{link.url}</td>
-                  <td className="py-4 pr-4">
-                    <Badge tone={statusTone(link.status)}>{link.status}</Badge>
-                  </td>
-                  <td className="py-4 pr-4 text-muted">VISORA</td>
-                  <td className="py-4 pr-4 text-muted">{format(new Date(link.updatedAt), "MMM d, yyyy")}</td>
-                  <td className="py-4 text-right">
-                    <LinkTableRowMenu
-                      linkId={link.id}
-                      linkName={link.name}
-                      linkUrl={link.url}
-                      status={link.status}
-                    />
-                  </td>
-                </tr>
-              ))
-            )}
+            ) : null}
+
+            {hasLinks && !hasFilteredResults && !showCreateRow ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-sm font-medium text-muted">
+                  No Results Found
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
