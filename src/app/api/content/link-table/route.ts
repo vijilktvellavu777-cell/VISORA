@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       workspaceId: workspace.id,
       name,
       url,
-      status: typeof body.status === "string" ? body.status : "draft",
+      status: typeof body.status === "string" ? body.status : "active",
     },
   });
 
