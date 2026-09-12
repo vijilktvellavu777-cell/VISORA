@@ -1,6 +1,7 @@
 import { parseJson } from "@/lib/types";
 
 export const PRESET_EXTENSION_ATTRIBUTES = [
+  { value: "email", label: "Email_address" },
   { value: "first_name", label: "First_name" },
   { value: "last_name", label: "Last_name" },
 ] as const;
