@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { uniqueCanvasName } from "@/lib/canvas-names";
 import { getDefaultWorkspace } from "@/lib/workspace";
 
 type Params = { params: Promise<{ id: string }> };
@@ -15,10 +16,12 @@ export async function POST(_request: NextRequest, { params }: Params) {
     });
     if (!existing) return null;
 
+    const name = await uniqueCanvasName(workspace.id, `${existing.name} (Copy)`, undefined, tx);
+
     const created = await tx.canvas.create({
       data: {
         workspaceId: workspace.id,
-        name: `${existing.name} (Copy)`,
+        name,
         description: existing.description,
         status: "draft",
         segmentId: existing.segmentId,
