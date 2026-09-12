@@ -25,6 +25,7 @@ model Workspace {
   contentTemplates  ContentTemplate[]
   contentFiles      ContentFile[]
   mediaFolders      MediaFolder[]
+  linkTableEntries  LinkTableEntry[]
   planProjects      PlanProject[]
   listExtensions    ListExtension[]
   suppressionLists  SuppressionList[]
@@ -304,6 +305,19 @@ model MediaFolder {
   files       ContentFile[]
 
   @@index([workspaceId])
+}
+
+model LinkTableEntry {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  url         String
+  status      String    @default("draft")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId, updatedAt])
 }
 
 model PlanProject {
