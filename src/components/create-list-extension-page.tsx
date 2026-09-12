@@ -7,12 +7,18 @@ import { ChevronDown, Plus, X } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
 import { extensionAttributeLabel, PRESET_EXTENSION_ATTRIBUTES } from "@/lib/list-extension-attributes";
 
+const STEPS = [
+  { id: 1, label: "Extension Details" },
+  { id: 2, label: "Attributes" },
+] as const;
+
 function attributeLabel(value: string) {
   return extensionAttributeLabel(value);
 }
 
 export function CreateListExtensionPage() {
   const router = useRouter();
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [type, setType] = useState("email");
   const [description, setDescription] = useState("");
@@ -59,9 +65,19 @@ export function CreateListExtensionPage() {
     if (value) addAttribute(value);
   }
 
+  function goToStep2() {
+    if (!name.trim()) {
+      setError("Extension name is required.");
+      return;
+    }
+    setError(null);
+    setStep(2);
+  }
+
   async function saveExtension() {
     if (!name.trim()) {
       setError("Extension name is required.");
+      setStep(1);
       return;
     }
 
@@ -93,8 +109,8 @@ export function CreateListExtensionPage() {
     <div className="min-h-screen bg-background">
       <div className="border-b border-border bg-surface px-6 pt-3">
         <div className="flex items-center gap-1 text-sm">
-          <Link href="/audience" className="rounded-t-lg px-3 py-2 text-muted hover:text-foreground">
-            List Extensions
+          <Link href="/audience/list-extensions" className="rounded-t-lg px-3 py-2 text-muted hover:text-foreground">
+            Extensions
           </Link>
           <div className="flex items-center gap-2 rounded-t-lg border border-b-0 border-border bg-background px-3 py-2 font-medium text-foreground">
             New Extension
@@ -115,58 +131,104 @@ export function CreateListExtensionPage() {
             >
               Cancel
             </Link>
-            <button
-              type="button"
-              onClick={saveExtension}
-              disabled={saving}
-              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
+            {step === 1 ? (
+              <button
+                type="button"
+                onClick={goToStep2}
+                className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={saveExtension}
+                disabled={saving}
+                className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            )}
           </div>
         </div>
 
-        <Card className="mt-8 space-y-5 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Extension Details</h2>
-
-          <Field label="Extension Name">
-            <input
-              className={inputClass}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Enter extension name"
-            />
-          </Field>
-
-          <Field label="Type">
-            <div className="relative">
-              <select
-                className={`${inputClass} appearance-none pr-8`}
-                value={type}
-                onChange={(event) => setType(event.target.value)}
+        <div className="mt-8 flex gap-6 border-b border-border pb-4">
+          {STEPS.map((item) => {
+            const active = step === item.id;
+            const complete = step > item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  if (item.id === 1) setStep(1);
+                  if (item.id === 2 && name.trim()) setStep(2);
+                }}
+                className="flex items-center gap-2 text-sm transition hover:opacity-80"
               >
-                <option value="email">Email</option>
-                <option value="sms">SMS</option>
-                <option value="custom">Custom</option>
-              </select>
-              <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-            </div>
-          </Field>
+                <span
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                    active
+                      ? "bg-primary text-white"
+                      : complete
+                        ? "bg-primary/15 text-primary"
+                        : "bg-primary/10 text-primary/70"
+                  }`}
+                >
+                  {item.id}
+                </span>
+                <span className={active ? "font-semibold text-foreground" : "text-muted"}>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-          <Field label="Description">
-            <textarea
-              className={`${inputClass} min-h-24`}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Describe what this extension does"
-            />
-          </Field>
+        {step === 1 ? (
+          <Card className="mt-8 space-y-5 p-6">
+            <h2 className="text-lg font-semibold text-foreground">Extension Details</h2>
 
-          <div className="space-y-3 border-t border-border pt-5">
+            <Field label="Extension Name">
+              <input
+                className={inputClass}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Enter extension name"
+              />
+            </Field>
+
+            <Field label="Type">
+              <div className="relative">
+                <select
+                  className={`${inputClass} appearance-none pr-8`}
+                  value={type}
+                  onChange={(event) => setType(event.target.value)}
+                >
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <ChevronDown
+                  size={14}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+                />
+              </div>
+            </Field>
+
+            <Field label="Description">
+              <textarea
+                className={`${inputClass} min-h-24`}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Describe what this extension does"
+              />
+            </Field>
+          </Card>
+        ) : (
+          <Card className="mt-8 space-y-5 p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-medium text-foreground">Attributes</h3>
-                <p className="mt-1 text-xs text-muted">Choose profile fields this extension maps to your list.</p>
+                <h2 className="text-lg font-semibold text-foreground">Attributes</h2>
+                <p className="mt-1 text-sm text-muted">Choose profile fields this extension maps to your list.</p>
               </div>
               <div className="relative min-w-[220px]">
                 <select
@@ -180,16 +242,19 @@ export function CreateListExtensionPage() {
                       {item.label}
                     </option>
                   ))}
-                  <option value="custom">New attribute</option>
+                  <option value="custom">Custom attribute</option>
                 </select>
-                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+                <ChevronDown
+                  size={14}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+                />
               </div>
             </div>
 
             {showCustomAttribute ? (
               <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background p-3">
                 <label className="min-w-[220px] flex-1 text-sm">
-                  <span className="mb-1.5 block text-muted">Attribute name</span>
+                  <span className="mb-1.5 block text-muted">Custom attribute name</span>
                   <input
                     className={inputClass}
                     value={customAttribute}
@@ -240,11 +305,25 @@ export function CreateListExtensionPage() {
               </ul>
             ) : (
               <p className="rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted">
-                No attributes added yet. Use Add attribute to include First_name, Last_name, or a custom field.
+                No attributes added yet. Use Add attribute to include Email_address, First_name, Last_name, or a custom
+                attribute.
               </p>
             )}
-          </div>
-        </Card>
+
+            <div className="border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setStep(1);
+                }}
+                className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-background"
+              >
+                Back
+              </button>
+            </div>
+          </Card>
+        )}
 
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
       </div>
