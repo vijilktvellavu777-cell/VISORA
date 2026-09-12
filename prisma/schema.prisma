@@ -318,7 +318,22 @@ model LinkTable {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  links LinkTableLink[]
+
   @@index([workspaceId, updatedAt])
+}
+
+model LinkTableLink {
+  id          String    @id @default(cuid())
+  linkTableId String
+  linkTable   LinkTable @relation(fields: [linkTableId], references: [id], onDelete: Cascade)
+  name        String
+  url         String
+  status      String    @default("active")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([linkTableId, updatedAt])
 }
 
 model PlanProject {
