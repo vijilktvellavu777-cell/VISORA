@@ -7,8 +7,9 @@ export function isHubSubnavPath(pathname: string) {
   return HUB_SUBNAV_PATHS.includes(pathname as (typeof HUB_SUBNAV_PATHS)[number]);
 }
 
+/** True when the secondary hub subnav panel should be visible (hub landing only). */
 export function hasHubSubnav(pathname: string) {
-  return HUB_SUBNAV_PATHS.some((hub) => pathname === hub || pathname.startsWith(`${hub}/`));
+  return isHubSubnavPath(pathname);
 }
 
 export function isHubSectionPath(pathname: string, hub: (typeof HUB_SUBNAV_PATHS)[number]) {
