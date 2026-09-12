@@ -13,7 +13,7 @@ import {
 import { CommunityMenu } from "@/components/community-menu";
 import { HeaderIconTooltip } from "@/components/header-icon-tooltip";
 import { SupportMenu } from "@/components/support-menu";
-import { isHubSubnavPath } from "@/lib/subnav";
+import { hasHubSubnav } from "@/lib/subnav";
 
 const ACCOUNT_USER_NAME = "VISORA User";
 
@@ -44,7 +44,7 @@ function IconButton({
 
 export function WorkspaceTopBar() {
   const pathname = usePathname();
-  const hubSubnavActive = isHubSubnavPath(pathname);
+  const hubSubnavActive = hasHubSubnav(pathname);
   const [profileOpen, setProfileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);

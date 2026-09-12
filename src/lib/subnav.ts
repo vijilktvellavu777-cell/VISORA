@@ -7,6 +7,14 @@ export function isHubSubnavPath(pathname: string) {
   return HUB_SUBNAV_PATHS.includes(pathname as (typeof HUB_SUBNAV_PATHS)[number]);
 }
 
+export function hasHubSubnav(pathname: string) {
+  return HUB_SUBNAV_PATHS.some((hub) => pathname === hub || pathname.startsWith(`${hub}/`));
+}
+
+export function isHubSectionPath(pathname: string, hub: (typeof HUB_SUBNAV_PATHS)[number]) {
+  return pathname === hub || pathname.startsWith(`${hub}/`);
+}
+
 export const subnavPanelClassName =
   "fixed inset-y-0 z-20 w-[220px] shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-6 text-white";
 
