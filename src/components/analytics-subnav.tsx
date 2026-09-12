@@ -13,7 +13,7 @@ import {
   MousePointerClick,
   Target,
 } from "lucide-react";
-import { isHubSubnavPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
+import { isHubSectionPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
 
 const SECTIONS = [
   {
@@ -44,7 +44,7 @@ const SECTIONS = [
 
 export function AnalyticsSubnav() {
   const pathname = usePathname();
-  if (!isHubSubnavPath(pathname) || pathname !== "/analytics") return null;
+  if (!isHubSectionPath(pathname, "/analytics")) return null;
 
   return (
     <aside className={subnavPanelClassName} style={subnavPanelStyle}>

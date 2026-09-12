@@ -7,10 +7,11 @@ import {
   FolderOpen,
   GitBranch,
   LayoutGrid,
+  Link2,
   Mail,
   Smartphone,
 } from "lucide-react";
-import { isHubSubnavPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
+import { isHubSectionPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
 
 const SECTIONS = [
   {
@@ -25,13 +26,20 @@ const SECTIONS = [
   },
   {
     title: "Files",
-    items: [{ href: "/content/files/media-library", label: "Media Library", icon: FolderOpen }],
+    items: [
+      { href: "/content/files/media-library", label: "Media Library", icon: FolderOpen },
+      { href: "/content/files/link-table", label: "Link Table", icon: Link2 },
+    ],
   },
 ] as const;
 
+function isNavItemActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function ContentSubnav() {
   const pathname = usePathname();
-  if (!isHubSubnavPath(pathname) || pathname !== "/content") return null;
+  if (!isHubSectionPath(pathname, "/content")) return null;
 
   return (
     <aside className={subnavPanelClassName} style={subnavPanelStyle}>
@@ -45,11 +53,14 @@ export function ContentSubnav() {
             <nav className="mt-2 flex flex-col gap-1">
               {section.items.map((item) => {
                 const Icon = item.icon;
+                const active = isNavItemActive(pathname, item.href);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white hover:bg-white/10"
+                    className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white hover:bg-white/10 ${
+                      active ? "bg-white/10" : ""
+                    }`}
                   >
                     <Icon size={16} />
                     {item.label}
