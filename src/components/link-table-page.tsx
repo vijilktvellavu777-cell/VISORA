@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -12,13 +11,16 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { Badge, inputClass } from "@/components/ui";
+import { Badge } from "@/components/ui";
+import { CreateNewLinkTableDropdown } from "@/components/create-new-link-table-dropdown";
 import { LinkTableRowMenu } from "@/components/link-table-row-menu";
+import { linkTableTypeLabel } from "@/lib/link-table";
 
-export type LinkTableRow = {
+export type LinkTableListRow = {
   id: string;
   name: string;
-  url: string;
+  type: string;
+  description: string | null;
   status: string;
   updatedAt: string;
 };
@@ -36,60 +38,26 @@ function matchesStatusFilter(status: string, statusFilter: string) {
   return true;
 }
 
-export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
-  const router = useRouter();
+export function LinkTablePageClient({ tables }: { tables: LinkTableListRow[] }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
-  const [showCreateRow, setShowCreateRow] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
-    return links.filter((link) => {
-      if (!matchesStatusFilter(link.status, statusFilter)) return false;
+    return tables.filter((table) => {
+      if (!matchesStatusFilter(table.status, statusFilter)) return false;
       if (search) {
         const query = search.toLowerCase();
-        if (!link.name.toLowerCase().includes(query) && !link.url.toLowerCase().includes(query)) {
-          return false;
-        }
+        const haystack = [table.name, table.type, table.description ?? "", linkTableTypeLabel(table.type)]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(query)) return false;
       }
       return true;
     });
-  }, [links, statusFilter, search]);
+  }, [tables, statusFilter, search]);
 
-  const hasLinks = links.length > 0;
+  const hasTables = tables.length > 0;
   const hasFilteredResults = filtered.length > 0;
-  const showTableBody = hasLinks || showCreateRow;
-
-  function resetCreateRow() {
-    setShowCreateRow(false);
-    setNewName("");
-    setNewUrl("");
-    setCreateError(null);
-  }
-
-  async function handleCreateLink() {
-    setSaving(true);
-    setCreateError(null);
-
-    const response = await fetch("/api/content/link-table", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName, url: newUrl, status: "active" }),
-    });
-    const json = await response.json().catch(() => ({}));
-    setSaving(false);
-
-    if (!response.ok) {
-      setCreateError(typeof json.error === "string" ? json.error : "Could not create link.");
-      return;
-    }
-
-    resetCreateRow();
-    router.refresh();
-  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -106,17 +74,7 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
             >
               <MessageSquare size={18} />
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreateRow(true);
-                setCreateError(null);
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-            >
-              Create new link
-              <ChevronDown size={16} className={showCreateRow ? "rotate-180 transition" : "transition"} />
-            </button>
+            <CreateNewLinkTableDropdown />
           </div>
         </div>
       </div>
@@ -208,8 +166,9 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border text-xs font-medium uppercase tracking-wide text-muted">
-              <th className="py-3 pr-4 font-medium">Link name</th>
-              <th className="py-3 pr-4 font-medium">Link URL</th>
+              <th className="py-3 pr-4 font-medium">Link table name</th>
+              <th className="py-3 pr-4 font-medium">Type</th>
+              <th className="py-3 pr-4 font-medium">Description</th>
               <th className="py-3 pr-4 font-medium">Status</th>
               <th className="py-3 pr-4 font-medium">Teams</th>
               <th className="py-3 pr-4 font-medium">Last edited</th>
@@ -219,82 +178,31 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {showCreateRow ? (
-              <tr className="border-b border-border bg-primary/5">
-                <td className="py-3 pr-4 align-top">
-                  <label className="sr-only" htmlFor="new-link-name">
-                    Link name
-                  </label>
-                  <input
-                    id="new-link-name"
-                    className={inputClass}
-                    value={newName}
-                    onChange={(event) => setNewName(event.target.value)}
-                    placeholder="Link name"
-                    autoFocus
-                  />
-                </td>
-                <td className="py-3 pr-4 align-top">
-                  <label className="sr-only" htmlFor="new-link-url">
-                    Link URL
-                  </label>
-                  <input
-                    id="new-link-url"
-                    className={inputClass}
-                    value={newUrl}
-                    onChange={(event) => setNewUrl(event.target.value)}
-                    placeholder="https://example.com"
-                  />
-                  {createError ? <p className="mt-2 text-xs text-error">{createError}</p> : null}
-                </td>
-                <td className="py-3 pr-4 align-top text-muted">—</td>
-                <td className="py-3 pr-4 align-top text-muted">VISORA</td>
-                <td className="py-3 pr-4 align-top text-muted">—</td>
-                <td className="py-3 align-top text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={resetCreateRow}
-                      className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-background"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={handleCreateLink}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-                    >
-                      {saving ? "Saving…" : "Save"}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ) : null}
-
-            {filtered.map((link) => (
-              <tr key={link.id} className="border-b border-border last:border-0">
-                <td className="py-4 pr-4 font-medium text-foreground">{link.name}</td>
-                <td className="max-w-md truncate py-4 pr-4 text-muted">{link.url}</td>
+            {filtered.map((table) => (
+              <tr key={table.id} className="border-b border-border last:border-0">
+                <td className="py-4 pr-4 font-medium text-foreground">{table.name}</td>
+                <td className="py-4 pr-4 text-muted">{linkTableTypeLabel(table.type)}</td>
+                <td className="max-w-md truncate py-4 pr-4 text-muted">{table.description ?? "—"}</td>
                 <td className="py-4 pr-4">
-                  <Badge tone={statusTone(link.status)}>{link.status}</Badge>
+                  <Badge tone={statusTone(table.status)}>{table.status}</Badge>
                 </td>
                 <td className="py-4 pr-4 text-muted">VISORA</td>
-                <td className="py-4 pr-4 text-muted">{format(new Date(link.updatedAt), "MMM d, yyyy")}</td>
+                <td className="py-4 pr-4 text-muted">{format(new Date(table.updatedAt), "MMM d, yyyy")}</td>
                 <td className="py-4 text-right">
                   <LinkTableRowMenu
-                    linkId={link.id}
-                    linkName={link.name}
-                    linkUrl={link.url}
-                    status={link.status}
+                    tableId={table.id}
+                    tableName={table.name}
+                    tableType={table.type}
+                    description={table.description}
+                    status={table.status}
                   />
                 </td>
               </tr>
             ))}
 
-            {!showTableBody ? (
+            {!hasTables ? (
               <tr>
-                <td colSpan={6} className="py-16">
+                <td colSpan={7} className="py-16">
                   <div className="text-center">
                     <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-background">
                       <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden>
@@ -304,28 +212,21 @@ export function LinkTablePageClient({ links }: { links: LinkTableRow[] }) {
                         <path d="M42 46h8M46 42v8" stroke="white" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <h2 className="mt-8 text-2xl font-semibold text-foreground">You do not have any links yet</h2>
+                    <h2 className="mt-8 text-2xl font-semibold text-foreground">You do not have any link tables yet</h2>
                     <p className="mt-2 text-sm text-muted">
-                      Create a new link to manage tracked URLs across your campaigns.
+                      Create a link table to organize tracked URLs across your campaigns.
                     </p>
                     <div className="mt-6 flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => setShowCreateRow(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-                      >
-                        Create new link
-                        <ChevronDown size={16} />
-                      </button>
+                      <CreateNewLinkTableDropdown />
                     </div>
                   </div>
                 </td>
               </tr>
             ) : null}
 
-            {hasLinks && !hasFilteredResults && !showCreateRow ? (
+            {hasTables && !hasFilteredResults ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm font-medium text-muted">
+                <td colSpan={7} className="py-16 text-center text-sm font-medium text-muted">
                   No Results Found
                 </td>
               </tr>
