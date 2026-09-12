@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -180,7 +181,14 @@ export function LinkTablePageClient({ tables }: { tables: LinkTableListRow[] }) 
           <tbody>
             {filtered.map((table) => (
               <tr key={table.id} className="border-b border-border last:border-0">
-                <td className="py-4 pr-4 font-medium text-foreground">{table.name}</td>
+                <td className="py-4 pr-4">
+                  <Link
+                    href={`/content/files/link-table/${table.id}`}
+                    className="font-medium text-foreground hover:text-primary"
+                  >
+                    {table.name}
+                  </Link>
+                </td>
                 <td className="py-4 pr-4 text-muted">{linkTableTypeLabel(table.type)}</td>
                 <td className="max-w-md truncate py-4 pr-4 text-muted">{table.description ?? "—"}</td>
                 <td className="py-4 pr-4">
