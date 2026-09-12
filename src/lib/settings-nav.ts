@@ -50,7 +50,3 @@ export const SETTINGS_NAV_SECTIONS: SettingsNavSection[] = [
 ];
 
 export const DEFAULT_SETTINGS_PATH = "/settings/general/profile";
-
-export function isSettingsNavActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}

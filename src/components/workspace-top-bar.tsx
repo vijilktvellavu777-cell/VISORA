@@ -84,7 +84,7 @@ export function WorkspaceTopBar() {
   return (
     <header
       className={`sticky top-0 z-30 border-b border-border bg-surface px-6 py-3 transition-[margin] ${
-        hubSubnavActive ? "ml-[220px]" : ""
+        hubSubnavActive ? "ml-[280px]" : ""
       }`}
     >
       <div className="flex items-center justify-between gap-4">
