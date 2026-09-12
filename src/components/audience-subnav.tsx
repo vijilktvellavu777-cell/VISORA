@@ -1,40 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Filter, Blocks, Ban, Search, ArrowLeftRight } from "lucide-react";
-import { isHubSubnavPath, subnavPanelClassName, subnavPanelStyle } from "@/lib/subnav";
-
-const ITEMS = [
-  { href: "/audience/segments", label: "Segments", icon: Filter },
-  { href: "/audience/list-extensions", label: "List Extensions", icon: Blocks },
-  { href: "/audience/suppression", label: "Suppression lists", icon: Ban },
-  { href: "/audience/find", label: "Find Users", icon: Search },
-  { href: "/audience/import-export", label: "Import and export users", icon: ArrowLeftRight },
-];
+import { HubPanelSubnav } from "@/components/hub-panel-subnav";
+import { AUDIENCE_NAV_SECTIONS } from "@/lib/audience-nav";
+import { hasHubSubnav } from "@/lib/subnav";
 
 export function AudienceSubnav() {
   const pathname = usePathname();
-  if (!isHubSubnavPath(pathname)) return null;
+  if (!hasHubSubnav(pathname)) return null;
 
   return (
-    <aside className={subnavPanelClassName} style={subnavPanelStyle}>
-      <div className="px-2 text-[11px] font-semibold uppercase tracking-wide text-white/60">Audience</div>
-      <nav className="mt-3 flex flex-col gap-1">
-        {ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white hover:bg-white/10"
-            >
-              <Icon size={16} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+    <HubPanelSubnav
+      title="Audience"
+      closeHref="/"
+      sections={AUDIENCE_NAV_SECTIONS}
+      variant="fixed"
+    />
   );
 }
