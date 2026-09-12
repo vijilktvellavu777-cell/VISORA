@@ -5,13 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { Copy, MoreVertical, Trash2 } from "lucide-react";
 
 type Props = {
-  linkId: string;
-  linkName: string;
-  linkUrl: string;
+  tableId: string;
+  tableName: string;
+  tableType: string;
+  description: string | null;
   status: string;
 };
 
-export function LinkTableRowMenu({ linkId, linkName, linkUrl, status }: Props) {
+export function LinkTableRowMenu({ tableId, tableName, tableType, description, status }: Props) {
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -32,8 +33,9 @@ export function LinkTableRowMenu({ linkId, linkName, linkUrl, status }: Props) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: `${linkName} copy`,
-        url: linkUrl,
+        name: `${tableName} copy`,
+        type: tableType,
+        description,
         status,
       }),
     });
@@ -43,11 +45,11 @@ export function LinkTableRowMenu({ linkId, linkName, linkUrl, status }: Props) {
 
   async function handleDelete() {
     setOpen(false);
-    const confirmed = window.confirm(`Delete "${linkName}"? This cannot be undone.`);
+    const confirmed = window.confirm(`Delete "${tableName}"? This cannot be undone.`);
     if (!confirmed) return;
 
     setBusy(true);
-    const response = await fetch(`/api/content/link-table/${linkId}`, { method: "DELETE" });
+    const response = await fetch(`/api/content/link-table/${tableId}`, { method: "DELETE" });
     setBusy(false);
     if (!response.ok) return;
     router.refresh();
@@ -57,7 +59,7 @@ export function LinkTableRowMenu({ linkId, linkName, linkUrl, status }: Props) {
     <div ref={ref} className="relative inline-flex">
       <button
         type="button"
-        aria-label={`Actions for ${linkName}`}
+        aria-label={`Actions for ${tableName}`}
         aria-expanded={open}
         disabled={busy}
         onClick={() => setOpen((value) => !value)}

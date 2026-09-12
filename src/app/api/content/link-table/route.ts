@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { isValidLinkTableType } from "@/lib/link-table";
 import { getDefaultWorkspace } from "@/lib/workspace";
-
-function normalizeUrl(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
 
 export async function GET() {
   const workspace = await getDefaultWorkspace();
-  const links = await prisma.linkTableEntry.findMany({
+  const tables = await prisma.linkTable.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { updatedAt: "desc" },
   });
-  return NextResponse.json(links);
+  return NextResponse.json(tables);
 }
 
 export async function POST(request: NextRequest) {
@@ -23,30 +17,26 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
 
   const name = typeof body.name === "string" ? body.name.trim() : "";
-  const urlInput = typeof body.url === "string" ? body.url.trim() : "";
-  const url = normalizeUrl(urlInput);
+  const type = typeof body.type === "string" ? body.type.trim() : "";
+  const description =
+    typeof body.description === "string" ? body.description.trim() || null : null;
 
   if (!name) {
-    return NextResponse.json({ error: "Link name is required." }, { status: 400 });
+    return NextResponse.json({ error: "Link table name is required." }, { status: 400 });
   }
-  if (!url) {
-    return NextResponse.json({ error: "Link URL is required." }, { status: 400 });
-  }
-
-  try {
-    new URL(url);
-  } catch {
-    return NextResponse.json({ error: "Enter a valid link URL." }, { status: 400 });
+  if (!isValidLinkTableType(type)) {
+    return NextResponse.json({ error: "Choose a valid link table type." }, { status: 400 });
   }
 
-  const link = await prisma.linkTableEntry.create({
+  const table = await prisma.linkTable.create({
     data: {
       workspaceId: workspace.id,
       name,
-      url,
+      type,
+      description,
       status: typeof body.status === "string" ? body.status : "active",
     },
   });
 
-  return NextResponse.json(link);
+  return NextResponse.json(table);
 }

@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { isValidLinkTableType } from "@/lib/link-table";
 import { getDefaultWorkspace } from "@/lib/workspace";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-function normalizeUrl(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
-async function getLinkForWorkspace(id: string, workspaceId: string) {
-  return prisma.linkTableEntry.findFirst({
+async function getTableForWorkspace(id: string, workspaceId: string) {
+  return prisma.linkTable.findFirst({
     where: { id, workspaceId },
   });
 }
@@ -20,55 +14,53 @@ async function getLinkForWorkspace(id: string, workspaceId: string) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const workspace = await getDefaultWorkspace();
   const { id } = await context.params;
-  const existing = await getLinkForWorkspace(id, workspace.id);
+  const existing = await getTableForWorkspace(id, workspace.id);
   if (!existing) {
-    return NextResponse.json({ error: "Link not found." }, { status: 404 });
+    return NextResponse.json({ error: "Link table not found." }, { status: 404 });
   }
 
   const body = await request.json();
-  const data: { name?: string; url?: string; status?: string } = {};
+  const data: { name?: string; type?: string; description?: string | null; status?: string } = {};
 
   if (typeof body.name === "string") {
     const name = body.name.trim();
     if (!name) {
-      return NextResponse.json({ error: "Link name is required." }, { status: 400 });
+      return NextResponse.json({ error: "Link table name is required." }, { status: 400 });
     }
     data.name = name;
   }
 
-  if (typeof body.url === "string") {
-    const url = normalizeUrl(body.url);
-    if (!url) {
-      return NextResponse.json({ error: "Link URL is required." }, { status: 400 });
+  if (typeof body.type === "string") {
+    if (!isValidLinkTableType(body.type)) {
+      return NextResponse.json({ error: "Choose a valid link table type." }, { status: 400 });
     }
-    try {
-      new URL(url);
-    } catch {
-      return NextResponse.json({ error: "Enter a valid link URL." }, { status: 400 });
-    }
-    data.url = url;
+    data.type = body.type;
+  }
+
+  if (typeof body.description === "string") {
+    data.description = body.description.trim() || null;
   }
 
   if (typeof body.status === "string") {
     data.status = body.status;
   }
 
-  const link = await prisma.linkTableEntry.update({
+  const table = await prisma.linkTable.update({
     where: { id: existing.id },
     data,
   });
 
-  return NextResponse.json(link);
+  return NextResponse.json(table);
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const workspace = await getDefaultWorkspace();
   const { id } = await context.params;
-  const existing = await getLinkForWorkspace(id, workspace.id);
+  const existing = await getTableForWorkspace(id, workspace.id);
   if (!existing) {
-    return NextResponse.json({ error: "Link not found." }, { status: 404 });
+    return NextResponse.json({ error: "Link table not found." }, { status: 404 });
   }
 
-  await prisma.linkTableEntry.delete({ where: { id: existing.id } });
+  await prisma.linkTable.delete({ where: { id: existing.id } });
   return NextResponse.json({ ok: true });
 }
