@@ -179,6 +179,14 @@ export function getDefaultSettingsPageData(key: SettingsPageKey): unknown {
         },
         docsBaseUrl: "https://docs.visora.app",
       };
+    case "templates":
+    case "integrations":
+    case "channels-email":
+    case "channels-push":
+    case "channels-whatsapp":
+    case "channels-in-app":
+    case "channels-content-cards":
+      return { sections: {} };
     default:
       return {};
   }

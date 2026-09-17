@@ -1,7 +1,6 @@
-import { DeveloperApiSettingsPage } from "@/components/notifications-security-billing-dev-pages";
-import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsDeveloperApiPage() {
-  const initial = await loadSettingsPageInitial("developer-api");
-  return <DeveloperApiSettingsPage initial={initial} />;
+export default function Page() {
+  redirect(getDefaultSectionPath("developer-api"));
 }

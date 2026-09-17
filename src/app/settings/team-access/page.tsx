@@ -1,7 +1,6 @@
-import { TeamAccessSettingsPage } from "@/components/team-access-settings-page";
-import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsTeamAccessPage() {
-  const initial = await loadSettingsPageInitial("team-access");
-  return <TeamAccessSettingsPage initial={initial} />;
+export default function Page() {
+  redirect(getDefaultSectionPath("team-access"));
 }

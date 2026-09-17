@@ -1,7 +1,6 @@
-import { TrackingDataSettingsPage } from "@/components/tracking-webhooks-settings-pages";
-import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsTrackingDataPage() {
-  const initial = await loadSettingsPageInitial("tracking-data");
-  return <TrackingDataSettingsPage initial={initial} />;
+export default function Page() {
+  redirect(getDefaultSectionPath("tracking-data"));
 }

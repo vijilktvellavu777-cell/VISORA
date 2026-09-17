@@ -1,19 +1,6 @@
-import { getPushConfig } from "@/lib/push-delivery";
-import { PageHeader } from "@/components/ui";
-import { PushSettingsPanel } from "@/components/push-settings-panel";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsChannelPushPage() {
-  const push = getPushConfig();
-
-  return (
-    <div className="min-h-full bg-background">
-      <PageHeader
-        title="Push Notifications"
-        subtitle="Web, iOS, and Android push provider configuration."
-      />
-      <div className="p-8">
-        <PushSettingsPanel push={push} />
-      </div>
-    </div>
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("channels-push"));
 }

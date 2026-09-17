@@ -1,10 +1,6 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsTemplatesPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Templates"
-      description="Global template defaults and shared template library settings."
-    />
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("templates"));
 }

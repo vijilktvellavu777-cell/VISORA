@@ -25,6 +25,10 @@ model Workspace {
   defaultLanguage      String?   @default("en")
   defaultTimeZone      String?
   dateFormat           String?   @default("MM/DD/YYYY")
+  secondaryColor       String?   @default("#6366f1")
+  faviconUrl           String?
+  timeFormat           String?   @default("12h")
+  currency             String?   @default("USD")
   pausedAt             DateTime?
 
   workspaceType        String?   @default("standard")
@@ -33,6 +37,8 @@ model Workspace {
   envStagingEnabled     Boolean  @default(true)
   envProductionEnabled  Boolean  @default(true)
   dataRegion           String?   @default("US")
+  workspaceDataRetentionDays Int? @default(365)
+  defaultDataPolicy    String?   @default("standard")
 
   /// JSON map of settings page id -> saved payload
   settingsPages        String    @default("{}")
