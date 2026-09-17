@@ -271,6 +271,11 @@ export function getSettingsAreaSectionLabel(areaId: string, sectionSlug: string)
   return area?.sections.find((section) => section.slug === sectionSlug)?.label ?? sectionSlug;
 }
 
+export function getSettingsAreaHubPath(areaId: string): string {
+  const area = SETTINGS_AREAS[areaId];
+  return area?.basePath ?? "/settings";
+}
+
 export function getDefaultSectionPath(areaId: string): string {
   const area = SETTINGS_AREAS[areaId];
   if (!area || area.sections.length === 0) return area?.basePath ?? "/settings";

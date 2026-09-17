@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
-import { getDefaultSectionPath } from "@/lib/settings-area-sections";
+import { SettingsAreaIndexPage } from "@/components/settings-area-index-page";
 
 export default function Page() {
-  redirect(getDefaultSectionPath("webhooks"));
+  return <SettingsAreaIndexPage areaId="webhooks" />;
 }
