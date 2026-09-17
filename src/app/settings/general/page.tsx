@@ -1,10 +1,10 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { GeneralSettingsPage } from "@/components/general-settings-page";
+import { workspaceToGeneralSettings } from "@/lib/general-settings";
+import { getDefaultWorkspace } from "@/lib/workspace";
 
-export default function SettingsGeneralPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="General"
-      description="Workspace-wide defaults, locale, and display preferences."
-    />
-  );
+export default async function SettingsGeneralPage() {
+  const workspace = await getDefaultWorkspace();
+  const initial = workspaceToGeneralSettings(workspace);
+
+  return <GeneralSettingsPage initial={initial} />;
 }
