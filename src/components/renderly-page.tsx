@@ -28,7 +28,6 @@ export function RenderlyPageClient({ items }: { items: RenderlyCampaignListItem[
     return items.filter(
       (item) =>
         item.name.toLowerCase().includes(query) ||
-        item.proofTitle.toLowerCase().includes(query) ||
         (item.subject ?? "").toLowerCase().includes(query) ||
         item.tags.some((tag) => tag.toLowerCase().includes(query)),
     );
@@ -181,7 +180,7 @@ export function RenderlyPageClient({ items }: { items: RenderlyCampaignListItem[
                           className="h-14 w-[72px] shrink-0"
                         />
                         <span className="line-clamp-2 font-medium text-foreground hover:text-primary">
-                          {item.proofTitle}
+                          {item.name}
                         </span>
                       </Link>
                     </td>

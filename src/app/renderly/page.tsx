@@ -1,10 +1,6 @@
 import { prisma } from "@/lib/db";
 import { CAMPAIGN_STATUS_CREATING } from "@/lib/campaign-status";
-import {
-  getRenderlyCampaignMetrics,
-  renderlyProjectAddress,
-  renderlyProofTitle,
-} from "@/lib/renderly-metrics";
+import { getRenderlyCampaignMetrics, renderlyProjectAddress } from "@/lib/renderly-metrics";
 import { getDefaultWorkspace } from "@/lib/workspace";
 import { RenderlyPageClient } from "@/components/renderly-page";
 import type { RenderlyCampaignListItem } from "@/lib/renderly-types";
@@ -52,11 +48,6 @@ export default async function RenderlyPage() {
       tags: parseTags(campaign.tags),
       status: campaign.status,
       updatedAt,
-      proofTitle: renderlyProofTitle({
-        name: campaign.name,
-        subject: campaign.subject,
-        updatedAt: campaign.updatedAt,
-      }),
       projectAddress: renderlyProjectAddress(campaign.id),
       metrics: getRenderlyCampaignMetrics(campaign.id, campaign.body),
     };

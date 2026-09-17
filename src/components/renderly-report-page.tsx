@@ -73,7 +73,7 @@ export function RenderlyReportPageClient({ campaign }: { campaign: RenderlyCampa
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <h1 className="text-xl font-semibold leading-snug text-[#5b21b6] md:text-2xl">
-                {campaign.proofTitle}
+                {campaign.name}
               </h1>
               <button
                 type="button"
