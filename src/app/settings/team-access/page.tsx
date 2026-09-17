@@ -1,10 +1,7 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { TeamAccessSettingsPage } from "@/components/team-access-settings-page";
+import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
 
-export default function SettingsTeamAccessPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Team & Access"
-      description="Invite teammates, assign roles, and manage workspace access."
-    />
-  );
+export default async function SettingsTeamAccessPage() {
+  const initial = await loadSettingsPageInitial("team-access");
+  return <TeamAccessSettingsPage initial={initial} />;
 }

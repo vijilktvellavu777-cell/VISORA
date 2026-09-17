@@ -1,10 +1,7 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { SecuritySettingsPage } from "@/components/notifications-security-billing-dev-pages";
+import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
 
-export default function SettingsSecurityPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Security"
-      description="SSO, session policies, and workspace security controls."
-    />
-  );
+export default async function SettingsSecurityPage() {
+  const initial = await loadSettingsPageInitial("security");
+  return <SecuritySettingsPage initial={initial} />;
 }

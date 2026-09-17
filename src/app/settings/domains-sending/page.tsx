@@ -1,10 +1,7 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { DomainsSendingSettingsPage } from "@/components/domains-audience-settings-pages";
+import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
 
-export default function SettingsDomainsSendingPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Domains & Sending"
-      description="Verified domains, DNS, and sending reputation settings."
-    />
-  );
+export default async function SettingsDomainsSendingPage() {
+  const initial = await loadSettingsPageInitial("domains-sending");
+  return <DomainsSendingSettingsPage initial={initial} />;
 }

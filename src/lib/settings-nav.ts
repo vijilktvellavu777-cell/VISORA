@@ -116,9 +116,9 @@ export const SETTINGS_NAV_SECTIONS: SettingsNavSection[] = [
   },
   {
     id: "developer-api",
-    title: "Developer / API",
+    title: "Developer",
     icon: Code2,
-    items: [{ href: "/settings/developer-api", label: "Developer / API" }],
+    items: [{ href: "/settings/developer-api", label: "Developer" }],
   },
 ];
 

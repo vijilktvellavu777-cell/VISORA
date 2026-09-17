@@ -1,10 +1,7 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { TrackingDataSettingsPage } from "@/components/tracking-webhooks-settings-pages";
+import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
 
-export default function SettingsTrackingDataPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Tracking & Data"
-      description="Event tracking, data retention, and export policies."
-    />
-  );
+export default async function SettingsTrackingDataPage() {
+  const initial = await loadSettingsPageInitial("tracking-data");
+  return <TrackingDataSettingsPage initial={initial} />;
 }
