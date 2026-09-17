@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CAMPAIGN_STATUS_CREATING } from "@/lib/campaign-status";
-import {
-  getRenderlyCampaignMetrics,
-  renderlyProjectAddress,
-  renderlyProofTitle,
-} from "@/lib/renderly-metrics";
+import { getRenderlyCampaignMetrics, renderlyProjectAddress } from "@/lib/renderly-metrics";
 import type { RenderlyCampaignListItem } from "@/lib/renderly-types";
 import { getDefaultWorkspace } from "@/lib/workspace";
 import { RenderlyReportPageClient } from "@/components/renderly-report-page";
@@ -56,11 +52,6 @@ export default async function RenderlyReportPage({ params }: Props) {
     tags: parseTags(campaign.tags),
     status: campaign.status,
     updatedAt: campaign.updatedAt.toISOString(),
-    proofTitle: renderlyProofTitle({
-      name: campaign.name,
-      subject: campaign.subject,
-      updatedAt: campaign.updatedAt,
-    }),
     projectAddress: renderlyProjectAddress(campaign.id),
     metrics: getRenderlyCampaignMetrics(campaign.id, campaign.body),
   };

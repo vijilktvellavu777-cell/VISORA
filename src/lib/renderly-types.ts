@@ -9,7 +9,6 @@ export type RenderlyCampaignListItem = {
   tags: string[];
   status: string;
   updatedAt: string;
-  proofTitle: string;
   projectAddress: string;
   metrics: RenderlyCampaignMetrics;
 };
