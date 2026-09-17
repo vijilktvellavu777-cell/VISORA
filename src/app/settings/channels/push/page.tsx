@@ -2,13 +2,13 @@ import { getPushConfig } from "@/lib/push-delivery";
 import { PageHeader } from "@/components/ui";
 import { PushSettingsPanel } from "@/components/push-settings-panel";
 
-export default function SettingsPushPage() {
+export default function SettingsChannelPushPage() {
   const push = getPushConfig();
 
   return (
     <div className="min-h-full bg-background">
       <PageHeader
-        title="Push settings"
+        title="Push Notifications"
         subtitle="Web, iOS, and Android push provider configuration."
       />
       <div className="p-8">
