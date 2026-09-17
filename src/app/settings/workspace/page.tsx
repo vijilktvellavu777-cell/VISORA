@@ -1,10 +1,6 @@
-import { WorkspaceSettingsPage } from "@/components/workspace-settings-page";
-import { workspaceToWorkspaceSettings } from "@/lib/workspace-settings";
-import { getDefaultWorkspace } from "@/lib/workspace";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsWorkspacePage() {
-  const workspace = await getDefaultWorkspace();
-  const initial = workspaceToWorkspaceSettings(workspace);
-
-  return <WorkspaceSettingsPage initial={initial} />;
+export default function SettingsWorkspaceIndexPage() {
+  redirect(getDefaultSectionPath("workspace"));
 }

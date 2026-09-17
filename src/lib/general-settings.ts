@@ -6,13 +6,16 @@ export type GeneralSettings = {
   industry: string;
   country: string;
   organizationTimeZone: string;
+  defaultLanguage: string;
   logoUrl: string;
   brandName: string;
   primaryColor: string;
-  defaultSenderName: string;
-  defaultLanguage: string;
+  secondaryColor: string;
+  faviconUrl: string;
   defaultTimeZone: string;
   dateFormat: string;
+  timeFormat: string;
+  currency: string;
   paused: boolean;
 };
 
@@ -66,6 +69,8 @@ export const LANGUAGE_OPTIONS = [
 ] as const;
 
 export const DATE_FORMAT_OPTIONS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as const;
+export const TIME_FORMAT_OPTIONS = ["12h", "24h"] as const;
+export const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD"] as const;
 
 export function workspaceToGeneralSettings(workspace: Workspace): GeneralSettings {
   return {
@@ -74,13 +79,16 @@ export function workspaceToGeneralSettings(workspace: Workspace): GeneralSetting
     industry: workspace.industry ?? "",
     country: workspace.country ?? "",
     organizationTimeZone: workspace.organizationTimeZone ?? "America/New_York",
+    defaultLanguage: workspace.defaultLanguage ?? "en",
     logoUrl: workspace.logoUrl ?? "",
     brandName: workspace.brandName ?? workspace.name,
     primaryColor: workspace.primaryColor ?? "#6d5efc",
-    defaultSenderName: workspace.defaultSenderName ?? workspace.name,
-    defaultLanguage: workspace.defaultLanguage ?? "en",
+    secondaryColor: workspace.secondaryColor ?? "#6366f1",
+    faviconUrl: workspace.faviconUrl ?? "",
     defaultTimeZone: workspace.defaultTimeZone ?? workspace.organizationTimeZone ?? "America/New_York",
     dateFormat: workspace.dateFormat ?? "MM/DD/YYYY",
+    timeFormat: workspace.timeFormat ?? "12h",
+    currency: workspace.currency ?? "USD",
     paused: workspace.pausedAt != null,
   };
 }
@@ -92,12 +100,15 @@ export function generalSettingsToWorkspaceData(settings: GeneralSettings) {
     industry: settings.industry.trim() || null,
     country: settings.country.trim() || null,
     organizationTimeZone: settings.organizationTimeZone.trim() || null,
+    defaultLanguage: settings.defaultLanguage.trim() || null,
     logoUrl: settings.logoUrl.trim() || null,
     brandName: settings.brandName.trim() || null,
     primaryColor: settings.primaryColor.trim() || null,
-    defaultSenderName: settings.defaultSenderName.trim() || null,
-    defaultLanguage: settings.defaultLanguage.trim() || null,
+    secondaryColor: settings.secondaryColor.trim() || null,
+    faviconUrl: settings.faviconUrl.trim() || null,
     defaultTimeZone: settings.defaultTimeZone.trim() || null,
     dateFormat: settings.dateFormat.trim() || null,
+    timeFormat: settings.timeFormat.trim() || null,
+    currency: settings.currency.trim() || null,
   };
 }

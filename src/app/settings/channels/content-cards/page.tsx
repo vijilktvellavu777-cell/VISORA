@@ -1,10 +1,6 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsChannelContentCardsPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Content Cards"
-      description="Content card feed settings and default styling."
-    />
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("channels-content-cards"));
 }

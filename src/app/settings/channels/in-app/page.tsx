@@ -1,10 +1,6 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsChannelInAppPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="In-App Messages"
-      description="In-app message defaults, triggers, and display rules."
-    />
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("channels-in-app"));
 }

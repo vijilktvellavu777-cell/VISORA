@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import {
   DATE_FORMAT_OPTIONS,
+  TIME_FORMAT_OPTIONS,
   generalSettingsToWorkspaceData,
   workspaceToGeneralSettings,
 } from "@/lib/general-settings";
@@ -15,13 +16,16 @@ const patchSchema = z.object({
   industry: z.string().optional(),
   country: z.string().optional(),
   organizationTimeZone: z.string().optional(),
+  defaultLanguage: z.string().optional(),
   logoUrl: z.string().optional(),
   brandName: z.string().optional(),
   primaryColor: z.string().optional(),
-  defaultSenderName: z.string().optional(),
-  defaultLanguage: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  faviconUrl: z.string().optional(),
   defaultTimeZone: z.string().optional(),
   dateFormat: z.enum(DATE_FORMAT_OPTIONS).optional(),
+  timeFormat: z.enum(TIME_FORMAT_OPTIONS).optional(),
+  currency: z.string().optional(),
 });
 
 export async function GET() {

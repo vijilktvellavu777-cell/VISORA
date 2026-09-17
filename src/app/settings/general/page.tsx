@@ -1,10 +1,6 @@
-import { GeneralSettingsPage } from "@/components/general-settings-page";
-import { workspaceToGeneralSettings } from "@/lib/general-settings";
-import { getDefaultWorkspace } from "@/lib/workspace";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsGeneralPage() {
-  const workspace = await getDefaultWorkspace();
-  const initial = workspaceToGeneralSettings(workspace);
-
-  return <GeneralSettingsPage initial={initial} />;
+export default function SettingsGeneralIndexPage() {
+  redirect(getDefaultSectionPath("general"));
 }

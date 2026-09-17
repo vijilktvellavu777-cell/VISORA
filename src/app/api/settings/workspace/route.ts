@@ -24,7 +24,9 @@ const patchSchema = z.object({
     staging: environmentSchema,
     production: environmentSchema,
   }),
-  dataRegion: z.enum(dataRegionValues),
+    dataRegion: z.enum(dataRegionValues),
+  dataRetentionDays: z.number().int().min(30).optional(),
+  defaultDataPolicy: z.string().optional(),
 });
 
 export async function GET() {
@@ -57,6 +59,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data = workspaceSettingsToWorkspaceData({
+      ...workspaceToWorkspaceSettings(workspace),
       ...body,
       workspaceId: workspace.id,
     });

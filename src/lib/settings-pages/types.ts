@@ -8,6 +8,13 @@ export const SETTINGS_PAGE_KEYS = [
   "security",
   "billing-usage",
   "developer-api",
+  "templates",
+  "integrations",
+  "channels-email",
+  "channels-push",
+  "channels-whatsapp",
+  "channels-in-app",
+  "channels-content-cards",
 ] as const;
 
 export type SettingsPageKey = (typeof SETTINGS_PAGE_KEYS)[number];

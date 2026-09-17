@@ -1,10 +1,6 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsChannelWhatsAppPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="WhatsApp"
-      description="WhatsApp Business API connection and message defaults."
-    />
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("channels-whatsapp"));
 }

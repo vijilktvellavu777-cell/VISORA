@@ -1,7 +1,6 @@
-import { NotificationsSettingsPage } from "@/components/notifications-security-billing-dev-pages";
-import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsNotificationsPage() {
-  const initial = await loadSettingsPageInitial("notifications");
-  return <NotificationsSettingsPage initial={initial} />;
+export default function Page() {
+  redirect(getDefaultSectionPath("notifications"));
 }

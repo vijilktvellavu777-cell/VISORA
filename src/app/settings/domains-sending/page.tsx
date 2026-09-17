@@ -1,7 +1,6 @@
-import { DomainsSendingSettingsPage } from "@/components/domains-audience-settings-pages";
-import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default async function SettingsDomainsSendingPage() {
-  const initial = await loadSettingsPageInitial("domains-sending");
-  return <DomainsSendingSettingsPage initial={initial} />;
+export default function Page() {
+  redirect(getDefaultSectionPath("domains-sending"));
 }

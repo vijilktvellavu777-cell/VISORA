@@ -1,10 +1,6 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsChannelEmailPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Email"
-      description="Default senders, reply-to addresses, and email delivery preferences."
-    />
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("channels-email"));
 }

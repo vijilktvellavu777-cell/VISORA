@@ -1,10 +1,6 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { redirect } from "next/navigation";
+import { getDefaultSectionPath } from "@/lib/settings-area-sections";
 
-export default function SettingsIntegrationsPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Integrations"
-      description="Connect CRM, analytics, and third-party tools to Visora."
-    />
-  );
+export default function Page() {
+  redirect(getDefaultSectionPath("integrations"));
 }

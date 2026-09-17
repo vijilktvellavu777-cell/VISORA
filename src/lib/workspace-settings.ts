@@ -6,12 +6,15 @@ export type WorkspaceSettings = {
   workspaceName: string;
   workspaceId: string;
   workspaceType: string;
+  createdAt: string;
   environments: {
     development: { enabled: boolean; active: boolean };
     staging: { enabled: boolean; active: boolean };
     production: { enabled: boolean; active: boolean };
   };
   dataRegion: string;
+  dataRetentionDays: number;
+  defaultDataPolicy: string;
 };
 
 export const WORKSPACE_TYPE_OPTIONS = [
@@ -45,6 +48,12 @@ export const ENVIRONMENT_META: Record<
   },
 };
 
+export const DEFAULT_DATA_POLICY_OPTIONS = [
+  { value: "standard", label: "Standard retention" },
+  { value: "minimal", label: "Minimal retention" },
+  { value: "extended", label: "Extended retention" },
+] as const;
+
 export function workspaceToWorkspaceSettings(workspace: Workspace): WorkspaceSettings {
   const active = (workspace.activeEnvironment ?? "production") as WorkspaceEnvironmentId;
 
@@ -52,6 +61,7 @@ export function workspaceToWorkspaceSettings(workspace: Workspace): WorkspaceSet
     workspaceName: workspace.name,
     workspaceId: workspace.id,
     workspaceType: workspace.workspaceType ?? "standard",
+    createdAt: workspace.createdAt.toISOString(),
     environments: {
       development: {
         enabled: workspace.envDevelopmentEnabled,
@@ -67,6 +77,8 @@ export function workspaceToWorkspaceSettings(workspace: Workspace): WorkspaceSet
       },
     },
     dataRegion: workspace.dataRegion ?? "US",
+    dataRetentionDays: workspace.workspaceDataRetentionDays ?? 365,
+    defaultDataPolicy: workspace.defaultDataPolicy ?? "standard",
   };
 }
 
@@ -84,5 +96,7 @@ export function workspaceSettingsToWorkspaceData(settings: WorkspaceSettings) {
     envStagingEnabled: settings.environments.staging.enabled,
     envProductionEnabled: settings.environments.production.enabled,
     dataRegion: settings.dataRegion.trim() || null,
+    workspaceDataRetentionDays: settings.dataRetentionDays,
+    defaultDataPolicy: settings.defaultDataPolicy.trim() || null,
   };
 }

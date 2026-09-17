@@ -14,12 +14,19 @@ import {
   setNestedForm,
 } from "@/components/settings-page-shell";
 import { PERMISSION_LABELS, TEAM_ROLES } from "@/lib/settings-pages/defaults";
+import { getSettingsAreaSectionLabel } from "@/lib/settings-area-sections";
 
-export function TeamAccessSettingsPage({ initial }: { initial: Record<string, unknown> }) {
+export function TeamAccessSettingsPage({
+  initial,
+  section,
+}: {
+  initial: Record<string, unknown>;
+  section: string;
+}) {
   return (
     <SettingsPageShell
       pageKey="team-access"
-      title="Team & Access"
+      title={getSettingsAreaSectionLabel("team-access", section)}
       subtitle="Members, roles, permissions, and audit history."
       initial={initial}
     >
@@ -53,6 +60,7 @@ export function TeamAccessSettingsPage({ initial }: { initial: Record<string, un
 
         return (
           <>
+            {section === "team-members" ? (
             <SettingsFormSection title="Team Members" description="People with access to this workspace.">
               <ul className="space-y-3">
                 {members.map((member, index) => (
@@ -98,7 +106,9 @@ export function TeamAccessSettingsPage({ initial }: { initial: Record<string, un
                 Invite member
               </button>
             </SettingsFormSection>
+            ) : null}
 
+            {section === "roles" ? (
             <SettingsFormSection title="Roles" description="Built-in workspace roles.">
               <ul className="grid gap-2 sm:grid-cols-2">
                 {TEAM_ROLES.map((role) => (
@@ -108,7 +118,9 @@ export function TeamAccessSettingsPage({ initial }: { initial: Record<string, un
                 ))}
               </ul>
             </SettingsFormSection>
+            ) : null}
 
+            {section === "permissions" ? (
             <SettingsFormSection title="Permissions" description="Role access by product area.">
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="min-w-full text-left text-sm">
@@ -158,7 +170,9 @@ export function TeamAccessSettingsPage({ initial }: { initial: Record<string, un
                 </table>
               </div>
             </SettingsFormSection>
+            ) : null}
 
+            {section === "audit-logs" ? (
             <SettingsFormSection title="Audit Logs" description="Recent access and configuration events.">
               <SettingsDataTable
                 columns={["Time", "Actor", "Action"]}
@@ -170,6 +184,7 @@ export function TeamAccessSettingsPage({ initial }: { initial: Record<string, un
                 emptyMessage="No audit events recorded yet."
               />
             </SettingsFormSection>
+            ) : null}
           </>
         );
       }}
