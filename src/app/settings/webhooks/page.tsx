@@ -1,10 +1,7 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { WebhooksSettingsPage } from "@/components/tracking-webhooks-settings-pages";
+import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
 
-export default function SettingsWebhooksPage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Webhooks"
-      description="Outbound webhooks for campaign and user lifecycle events."
-    />
-  );
+export default async function SettingsWebhooksPage() {
+  const initial = await loadSettingsPageInitial("webhooks");
+  return <WebhooksSettingsPage initial={initial} />;
 }

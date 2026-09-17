@@ -1,10 +1,7 @@
-import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
+import { BillingUsageSettingsPage } from "@/components/notifications-security-billing-dev-pages";
+import { loadSettingsPageInitial } from "@/lib/settings-pages/load-page";
 
-export default function SettingsBillingUsagePage() {
-  return (
-    <SettingsPlaceholderPage
-      title="Billing & Usage"
-      description="Subscription, usage meters, invoices, and payment methods."
-    />
-  );
+export default async function SettingsBillingUsagePage() {
+  const initial = await loadSettingsPageInitial("billing-usage");
+  return <BillingUsageSettingsPage initial={initial} />;
 }
