@@ -1,5 +1,5 @@
-import { SettingsAreaIndexPage } from "@/components/settings-area-index-page";
+import { redirect } from "next/navigation";
 
 export default function SettingsGeneralIndexPage() {
-  return <SettingsAreaIndexPage areaId="general" />;
+  redirect("/settings/general/organization");
 }

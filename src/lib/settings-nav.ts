@@ -125,4 +125,4 @@ export const SETTINGS_NAV_SECTIONS: SettingsNavSection[] = [
   },
 ];
 
-export const DEFAULT_SETTINGS_PATH = SETTINGS_HUB_PATH;
+export const DEFAULT_SETTINGS_PATH = "/settings/general/organization";

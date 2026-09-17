@@ -1,5 +1,6 @@
-import { SettingsLandingPage } from "@/components/settings-landing-page";
+import { redirect } from "next/navigation";
+import { DEFAULT_SETTINGS_PATH } from "@/lib/settings-nav";
 
 export default function SettingsIndexPage() {
-  return <SettingsLandingPage />;
+  redirect(DEFAULT_SETTINGS_PATH);
 }
