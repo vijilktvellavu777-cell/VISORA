@@ -27,6 +27,13 @@ model Workspace {
   dateFormat           String?   @default("MM/DD/YYYY")
   pausedAt             DateTime?
 
+  workspaceType        String?   @default("standard")
+  activeEnvironment    String?   @default("production")
+  envDevelopmentEnabled Boolean  @default(true)
+  envStagingEnabled     Boolean  @default(true)
+  envProductionEnabled  Boolean  @default(true)
+  dataRegion           String?   @default("US")
+
   apiKeys    ApiKey[]
   customers  Customer[]
   devices    Device[]
