@@ -2,6 +2,7 @@ import type { Workspace } from "@prisma/client";
 
 export type GeneralSettings = {
   organizationName: string;
+  organizationId: string;
   website: string;
   industry: string;
   country: string;
@@ -25,6 +26,7 @@ export const INDUSTRY_OPTIONS = [
   "Healthcare",
   "Media & entertainment",
   "SaaS / Technology",
+  "Technology",
   "Travel & hospitality",
   "Other",
 ] as const;
@@ -72,9 +74,15 @@ export const DATE_FORMAT_OPTIONS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as
 export const TIME_FORMAT_OPTIONS = ["12h", "24h"] as const;
 export const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD"] as const;
 
+export function formatOrganizationId(workspaceId: string) {
+  const compact = workspaceId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 22).toUpperCase();
+  return `org_${compact}`;
+}
+
 export function workspaceToGeneralSettings(workspace: Workspace): GeneralSettings {
   return {
     organizationName: workspace.name,
+    organizationId: formatOrganizationId(workspace.id),
     website: workspace.website ?? "",
     industry: workspace.industry ?? "",
     country: workspace.country ?? "",

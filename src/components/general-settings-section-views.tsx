@@ -5,6 +5,11 @@ import { AlertTriangle } from "lucide-react";
 import { Button, Card, Field, PageHeader, inputClass } from "@/components/ui";
 import { useGeneralSettings } from "@/components/general-settings-provider";
 import {
+  SettingsFormField,
+  SettingsInfoBanner,
+  SettingsPageChrome,
+} from "@/components/settings-page-chrome";
+import {
   COUNTRY_OPTIONS,
   CURRENCY_OPTIONS,
   DATE_FORMAT_OPTIONS,
@@ -15,6 +20,7 @@ import {
   type GeneralSettings,
 } from "@/lib/general-settings";
 import { getSettingsAreaSectionLabel } from "@/lib/settings-area-sections";
+import { formatTimeZoneLabel } from "@/lib/time-zone-labels";
 
 const selectClass = `${inputClass} appearance-none bg-surface`;
 
@@ -52,94 +58,121 @@ function SaveBar({ title, subtitle }: { title: string; subtitle?: string }) {
 }
 
 function OrganizationSection() {
-  const { form, setForm } = useGeneralSettings();
+  const { form, setForm, save, saving, message, error } = useGeneralSettings();
 
   function update<K extends keyof GeneralSettings>(key: K, value: GeneralSettings[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   return (
-    <>
-      <SaveBar title="Organization" subtitle="Organization profile and defaults." />
-      <div className="p-8">
-        <SettingsAlerts />
-        <Card className="space-y-4 p-6">
-          <Field label="Organization Name">
+    <SettingsPageChrome
+      breadcrumbs={[
+        { label: "Settings", href: "/settings" },
+        { label: "General", href: "/settings/general" },
+        { label: "Organization" },
+      ]}
+      title="Organization"
+      description="Manage your organization details and basic information."
+      onSave={() => save()}
+      saving={saving}
+    >
+      {message ? (
+        <div className="mb-6 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
+          {message}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="mb-6 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+          {error}
+        </div>
+      ) : null}
+      <Card className="border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-foreground">Organization Information</h2>
+        <p className="mt-1 text-sm text-muted">
+          These details will be used across your workspace and communications.
+        </p>
+        <div className="mt-6 grid gap-5 md:grid-cols-2">
+          <SettingsFormField label="Organization Name" required>
             <input
               className={inputClass}
               value={form.organizationName}
               onChange={(event) => update("organizationName", event.target.value)}
             />
-          </Field>
-          <Field label="Website">
+          </SettingsFormField>
+          <SettingsFormField label="Website">
             <input
               className={inputClass}
               type="url"
               value={form.website}
               onChange={(event) => update("website", event.target.value)}
+              placeholder="https://visora.world"
             />
-          </Field>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Industry">
-              <select
-                className={selectClass}
-                value={form.industry}
-                onChange={(event) => update("industry", event.target.value)}
-              >
-                <option value="">Select industry</option>
-                {INDUSTRY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Country">
-              <select
-                className={selectClass}
-                value={form.country}
-                onChange={(event) => update("country", event.target.value)}
-              >
-                <option value="">Select country</option>
-                {COUNTRY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Time Zone">
-              <select
-                className={selectClass}
-                value={form.organizationTimeZone}
-                onChange={(event) => update("organizationTimeZone", event.target.value)}
-              >
-                {TIME_ZONE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Default Language">
-              <select
-                className={selectClass}
-                value={form.defaultLanguage}
-                onChange={(event) => update("defaultLanguage", event.target.value)}
-              >
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-        </Card>
-      </div>
-    </>
+          </SettingsFormField>
+          <SettingsFormField label="Industry">
+            <select
+              className={selectClass}
+              value={form.industry}
+              onChange={(event) => update("industry", event.target.value)}
+            >
+              <option value="">Select industry</option>
+              {INDUSTRY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option === "SaaS / Technology" ? "Technology" : option}
+                </option>
+              ))}
+            </select>
+          </SettingsFormField>
+          <SettingsFormField label="Country">
+            <select
+              className={selectClass}
+              value={form.country}
+              onChange={(event) => update("country", event.target.value)}
+            >
+              <option value="">Select country</option>
+              {COUNTRY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </SettingsFormField>
+          <SettingsFormField label="Time Zone">
+            <select
+              className={selectClass}
+              value={form.organizationTimeZone}
+              onChange={(event) => update("organizationTimeZone", event.target.value)}
+            >
+              {TIME_ZONE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {formatTimeZoneLabel(option)}
+                </option>
+              ))}
+            </select>
+          </SettingsFormField>
+          <SettingsFormField label="Default Language">
+            <select
+              className={selectClass}
+              value={form.defaultLanguage}
+              onChange={(event) => update("defaultLanguage", event.target.value)}
+            >
+              {LANGUAGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </SettingsFormField>
+          <SettingsFormField label="Organization ID">
+            <input className={`${inputClass} bg-background text-muted`} readOnly value={form.organizationId} />
+          </SettingsFormField>
+        </div>
+        <div className="mt-6">
+          <SettingsInfoBanner>
+            This information will be used in emails, reports, and across your VISORA workspace.
+          </SettingsInfoBanner>
+        </div>
+      </Card>
+    </SettingsPageChrome>
   );
 }
 
