@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
-import { getDefaultSectionPath } from "@/lib/settings-area-sections";
+import { SettingsAreaIndexPage } from "@/components/settings-area-index-page";
 
 export default function SettingsWorkspaceIndexPage() {
-  redirect(getDefaultSectionPath("workspace"));
+  return <SettingsAreaIndexPage areaId="workspace" />;
 }
