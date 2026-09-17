@@ -76,23 +76,3 @@ export function renderlyProjectAddress(campaignId: string): string {
   const token = campaignId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10) || "proof";
   return `p_${token}@rendering.inboxmonster.com`;
 }
-
-export function renderlyProofTitle(campaign: {
-  name: string;
-  subject: string | null;
-  updatedAt: Date | string;
-}): string {
-  const updated =
-    typeof campaign.updatedAt === "string" ? new Date(campaign.updatedAt) : campaign.updatedAt;
-  const stamp = updated.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-  const subject = campaign.subject?.trim() || campaign.name;
-  return `Proof Launch: (HTML-only) [${campaign.name} - ${stamp}] ${subject}`;
-}

@@ -14,6 +14,7 @@ import {
   Share2,
   Sun,
 } from "lucide-react";
+import { isEmailHtmlBody } from "@/lib/renderly-body";
 import type { RenderlyCampaignListItem } from "@/lib/renderly-types";
 import { RenderlyEmailPreviewFrame } from "@/components/renderly-email-preview";
 
