@@ -1,9 +1,9 @@
 import { SettingsPlaceholderPage } from "@/components/settings-placeholder-page";
 
-export default function SettingsUsersPage() {
+export default function SettingsTeamAccessPage() {
   return (
     <SettingsPlaceholderPage
-      title="Users and teams"
+      title="Team & Access"
       description="Invite teammates, assign roles, and manage workspace access."
     />
   );
