@@ -16,7 +16,7 @@ VISORA is a customer engagement platform. Key areas:
 - Analytics (/analytics): reports and campaign performance
 - Developer (/developer): API keys and integrations
 - Planly (/planly): project and task board
-- Renderly (/renderly): preview rendering for all emails
+- Renderly (/renderly): proof and QA rendering for email campaigns
 - Bubu (/bubu): this AI assistant
 
 Campaign wizard steps: Compose → Target → Summary → Schedule.
@@ -85,7 +85,7 @@ function keywordReply(message: string, context: BubuWorkspaceContext) {
   }
 
   if (text.includes("renderly") || text.includes("render") || text.includes("preview email")) {
-    return "Open [Renderly](/renderly) to preview how all your email campaigns and templates render. You can filter by campaigns or templates and switch between desktop and mobile views.";
+    return "Open [Renderly](/renderly) to see all email campaign proofs in a list. Click a row to open the rendering report with proofing, previews, and QA tabs.";
   }
 
   if (text.includes("whatsapp")) {
