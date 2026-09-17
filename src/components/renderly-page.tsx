@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Filter, Search } from "lucide-react";
 import type { RenderlyCampaignListItem } from "@/lib/renderly-types";
 import { RenderlyEmailPreviewFrame } from "@/components/renderly-email-preview";
+import { RenderlyListThumbnail } from "@/components/renderly-list-thumbnail";
 import { RenderlyRowMenu } from "@/components/renderly-row-menu";
 
 const PAGE_SIZE = 10;
@@ -132,11 +133,11 @@ export function RenderlyPageClient({ items }: { items: RenderlyCampaignListItem[
                   </div>
                 </div>
                 <div className="p-4">
-                  <RenderlyEmailPreviewFrame
-                    html={item.body}
-                    title={`Thumbnail ${item.name}`}
-                    className="h-[220px]"
-                  />
+                    <RenderlyEmailPreviewFrame
+                      html={item.body}
+                      title={`Thumbnail ${item.name}`}
+                      className="h-[220px] w-full"
+                    />
                 </div>
                 <div className="flex justify-between border-t border-border px-4 py-2 text-xs text-muted">
                   <span>{formatKb(item.metrics.htmlSizeKb)}</span>
@@ -169,17 +170,13 @@ export function RenderlyPageClient({ items }: { items: RenderlyCampaignListItem[
                     key={item.id}
                     className="border-b border-border/80 hover:bg-background/60"
                   >
-                    <td className="py-3 pr-4">
+                    <td className="max-w-[320px] py-3 pr-4">
                       <Link
                         href={`/renderly/${item.id}`}
-                        className="flex items-center gap-3"
+                        className="flex min-w-0 items-center gap-3"
                       >
-                        <RenderlyEmailPreviewFrame
-                          html={item.body}
-                          title={`Thumbnail ${item.name}`}
-                          className="h-14 w-[72px] shrink-0"
-                        />
-                        <span className="line-clamp-2 font-medium text-foreground hover:text-primary">
+                        <RenderlyListThumbnail body={item.body} name={item.name} />
+                        <span className="min-w-0 flex-1 font-medium leading-snug text-foreground hover:text-primary">
                           {item.name}
                         </span>
                       </Link>

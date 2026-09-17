@@ -20,7 +20,7 @@ export function RenderlyEmailPreviewFrame({
   return (
     <div
       className={`overflow-hidden rounded-md border border-border bg-white ${
-        viewMode === "mobile" ? "max-w-[375px]" : "w-full"
+        viewMode === "mobile" ? "max-w-[375px]" : ""
       } ${className}`}
     >
       {srcDoc ? (
