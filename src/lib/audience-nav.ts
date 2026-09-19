@@ -12,6 +12,9 @@ export const AUDIENCE_NAV_SECTIONS: HubPanelNavSection[] = [
       { href: "/audience/suppression", label: "Suppression lists" },
       { href: "/audience/find", label: "Find Users" },
       { href: "/audience/import-export", label: "Import and export users" },
+      { href: "/audience/contact-list", label: "Contact list" },
+      { href: "/audience/sql-view", label: "SQL view" },
+      { href: "/audience/location", label: "Location" },
     ],
   },
 ];
