@@ -20,6 +20,7 @@ export default async function ListExtensionImportRoute({ params }: Params) {
 
   return (
     <ListExtensionImportPageClient
+      extensionName={extension.name}
       attributes={resolveExtensionAttributes(extension.attributes, extension.type)}
     />
   );
