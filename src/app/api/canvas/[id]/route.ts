@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { DUPLICATE_CANVAS_NAME_ERROR, findCanvasWithName } from "@/lib/canvas-names";
 import { getDefaultWorkspace } from "@/lib/workspace";
 import { parseJson } from "@/lib/types";
 
@@ -39,7 +40,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const data: Record<string, unknown> = {};
 
-  if (typeof body.name === "string") data.name = body.name.trim();
+  if (typeof body.name === "string") {
+    const name = body.name.trim();
+    if (!name) {
+      return NextResponse.json({ error: "Canvas name is required." }, { status: 400 });
+    }
+    const duplicate = await findCanvasWithName(workspace.id, name, id);
+    if (duplicate) {
+      return NextResponse.json({ error: DUPLICATE_CANVAS_NAME_ERROR }, { status: 409 });
+    }
+    data.name = name;
+  }
   if (body.description !== undefined) {
     data.description = typeof body.description === "string" ? body.description.trim() || null : null;
   }
