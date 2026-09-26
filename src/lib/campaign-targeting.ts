@@ -74,6 +74,42 @@ export const PREBUILT_TARGETING_FILTERS: PrebuiltFilter[] = [
     description: "Performed signup event",
     rules: { op: "and", filters: [{ kind: "event", name: "signup", op: "performed" }] },
   },
+  {
+    id: "rule_set",
+    label: "Rule set",
+    description: "Start a reusable rule set",
+    rules: { op: "and", filters: [] },
+  },
+  {
+    id: "email_address",
+    label: "Address",
+    description: "Profile has an email address",
+    rules: { op: "and", filters: [{ kind: "attribute", field: "email", op: "exists" }] },
+  },
+  {
+    id: "email_subscribe_date",
+    label: "Subscribe date",
+    description: "Email subscribe date is set",
+    rules: { op: "and", filters: [{ kind: "attribute", field: "emailSubscribedAt", op: "exists" }] },
+  },
+  {
+    id: "email_subscribe_status",
+    label: "Subscribe status",
+    description: "Email subscription is active",
+    rules: { op: "and", filters: [{ kind: "attribute", field: "emailSubscribed", op: "eq", value: "true" }] },
+  },
+  {
+    id: "email_unsubscribe_date",
+    label: "Unsubscribe date",
+    description: "Email unsubscribe date is set",
+    rules: { op: "and", filters: [{ kind: "attribute", field: "emailUnsubscribedAt", op: "exists" }] },
+  },
+  {
+    id: "email_valid_status",
+    label: "Valid status",
+    description: "Email address is marked valid",
+    rules: { op: "and", filters: [{ kind: "attribute", field: "emailValid", op: "eq", value: "true" }] },
+  },
 ];
 
 export function emptyTargeting(): CampaignTargeting {
