@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Calculator,
   ChevronDown,
@@ -80,6 +80,8 @@ export function CreateSegmentPage({
   const [showDescription, setShowDescription] = useState(starting.showDescription);
   const [analyticsTracking, setAnalyticsTracking] = useState(starting.analyticsTracking);
   const [builder, setBuilder] = useState<BuilderState>(starting.builder);
+  const builderRef = useRef(builder);
+  builderRef.current = builder;
   const [lookupQuery, setLookupQuery] = useState("");
   const [totalUsers, setTotalUsers] = useState(0);
   const [estimatedUsers, setEstimatedUsers] = useState(0);
@@ -98,13 +100,13 @@ export function CreateSegmentPage({
 
   const estimatedPercent = totalUsers > 0 ? ((estimatedUsers / totalUsers) * 100).toFixed(1) : "0.0";
 
-  function buildRules() {
+  function buildRules(current: BuilderState = builderRef.current) {
     return buildSegmentRulesPayload({
       appsTarget: starting.appsTarget,
       specificApps: starting.specificApps,
       analyticsTracking,
-      filterGroups: builder.filterGroups,
-      exclusionGroups: builder.exclusionGroups,
+      filterGroups: current.filterGroups,
+      exclusionGroups: current.exclusionGroups,
     });
   }
 
@@ -128,6 +130,23 @@ export function CreateSegmentPage({
     setEstimatedUsers(typeof data.count === "number" ? data.count : 0);
     if (typeof data.totalUsers === "number") setTotalUsers(data.totalUsers);
   }
+
+  useEffect(() => {
+    const hasRules =
+      builder.filterGroups.some((group) => group.filters.length > 0) ||
+      builder.exclusionGroups.some((group) => group.filters.length > 0);
+    if (!hasRules) {
+      setEstimatedUsers(0);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void runCounts();
+    }, 250);
+    return () => window.clearTimeout(timer);
+    // Recalculate whenever the segment groups change, including a dragged rule.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [builder]);
 
   async function saveSegment() {
     if (!name.trim()) {
@@ -360,7 +379,15 @@ export function CreateSegmentPage({
       </div>
 
       <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface px-8 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-end">
+        <div className="mx-auto flex max-w-7xl items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={saveSegment}
+            disabled={saving}
+            className="rounded-lg border border-primary bg-surface px-5 py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
           <button
             type="button"
             onClick={runCounts}
