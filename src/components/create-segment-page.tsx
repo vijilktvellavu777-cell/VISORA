@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { Card, Field, inputClass } from "@/components/ui";
+import { SegmentRulesPanel } from "@/components/segment-rules-panel";
+import { createFilterGroup, createFilterItem } from "@/lib/campaign-targeting";
 import {
   emptySegmentBuilder,
   SegmentBuilderCard,
@@ -330,6 +332,27 @@ export function CreateSegmentPage({
                 </button>
               </div>
             </Card>
+
+            <SegmentRulesPanel
+              onSelect={(rule) => {
+                setBuilder((current) => {
+                  const groups = current.filterGroups.length
+                    ? current.filterGroups
+                    : [createFilterGroup("or")];
+                  const [first, ...rest] = groups;
+                  return {
+                    ...current,
+                    filterGroups: [
+                      {
+                        ...first,
+                        filters: [...first.filters, createFilterItem(rule.id, rule.label)],
+                      },
+                      ...rest,
+                    ],
+                  };
+                });
+              }}
+            />
           </aside>
         </div>
 

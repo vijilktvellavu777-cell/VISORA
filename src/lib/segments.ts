@@ -10,6 +10,10 @@ function getAttr(customer: Customer, field: string): unknown {
   if (field === "lastName") return customer.lastName;
   if (field === "country") return customer.country;
   if (field === "externalId") return customer.externalId;
+  if (field === "emailSubscribed") {
+    const subscriptions = parseJson<Record<string, unknown>>(customer.subscriptions, {});
+    return subscriptions.email === true ? "true" : "false";
+  }
   const attrs = parseJson<Record<string, unknown>>(customer.attributes, {});
   return attrs[field];
 }

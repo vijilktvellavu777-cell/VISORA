@@ -16,6 +16,7 @@ import {
   PREBUILT_TARGETING_FILTERS,
   type TargetingFilterGroup,
 } from "@/lib/campaign-targeting";
+import type { SegmentRuleEntry } from "@/lib/segment-rules-catalog";
 
 type BuilderState = {
   filterGroups: TargetingFilterGroup[];
@@ -116,11 +117,33 @@ function FilterGroupCard({
   }));
   const isExclusion = variant === "exclusion";
 
+  function addRule(rule: SegmentRuleEntry) {
+    onChange({
+      ...group,
+      filters: [...group.filters, createFilterItem(rule.id, rule.label)],
+    });
+  }
+
   return (
     <div
       className={`rounded-lg border p-4 ${
         isExclusion ? "border-red-200 bg-red-50" : "border-border bg-background"
       }`}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes("application/x-visora-rule")) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={(event) => {
+        const raw = event.dataTransfer.getData("application/x-visora-rule");
+        if (!raw) return;
+        event.preventDefault();
+        try {
+          addRule(JSON.parse(raw) as SegmentRuleEntry);
+        } catch {
+          /* ignore invalid drag payload */
+        }
+      }}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
