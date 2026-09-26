@@ -387,7 +387,14 @@ export function CreateSegmentPage({
       ) : null}
 
       <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface px-8 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-end gap-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <p className="text-sm text-muted">
+            Counts{" "}
+            <span className="text-lg font-semibold tabular-nums text-foreground">
+              {runningCounts ? "…" : estimatedUsers.toLocaleString()}
+            </span>
+          </p>
+          <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={saveSegment}
@@ -404,6 +411,7 @@ export function CreateSegmentPage({
           >
             {runningCounts ? "Running…" : "Run counts"}
           </button>
+          </div>
         </div>
       </footer>
     </div>
