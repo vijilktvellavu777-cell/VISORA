@@ -112,6 +112,53 @@ export function customerMatchesSegmentGroups(
   return !exclusionGroups.some((group) => groupMatches(customer, group, listMembers));
 }
 
+export function segmentGroupsAreListOnly(
+  filterGroups: TargetingFilterGroup[],
+  exclusionGroups: TargetingFilterGroup[],
+) {
+  const groups = [...filterGroups, ...exclusionGroups].filter((group) => group.filters.length > 0);
+  return (
+    groups.length > 0 &&
+    groups.every((group) => group.filters.every((filter) => filter.filterId.startsWith("list_extension:")))
+  );
+}
+
+export function countListRuleGroups(
+  filterGroups: TargetingFilterGroup[],
+  exclusionGroups: TargetingFilterGroup[],
+  entryIdsByList: Map<string, string[]>,
+) {
+  function keysFor(listId: string) {
+    return new Set(entryIdsByList.get(listId) ?? []);
+  }
+
+  function combine(group: TargetingFilterGroup) {
+    const sets = group.filters.map((filter) =>
+      keysFor(filter.filterId.slice("list_extension:".length)),
+    );
+    if (sets.length === 0) return new Set<string>();
+    if (group.logic === "and") {
+      return sets.reduce((combined, set) => new Set([...combined].filter((id) => set.has(id))));
+    }
+    const union = new Set<string>();
+    for (const set of sets) {
+      for (const id of set) union.add(id);
+    }
+    return union;
+  }
+
+  const included = new Set<string>();
+  for (const group of filterGroups) {
+    if (group.filters.length === 0) continue;
+    for (const id of combine(group)) included.add(id);
+  }
+  for (const group of exclusionGroups) {
+    if (group.filters.length === 0) continue;
+    for (const id of combine(group)) included.delete(id);
+  }
+  return included.size;
+}
+
 export function listIdsInGroups(groups: TargetingFilterGroup[]) {
   const ids = new Set<string>();
   for (const group of groups) {
