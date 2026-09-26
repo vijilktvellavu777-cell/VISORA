@@ -34,3 +34,22 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   return NextResponse.json(segment);
 }
+
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  const { id } = await params;
+  const workspace = await getDefaultWorkspace();
+  const existing = await prisma.segment.findFirst({
+    where: { id, workspaceId: workspace.id },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.$transaction([
+    prisma.campaign.updateMany({ where: { segmentId: id }, data: { segmentId: null } }),
+    prisma.canvas.updateMany({ where: { segmentId: id }, data: { segmentId: null } }),
+    prisma.segment.delete({ where: { id } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}

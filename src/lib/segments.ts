@@ -123,7 +123,18 @@ export function segmentGroupsAreListOnly(
   );
 }
 
-export function countListRuleGroups(
+export function readSegmentGroups(raw: string) {
+  const parsed = parseJson<{
+    filterGroups?: TargetingFilterGroup[];
+    exclusionGroups?: TargetingFilterGroup[];
+  }>(raw, {});
+  return {
+    filterGroups: Array.isArray(parsed.filterGroups) ? parsed.filterGroups : [],
+    exclusionGroups: Array.isArray(parsed.exclusionGroups) ? parsed.exclusionGroups : [],
+  };
+}
+
+export function includedListEntryIds(
   filterGroups: TargetingFilterGroup[],
   exclusionGroups: TargetingFilterGroup[],
   entryIdsByList: Map<string, string[]>,
@@ -156,7 +167,15 @@ export function countListRuleGroups(
     if (group.filters.length === 0) continue;
     for (const id of combine(group)) included.delete(id);
   }
-  return included.size;
+  return included;
+}
+
+export function countListRuleGroups(
+  filterGroups: TargetingFilterGroup[],
+  exclusionGroups: TargetingFilterGroup[],
+  entryIdsByList: Map<string, string[]>,
+) {
+  return includedListEntryIds(filterGroups, exclusionGroups, entryIdsByList).size;
 }
 
 export function listIdsInGroups(groups: TargetingFilterGroup[]) {

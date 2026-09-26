@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getDefaultWorkspace, resolveSegmentMembers } from "@/lib/workspace";
+import { getDefaultWorkspace, loadSegmentAudience } from "@/lib/workspace";
 
 export async function GET(request: NextRequest) {
   const workspace = await getDefaultWorkspace();
@@ -12,16 +12,16 @@ export async function GET(request: NextRequest) {
 
   const segmentId = request.nextUrl.searchParams.get("segmentId");
   if (segmentId) {
-    const members = await resolveSegmentMembers(workspace.id, segmentId);
+    const segment = await prisma.segment.findFirst({
+      where: { id: segmentId, workspaceId: workspace.id },
+    });
+    if (!segment) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const audience = await loadSegmentAudience(workspace.id, segment.rules);
     return NextResponse.json({
-      count: members.length,
-      customers: members.map((c) => ({
-        id: c.id,
-        externalId: c.externalId,
-        email: c.email,
-        firstName: c.firstName,
-        lastName: c.lastName,
-      })),
+      count: audience.people.length,
+      customers: audience.people,
     });
   }
 

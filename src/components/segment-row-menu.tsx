@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Calculator, Copy, MoreHorizontal, Pencil } from "lucide-react";
+import { Calculator, Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 type Props = {
   segmentId: string;
@@ -29,6 +29,18 @@ export function SegmentRowMenu({ segmentId, segmentName, onCounts }: Props) {
     setOpen(false);
     setBusy(true);
     const response = await fetch(`/api/segments/${segmentId}/copy`, { method: "POST" });
+    setBusy(false);
+    if (!response.ok) return;
+    router.refresh();
+  }
+
+  async function handleDelete() {
+    setOpen(false);
+    const confirmed = window.confirm(`Delete "${segmentName}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setBusy(true);
+    const response = await fetch(`/api/segments/${segmentId}`, { method: "DELETE" });
     setBusy(false);
     if (!response.ok) return;
     router.refresh();
@@ -82,6 +94,14 @@ export function SegmentRowMenu({ segmentId, segmentName, onCounts }: Props) {
           >
             <Calculator size={14} className="text-muted" />
             Run counts
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDelete()}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-background"
+          >
+            <Trash2 size={14} />
+            Delete
           </button>
         </div>
       ) : null}
