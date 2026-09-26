@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Calculator,
@@ -73,8 +72,9 @@ export function CreateSegmentPage({
   segmentId?: string;
   initial?: SegmentEditorInitial;
 }) {
-  const router = useRouter();
   const starting = readInitial(initial);
+  const [persistedId, setPersistedId] = useState(segmentId);
+  const [savedNotice, setSavedNotice] = useState(false);
   const [name, setName] = useState(starting.name);
   const [description, setDescription] = useState(starting.description);
   const [showDescription, setShowDescription] = useState(starting.showDescription);
@@ -159,8 +159,8 @@ export function CreateSegmentPage({
 
     const rules = buildRules();
 
-    const response = await fetch(segmentId ? `/api/segments/${segmentId}` : "/api/segments", {
-      method: segmentId ? "PATCH" : "POST",
+    const response = await fetch(persistedId ? `/api/segments/${persistedId}` : "/api/segments", {
+      method: persistedId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
@@ -171,12 +171,14 @@ export function CreateSegmentPage({
 
     setSaving(false);
     if (!response.ok) {
-      setError(segmentId ? "Could not save segment" : "Could not create segment");
+      setError(persistedId ? "Could not save segment" : "Could not create segment");
       return;
     }
 
-    router.push("/audience/segments");
-    router.refresh();
+    const saved = (await response.json()) as { id?: string };
+    if (saved.id) setPersistedId(saved.id);
+    setSavedNotice(true);
+    window.setTimeout(() => setSavedNotice(false), 2500);
   }
 
   return (
@@ -377,6 +379,12 @@ export function CreateSegmentPage({
 
         {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
       </div>
+
+      {savedNotice ? (
+        <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Saved
+        </div>
+      ) : null}
 
       <footer className="fixed bottom-0 left-[240px] right-0 z-30 border-t border-border bg-surface px-8 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-end gap-3">
