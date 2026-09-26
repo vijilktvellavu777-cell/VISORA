@@ -55,8 +55,8 @@ function readInitial(initial?: SegmentEditorInitial) {
     name: initial?.name ?? defaultSegmentName(),
     description: initial?.description ?? "",
     showDescription: Boolean(initial?.description),
-    appsTarget: typeof parsed.appsTarget === "string" ? parsed.appsTarget : "specific",
-    specificApps: specificApps.length > 0 ? specificApps : ["visora-web"],
+    appsTarget: typeof parsed.appsTarget === "string" ? parsed.appsTarget : "all",
+    specificApps,
     analyticsTracking: parsed.analyticsTracking === true,
     builder: filterGroups
       ? { filterGroups, exclusionGroups }
@@ -76,8 +76,6 @@ export function CreateSegmentPage({
   const [name, setName] = useState(starting.name);
   const [description, setDescription] = useState(starting.description);
   const [showDescription, setShowDescription] = useState(starting.showDescription);
-  const [appsTarget, setAppsTarget] = useState(starting.appsTarget);
-  const [specificApps, setSpecificApps] = useState<string[]>(starting.specificApps);
   const [analyticsTracking, setAnalyticsTracking] = useState(starting.analyticsTracking);
   const [builder, setBuilder] = useState<BuilderState>(starting.builder);
   const [lookupQuery, setLookupQuery] = useState("");
@@ -100,8 +98,8 @@ export function CreateSegmentPage({
 
   function buildRules() {
     return buildSegmentRulesPayload({
-      appsTarget,
-      specificApps,
+      appsTarget: starting.appsTarget,
+      specificApps: starting.specificApps,
       analyticsTracking,
       filterGroups: builder.filterGroups,
       exclusionGroups: builder.exclusionGroups,
@@ -202,25 +200,7 @@ export function CreateSegmentPage({
         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
             <Card className="space-y-5 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <h2 className="text-lg font-semibold text-foreground">Segment Details</h2>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                  >
-                    User Data
-                    <ChevronDown size={14} />
-                  </button>
-                  <Link
-                    href="/campaigns/new?type=email&fresh=1"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                  >
-                    Create campaign
-                    <ChevronDown size={14} />
-                  </Link>
-                </div>
-              </div>
+              <h2 className="text-lg font-semibold text-foreground">Segment Details</h2>
 
               <Field label="Segment Name">
                 <input
@@ -256,38 +236,6 @@ export function CreateSegmentPage({
                 Tags
                 <ChevronDown size={14} />
               </button>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Apps and websites targeted">
-                  <div className="relative">
-                    <select
-                      className={`${inputClass} appearance-none pr-8`}
-                      value={appsTarget}
-                      onChange={(event) => setAppsTarget(event.target.value)}
-                    >
-                      <option value="all">Users from all apps</option>
-                      <option value="specific">Users from specific apps</option>
-                    </select>
-                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-                  </div>
-                </Field>
-
-                <Field label="Specific Apps">
-                  <div className="relative">
-                    <select
-                      className={`${inputClass} appearance-none pr-8`}
-                      value={specificApps[0] ?? ""}
-                      onChange={(event) => setSpecificApps(event.target.value ? [event.target.value] : [])}
-                      disabled={appsTarget !== "specific"}
-                    >
-                      <option value="visora-web">VISORA Web</option>
-                      <option value="visora-ios">VISORA iOS</option>
-                      <option value="visora-android">VISORA Android</option>
-                    </select>
-                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-                  </div>
-                </Field>
-              </div>
 
               <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
                 <span className="text-sm font-medium text-foreground">Analytics Tracking</span>
