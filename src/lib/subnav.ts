@@ -7,9 +7,12 @@ export function isHubSubnavPath(pathname: string) {
   return HUB_SUBNAV_PATHS.includes(pathname as (typeof HUB_SUBNAV_PATHS)[number]);
 }
 
-/** True when a hub panel subnav should show and content should offset. */
+/**
+ * Hub panel is only open on the section landing route.
+ * Choosing a submenu navigates into a child path and the panel hides.
+ */
 export function hasHubSubnav(pathname: string) {
-  return HUB_SUBNAV_PATHS.some((hub) => pathname === hub || pathname.startsWith(`${hub}/`));
+  return isHubSubnavPath(pathname);
 }
 
 export function isHubSectionPath(pathname: string, hub: (typeof HUB_SUBNAV_PATHS)[number]) {
