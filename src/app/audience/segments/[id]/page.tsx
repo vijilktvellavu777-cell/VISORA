@@ -24,7 +24,9 @@ export default async function SegmentDetailPage({ params }: { params: Promise<{ 
             <Badge key={index} tone="accent">
               {filter.kind === "attribute"
                 ? `${filter.field} ${filter.op} ${filter.value ?? ""}`
-                : `${filter.name} ${filter.op}`}
+                : filter.kind === "event"
+                  ? `${filter.name} ${filter.op}`
+                  : "Audience list"}
             </Badge>
           ))}
         </div>

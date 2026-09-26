@@ -77,10 +77,8 @@ export const SEGMENT_RULE_GROUPS: SegmentRuleGroup[] = [
     id: "import",
     label: "Import Attributes",
     rules: [
-      { id: "import_created_in_load", label: "Created in load" },
-      { id: "import_last_modified_in_load", label: "Last modified in load" },
-      { id: "import_members_of_load", label: "Members of load" },
-      { id: "import_members_of_table", label: "Members of table" },
+      { id: "import_list", label: "Import a list" },
+      { id: "import_user", label: "Import a user" },
     ],
   },
   {

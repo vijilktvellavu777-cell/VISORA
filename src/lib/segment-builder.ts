@@ -15,6 +15,10 @@ export function flattenFilterGroups(groups: TargetingFilterGroup[]): SegmentFilt
 
   for (const group of groups) {
     for (const item of group.filters) {
+      if (item.filterId.startsWith("list_extension:")) {
+        filters.push({ kind: "list", listId: item.filterId.slice("list_extension:".length) });
+        continue;
+      }
       const prebuilt = getPrebuiltFilter(item.filterId);
       if (prebuilt) filters.push(...prebuilt.rules.filters);
     }
