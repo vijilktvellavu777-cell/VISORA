@@ -1,4 +1,5 @@
 import type { Customer, Event } from "@prisma/client";
+import { getPrebuiltFilter, type TargetingFilterGroup } from "./campaign-targeting";
 import { parseJson, type SegmentFilter, type SegmentRules } from "./types";
 
 type CustomerWithEvents = Customer & { events: Event[] };
@@ -70,6 +71,57 @@ export function customerMatchesRules(
 
 export function listIdsInRules(rules: SegmentRules) {
   return rules.filters.filter((filter) => filter.kind === "list").map((filter) => filter.listId);
+}
+
+function filterItemMatches(
+  customer: CustomerWithEvents,
+  filterId: string,
+  listMembers?: Map<string, Set<string>>,
+) {
+  if (filterId.startsWith("list_extension:")) {
+    return customerMatchesRules(
+      customer,
+      { op: "and", filters: [{ kind: "list", listId: filterId.slice("list_extension:".length) }] },
+      listMembers,
+    );
+  }
+
+  const prebuilt = getPrebuiltFilter(filterId);
+  if (!prebuilt || prebuilt.rules.filters.length === 0) return false;
+  return customerMatchesRules(customer, prebuilt.rules, listMembers);
+}
+
+function groupMatches(
+  customer: CustomerWithEvents,
+  group: TargetingFilterGroup,
+  listMembers?: Map<string, Set<string>>,
+) {
+  if (group.filters.length === 0) return false;
+  const results = group.filters.map((filter) => filterItemMatches(customer, filter.filterId, listMembers));
+  return group.logic === "or" ? results.some(Boolean) : results.every(Boolean);
+}
+
+export function customerMatchesSegmentGroups(
+  customer: CustomerWithEvents,
+  filterGroups: TargetingFilterGroup[],
+  exclusionGroups: TargetingFilterGroup[],
+  listMembers?: Map<string, Set<string>>,
+) {
+  const included = filterGroups.some((group) => groupMatches(customer, group, listMembers));
+  if (!included) return false;
+  return !exclusionGroups.some((group) => groupMatches(customer, group, listMembers));
+}
+
+export function listIdsInGroups(groups: TargetingFilterGroup[]) {
+  const ids = new Set<string>();
+  for (const group of groups) {
+    for (const filter of group.filters) {
+      if (filter.filterId.startsWith("list_extension:")) {
+        ids.add(filter.filterId.slice("list_extension:".length));
+      }
+    }
+  }
+  return Array.from(ids);
 }
 
 export function parseRules(raw: string): SegmentRules {

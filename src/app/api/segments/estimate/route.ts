@@ -1,21 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { customerMatchesRules, listIdsInRules, parseRules } from "@/lib/segments";
+import type { TargetingFilterGroup } from "@/lib/campaign-targeting";
+import { customerMatchesSegmentGroups, listIdsInGroups } from "@/lib/segments";
 import { getDefaultWorkspace, loadListMembers } from "@/lib/workspace";
+
+function asGroups(value: unknown): TargetingFilterGroup[] {
+  return Array.isArray(value) ? (value as TargetingFilterGroup[]) : [];
+}
 
 export async function POST(request: NextRequest) {
   const workspace = await getDefaultWorkspace();
   const body = await request.json();
-  const rules = parseRules(JSON.stringify(body.rules ?? { op: "and", filters: [] }));
+  const payload = (body.rules ?? {}) as {
+    filterGroups?: TargetingFilterGroup[];
+    exclusionGroups?: TargetingFilterGroup[];
+  };
+  const filterGroups = asGroups(payload.filterGroups);
+  const exclusionGroups = asGroups(payload.exclusionGroups);
 
   const customers = await prisma.customer.findMany({
     where: { workspaceId: workspace.id },
     include: { events: true },
   });
 
-  const listMembers = await loadListMembers(listIdsInRules(rules));
-  const count = customers.filter((customer) => customerMatchesRules(customer, rules, listMembers)).length;
-  const totalUsers = customers.length;
+  const listMembers = await loadListMembers(listIdsInGroups([...filterGroups, ...exclusionGroups]));
+  const count = customers.filter((customer) =>
+    customerMatchesSegmentGroups(customer, filterGroups, exclusionGroups, listMembers),
+  ).length;
 
-  return NextResponse.json({ count, totalUsers });
+  return NextResponse.json({ count, totalUsers: customers.length });
 }
