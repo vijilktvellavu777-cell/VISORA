@@ -21,7 +21,12 @@ export type EventFilter = {
   days?: number;
 };
 
-export type SegmentFilter = AttributeFilter | EventFilter;
+export type ListFilter = {
+  kind: "list";
+  listId: string;
+};
+
+export type SegmentFilter = AttributeFilter | EventFilter | ListFilter;
 
 export type SegmentRules = {
   op: "and" | "or";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { customerMatchesRules, parseRules } from "@/lib/segments";
-import { getDefaultWorkspace } from "@/lib/workspace";
+import { customerMatchesRules, listIdsInRules, parseRules } from "@/lib/segments";
+import { getDefaultWorkspace, loadListMembers } from "@/lib/workspace";
 
 export async function POST(request: NextRequest) {
   const workspace = await getDefaultWorkspace();
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     include: { events: true },
   });
 
-  const count = customers.filter((customer) => customerMatchesRules(customer, rules)).length;
+  const listMembers = await loadListMembers(listIdsInRules(rules));
+  const count = customers.filter((customer) => customerMatchesRules(customer, rules, listMembers)).length;
   const totalUsers = customers.length;
 
   return NextResponse.json({ count, totalUsers });

@@ -50,12 +50,26 @@ function matchEvent(customer: CustomerWithEvents, filter: Extract<SegmentFilter,
   return filter.op === "performed" ? hits.length > 0 : hits.length === 0;
 }
 
-export function customerMatchesRules(customer: CustomerWithEvents, rules: SegmentRules): boolean {
+export function customerMatchesRules(
+  customer: CustomerWithEvents,
+  rules: SegmentRules,
+  listMembers?: Map<string, Set<string>>,
+): boolean {
   if (!rules.filters.length) return true;
-  const results = rules.filters.map((filter) =>
-    filter.kind === "attribute" ? matchAttribute(customer, filter) : matchEvent(customer, filter),
-  );
+  const results = rules.filters.map((filter) => {
+    if (filter.kind === "attribute") return matchAttribute(customer, filter);
+    if (filter.kind === "event") return matchEvent(customer, filter);
+    const members = listMembers?.get(filter.listId);
+    if (!members) return false;
+    const email = customer.email?.toLowerCase();
+    const externalId = customer.externalId.toLowerCase();
+    return (email ? members.has(email) : false) || members.has(externalId);
+  });
   return rules.op === "or" ? results.some(Boolean) : results.every(Boolean);
+}
+
+export function listIdsInRules(rules: SegmentRules) {
+  return rules.filters.filter((filter) => filter.kind === "list").map((filter) => filter.listId);
 }
 
 export function parseRules(raw: string): SegmentRules {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, GripVertical, Search, X } from "lucide-react";
 import { Card } from "@/components/ui";
 import {
@@ -17,6 +17,22 @@ export function SegmentRulesPanel({ onSelect }: Props) {
   const [open, setOpen] = useState(true);
   const [groupId, setGroupId] = useState("all");
   const [query, setQuery] = useState("");
+  const [listsOpen, setListsOpen] = useState(false);
+  const [audienceLists, setAudienceLists] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/audience/list-extensions")
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data: { id?: string; name?: string }[]) => {
+        if (!Array.isArray(data)) return;
+        setAudienceLists(
+          data
+            .filter((item) => typeof item.id === "string" && typeof item.name === "string")
+            .map((item) => ({ id: item.id as string, name: item.name as string })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
 
   const rules = useMemo(() => segmentRulesForGroup(groupId, query), [groupId, query]);
   const visibleGroups = useMemo(() => {
@@ -93,7 +109,33 @@ export function SegmentRulesPanel({ onSelect }: Props) {
             <div key={group.id} className="space-y-3">
               <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
               {groupRules.length > 0 ? (
-                groupRules.map((rule) => <RuleRow key={rule.id} rule={rule} onSelect={onSelect} />)
+                groupRules.map((rule) =>
+                  rule.id === "import_list" ? (
+                    <div key={rule.id} className="space-y-3">
+                      <RuleRow rule={rule} onSelect={() => setListsOpen((current) => !current)} />
+                      {listsOpen ? (
+                        audienceLists.length > 0 ? (
+                          audienceLists.map((list) => (
+                            <RuleRow
+                              key={list.id}
+                              rule={{
+                                id: `list_extension:${list.id}`,
+                                label: list.name,
+                                groupId: "import",
+                              }}
+                              onSelect={onSelect}
+                              nested
+                            />
+                          ))
+                        ) : (
+                          <p className="pl-7 text-sm text-muted">No audience lists yet.</p>
+                        )
+                      ) : null}
+                    </div>
+                  ) : (
+                    <RuleRow key={rule.id} rule={rule} onSelect={onSelect} />
+                  ),
+                )
               ) : (
                 <p className="text-sm text-muted">
                   {query.trim() ? "No rules match your search." : group.emptyMessage ?? "No rules in this group yet."}
@@ -112,20 +154,25 @@ export function SegmentRulesPanel({ onSelect }: Props) {
 function RuleRow({
   rule,
   onSelect,
+  nested = false,
 }: {
   rule: SegmentRuleEntry;
   onSelect: (rule: SegmentRuleEntry) => void;
+  nested?: boolean;
 }) {
   return (
     <button
       type="button"
-      draggable
+      draggable={rule.id !== "import_list"}
       onDragStart={(event) => {
+        if (rule.id === "import_list") return;
         event.dataTransfer.setData("application/x-visora-rule", JSON.stringify(rule));
         event.dataTransfer.effectAllowed = "copy";
       }}
       onClick={() => onSelect(rule)}
-      className="flex w-full items-center gap-3 text-left text-sm text-foreground hover:text-primary"
+      className={`flex w-full items-center gap-3 text-left text-sm text-foreground hover:text-primary ${
+        nested ? "pl-7" : ""
+      }`}
     >
       <GripVertical size={16} className="shrink-0 text-muted" />
       <span>{rule.label}</span>
