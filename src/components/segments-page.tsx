@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { SegmentRowMenu } from "@/components/segment-row-menu";
 
 const STARRED_SEGMENTS_KEY = "visora-starred-segments";
 
@@ -53,6 +54,7 @@ export function SegmentsPageClient({ segments }: { segments: SegmentRow[] }) {
   const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setStarredIds(readStarredIds());
@@ -245,13 +247,16 @@ export function SegmentsPageClient({ segments }: { segments: SegmentRow[] }) {
               <th className="py-3 pr-4 font-medium">Profiles</th>
               <th className="py-3 pr-4 font-medium">Last edited</th>
               <th className="py-3 pr-4 font-medium">Created by</th>
-              <th className="py-3 font-medium">Teams</th>
+              <th className="py-3 pr-4 font-medium">Teams</th>
+              <th className="w-12 py-3 font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-muted">
+                <td colSpan={8} className="py-16 text-center text-sm text-muted">
                   No Results Found
                 </td>
               </tr>
@@ -291,12 +296,21 @@ export function SegmentsPageClient({ segments }: { segments: SegmentRow[] }) {
                     <td className="py-4 pr-4">
                       <Badge tone="ok">Active</Badge>
                     </td>
-                    <td className="py-4 pr-4">{segment.count.toLocaleString()}</td>
+                    <td className="py-4 pr-4">{(counts[segment.id] ?? segment.count).toLocaleString()}</td>
                     <td className="py-4 pr-4 text-muted">
                       {format(new Date(segment.updatedAt), "MMM d, yyyy")}
                     </td>
                     <td className="py-4 pr-4 text-muted">VISORA</td>
-                    <td className="py-4 text-muted">VISORA</td>
+                    <td className="py-4 pr-4 text-muted">VISORA</td>
+                    <td className="py-4 text-right">
+                      <SegmentRowMenu
+                        segmentId={segment.id}
+                        segmentName={segment.name}
+                        onCounts={(id, count) =>
+                          setCounts((current) => ({ ...current, [id]: count }))
+                        }
+                      />
+                    </td>
                   </tr>
                 );
               })

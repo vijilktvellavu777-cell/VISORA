@@ -24,15 +24,62 @@ function defaultSegmentName() {
   return "New Segment";
 }
 
-export function CreateSegmentPage() {
+type SegmentEditorInitial = {
+  name: string;
+  description: string | null;
+  rules: string;
+};
+
+function readInitial(initial?: SegmentEditorInitial) {
+  let parsed: Record<string, unknown> = {};
+  if (initial?.rules) {
+    try {
+      const value = JSON.parse(initial.rules) as unknown;
+      if (value && typeof value === "object") parsed = value as Record<string, unknown>;
+    } catch {
+      parsed = {};
+    }
+  }
+
+  const filterGroups = Array.isArray(parsed.filterGroups)
+    ? (parsed.filterGroups as BuilderState["filterGroups"])
+    : null;
+  const exclusionGroups = Array.isArray(parsed.exclusionGroups)
+    ? (parsed.exclusionGroups as BuilderState["exclusionGroups"])
+    : [];
+  const specificApps = Array.isArray(parsed.specificApps)
+    ? parsed.specificApps.filter((app): app is string => typeof app === "string")
+    : ["visora-web"];
+
+  return {
+    name: initial?.name ?? defaultSegmentName(),
+    description: initial?.description ?? "",
+    showDescription: Boolean(initial?.description),
+    appsTarget: typeof parsed.appsTarget === "string" ? parsed.appsTarget : "specific",
+    specificApps: specificApps.length > 0 ? specificApps : ["visora-web"],
+    analyticsTracking: parsed.analyticsTracking === true,
+    builder: filterGroups
+      ? { filterGroups, exclusionGroups }
+      : emptySegmentBuilder(),
+  };
+}
+
+export function CreateSegmentPage({
+  segmentId,
+  initial,
+}: {
+  segmentId?: string;
+  initial?: SegmentEditorInitial;
+}) {
   const router = useRouter();
-  const [name, setName] = useState(defaultSegmentName());
-  const [description, setDescription] = useState("");
-  const [showDescription, setShowDescription] = useState(false);
-  const [appsTarget, setAppsTarget] = useState("specific");
-  const [specificApps, setSpecificApps] = useState<string[]>(["visora-web"]);
-  const [analyticsTracking, setAnalyticsTracking] = useState(false);
-  const [builder, setBuilder] = useState<BuilderState>(emptySegmentBuilder());
+  const starting = readInitial(initial);
+  const [name, setName] = useState(starting.name);
+  const [description, setDescription] = useState(starting.description);
+  const [showDescription, setShowDescription] = useState(starting.showDescription);
+  const [appsTarget, setAppsTarget] = useState(starting.appsTarget);
+  const [specificApps, setSpecificApps] = useState<string[]>(starting.specificApps);
+  const [analyticsTracking, setAnalyticsTracking] = useState(starting.analyticsTracking);
+  const [builder, setBuilder] = useState<BuilderState>(starting.builder);
   const [lookupQuery, setLookupQuery] = useState("");
   const [totalUsers, setTotalUsers] = useState(0);
   const [estimatedUsers, setEstimatedUsers] = useState(0);
@@ -93,8 +140,8 @@ export function CreateSegmentPage() {
 
     const rules = buildRules();
 
-    const response = await fetch("/api/segments", {
-      method: "POST",
+    const response = await fetch(segmentId ? `/api/segments/${segmentId}` : "/api/segments", {
+      method: segmentId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
@@ -105,7 +152,7 @@ export function CreateSegmentPage() {
 
     setSaving(false);
     if (!response.ok) {
-      setError("Could not create segment");
+      setError(segmentId ? "Could not save segment" : "Could not create segment");
       return;
     }
 
@@ -131,7 +178,9 @@ export function CreateSegmentPage() {
 
       <div className="mx-auto max-w-7xl px-8 py-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Create segment</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            {segmentId ? "Edit segment" : "Create segment"}
+          </h1>
           <div className="flex items-center gap-3">
             <Link
               href="/audience/segments"
