@@ -199,6 +199,7 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
   const [copied, setCopied] = useState(false);
   const [newConversionEvent, setNewConversionEvent] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -265,7 +266,7 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
         const createRes = await fetch("/api/canvas", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: defaultCanvasName() }),
+          body: JSON.stringify({ name: defaultCanvasName(), autoUniqueName: true }),
         });
         if (!createRes.ok) {
           if (!cancelled) setError("Could not create canvas draft");
@@ -314,12 +315,20 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
     });
     setSaving(false);
     if (!response.ok) {
-      setError("Could not save canvas");
+      const json = await response.json().catch(() => ({}));
+      const message = typeof json.error === "string" ? json.error : "Could not save canvas";
+      if (response.status === 409 && data.name !== undefined) {
+        setNameError(message);
+        setStep(1);
+      } else {
+        setError(message);
+      }
       return false;
     }
     const updated = await response.json();
     setCanvas(mapCanvasDraft(updated));
     setError(null);
+    setNameError(null);
     return true;
   }
 
@@ -443,10 +452,14 @@ export function CanvasWizard({ fresh = false, canvasId }: { fresh?: boolean; can
               <h2 className="text-lg font-semibold text-foreground">Set Up Canvas Details</h2>
               <Field label="Canvas Name">
                 <input
-                  className={inputClass}
+                  className={`${inputClass} ${nameError ? "border-error focus:border-error" : ""}`}
                   value={canvas.name}
-                  onChange={(event) => setCanvas({ ...canvas, name: event.target.value })}
+                  onChange={(event) => {
+                    if (nameError) setNameError(null);
+                    setCanvas({ ...canvas, name: event.target.value });
+                  }}
                 />
+                {nameError ? <p className="mt-1.5 text-sm text-error">{nameError}</p> : null}
               </Field>
               {showDescription ? (
                 <Field label="Description">

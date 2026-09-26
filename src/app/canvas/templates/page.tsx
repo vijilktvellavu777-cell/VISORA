@@ -55,6 +55,7 @@ export default function CanvasTemplatesPage() {
         name: template.name,
         description: template.description,
         steps: template.steps,
+        autoUniqueName: true,
       }),
     });
     if (!response.ok) {
