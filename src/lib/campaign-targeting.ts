@@ -1,4 +1,5 @@
 import type { SegmentRules } from "./types";
+import { SEGMENT_RULE_GROUPS } from "./segment-rules-catalog";
 
 export type TargetingFilterItem = {
   id: string;
@@ -25,7 +26,7 @@ export type PrebuiltFilter = {
   rules: SegmentRules;
 };
 
-export const PREBUILT_TARGETING_FILTERS: PrebuiltFilter[] = [
+const BASE_TARGETING_FILTERS: PrebuiltFilter[] = [
   {
     id: "added_to_cart",
     label: "Added to cart",
@@ -110,6 +111,23 @@ export const PREBUILT_TARGETING_FILTERS: PrebuiltFilter[] = [
     description: "Email address is marked valid",
     rules: { op: "and", filters: [{ kind: "attribute", field: "emailValid", op: "eq", value: "true" }] },
   },
+];
+
+const GROUP_TARGETING_FILTERS: PrebuiltFilter[] = SEGMENT_RULE_GROUPS.flatMap((group) =>
+  group.rules.map((rule) => ({
+    id: rule.id,
+    label: rule.label,
+    description: group.label,
+    rules: {
+      op: "and" as const,
+      filters: [{ kind: "attribute" as const, field: rule.id, op: "exists" as const }],
+    },
+  })),
+);
+
+export const PREBUILT_TARGETING_FILTERS: PrebuiltFilter[] = [
+  ...BASE_TARGETING_FILTERS,
+  ...GROUP_TARGETING_FILTERS,
 ];
 
 export function emptyTargeting(): CampaignTargeting {
