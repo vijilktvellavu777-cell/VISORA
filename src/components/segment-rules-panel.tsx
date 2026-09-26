@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { ChevronDown, GripVertical, Search, X } from "lucide-react";
 import { Card } from "@/components/ui";
 import {
-  visibleSegmentRules,
-  type SegmentRuleCategory,
+  SEGMENT_RULE_GROUPS,
+  segmentRulesForGroup,
   type SegmentRuleEntry,
 } from "@/lib/segment-rules-catalog";
 
@@ -15,14 +15,22 @@ type Props = {
 
 export function SegmentRulesPanel({ onSelect }: Props) {
   const [open, setOpen] = useState(true);
-  const [category, setCategory] = useState<SegmentRuleCategory>("all");
+  const [groupId, setGroupId] = useState("all");
   const [query, setQuery] = useState("");
 
-  const rules = useMemo(() => visibleSegmentRules(category, query), [category, query]);
-  const showChannels = category !== "email" && rules.some((rule) => rule.section !== "general");
-  const showEmail = rules.some((rule) => rule.section === "email");
-  const generalRules = rules.filter((rule) => rule.section === "general");
-  const emailRules = rules.filter((rule) => rule.section === "email");
+  const rules = useMemo(() => segmentRulesForGroup(groupId, query), [groupId, query]);
+  const visibleGroups = useMemo(() => {
+    const selected =
+      groupId === "all" ? SEGMENT_RULE_GROUPS : SEGMENT_RULE_GROUPS.filter((group) => group.id === groupId);
+    const normalized = query.trim().toLowerCase();
+    return selected.filter((group) => {
+      const hasMatch = group.rules.some(
+        (rule) => !normalized || rule.label.toLowerCase().includes(normalized) || group.label.toLowerCase().includes(normalized),
+      );
+      if (groupId !== "all") return true;
+      return hasMatch;
+    });
+  }, [groupId, query]);
 
   if (!open) {
     return (
@@ -53,13 +61,16 @@ export function SegmentRulesPanel({ onSelect }: Props) {
       <div className="space-y-3 px-5 py-4">
         <div className="relative">
           <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value as SegmentRuleCategory)}
+            value={groupId}
+            onChange={(event) => setGroupId(event.target.value)}
             className="w-full appearance-none rounded-lg border border-border bg-surface py-2.5 pl-3 pr-9 text-sm text-foreground outline-none focus:border-primary"
           >
             <option value="all">All rules</option>
-            <option value="channels">Channels</option>
-            <option value="email">Email</option>
+            {SEGMENT_RULE_GROUPS.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.label}
+              </option>
+            ))}
           </select>
           <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
         </div>
@@ -76,17 +87,23 @@ export function SegmentRulesPanel({ onSelect }: Props) {
       </div>
 
       <div className="max-h-[420px] space-y-4 overflow-y-auto px-5 pb-5">
-        {generalRules.map((rule) => (
-          <RuleRow key={rule.id} rule={rule} onSelect={onSelect} />
-        ))}
+        {visibleGroups.map((group) => {
+          const groupRules = rules.filter((rule) => rule.groupId === group.id);
+          return (
+            <div key={group.id} className="space-y-3">
+              <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
+              {groupRules.length > 0 ? (
+                groupRules.map((rule) => <RuleRow key={rule.id} rule={rule} onSelect={onSelect} />)
+              ) : (
+                <p className="text-sm text-muted">
+                  {query.trim() ? "No rules match your search." : group.emptyMessage ?? "No rules in this group yet."}
+                </p>
+              )}
+            </div>
+          );
+        })}
 
-        {showChannels ? <h3 className="text-base font-semibold text-foreground">Channels</h3> : null}
-        {showEmail ? <h3 className="text-base font-semibold text-foreground">Email</h3> : null}
-        {emailRules.map((rule) => (
-          <RuleRow key={rule.id} rule={rule} onSelect={onSelect} />
-        ))}
-
-        {rules.length === 0 ? <p className="text-sm text-muted">No rules match your search.</p> : null}
+        {visibleGroups.length === 0 ? <p className="text-sm text-muted">No rules match your search.</p> : null}
       </div>
     </Card>
   );
