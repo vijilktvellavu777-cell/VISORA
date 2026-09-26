@@ -6,6 +6,29 @@ import { formatDistanceToNow } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
+const RESULT_LIMIT = 2000;
+
+type FindRecord = {
+  key: string;
+  href: string | null;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  externalId: string | null;
+  source: string;
+  addedAt: Date;
+};
+
+function entryName(entry: {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  externalId: string | null;
+}) {
+  const name = [entry.firstName, entry.lastName].filter(Boolean).join(" ");
+  return name || entry.email || entry.externalId || "Untitled record";
+}
+
 export default async function FindUsersPage({
   searchParams,
 }: {
@@ -14,31 +37,68 @@ export default async function FindUsersPage({
   const { q = "" } = await searchParams;
   const workspace = await getDefaultWorkspace();
   const query = q.trim();
-  const customers = await prisma.customer.findMany({
-    where: {
-      workspaceId: workspace.id,
-      ...(query
-        ? {
-            OR: [
-              { email: { contains: query } },
-              { externalId: { contains: query } },
-              { firstName: { contains: query } },
-              { lastName: { contains: query } },
-              { phone: { contains: query } },
-            ],
-          }
-        : {}),
-    },
-    include: { _count: { select: { events: true } } },
-    orderBy: { lastSeenAt: "desc" },
-    take: 100,
-  });
+  const textMatch = query
+    ? {
+        OR: [
+          { email: { contains: query } },
+          { externalId: { contains: query } },
+          { firstName: { contains: query } },
+          { lastName: { contains: query } },
+          { phone: { contains: query } },
+        ],
+      }
+    : {};
+
+  const [customers, entries] = await Promise.all([
+    prisma.customer.findMany({
+      where: {
+        workspaceId: workspace.id,
+        ...textMatch,
+      },
+      orderBy: { createdAt: "desc" },
+      take: RESULT_LIMIT,
+    }),
+    prisma.listExtensionEntry.findMany({
+      where: {
+        extension: { workspaceId: workspace.id },
+        ...textMatch,
+      },
+      include: { extension: { select: { id: true, name: true } } },
+      orderBy: { createdAt: "desc" },
+      take: RESULT_LIMIT,
+    }),
+  ]);
+
+  const records: FindRecord[] = [
+    ...customers.map((customer) => ({
+      key: `profile:${customer.id}`,
+      href: `/audience/${customer.id}`,
+      name: customerDisplayName(customer),
+      email: customer.email,
+      phone: customer.phone,
+      externalId: customer.externalId,
+      source: "Profile",
+      addedAt: customer.createdAt,
+    })),
+    ...entries.map((entry) => ({
+      key: `upload:${entry.id}`,
+      href: `/audience/list-extensions/${entry.extension.id}`,
+      name: entryName(entry),
+      email: entry.email,
+      phone: entry.phone,
+      externalId: entry.externalId,
+      source: entry.extension.name,
+      addedAt: entry.createdAt,
+    })),
+  ].sort((a, b) => b.addedAt.getTime() - a.addedAt.getTime());
+
+  const truncated = customers.length >= RESULT_LIMIT || entries.length >= RESULT_LIMIT;
 
   return (
     <div>
       <PageHeader
         title="Find Users"
-        subtitle="Search profiles by email, name, phone, or external ID."
+        subtitle="Search uploaded list records and profiles by email, name, phone, or external ID."
       />
       <div className="space-y-4 p-8">
         <form className="flex gap-2">
@@ -51,45 +111,63 @@ export default async function FindUsersPage({
           <Button type="submit">Search</Button>
         </form>
         <Card>
-          {customers.length === 0 ? (
+          {records.length === 0 ? (
             <EmptyState
-              title={query ? "No matching users" : "No profiles yet"}
-              body={query ? "Try a different email or external ID." : "Identify a user or import a CSV to add profiles."}
+              title={query ? "No matching records" : "No records yet"}
+              body={
+                query
+                  ? "Try a different email, name, phone, or external ID."
+                  : "Import a list or identify a user to add records."
+              }
             />
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-muted">
-                <tr className="border-b border-border">
-                  <th className="px-5 py-3 font-medium">Profile</th>
-                  <th className="px-5 py-3 font-medium">External ID</th>
-                  <th className="px-5 py-3 font-medium">Country</th>
-                  <th className="px-5 py-3 font-medium">Events</th>
-                  <th className="px-5 py-3 font-medium">Last seen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-border last:border-0">
-                    <td className="px-5 py-3">
-                      <Link href={`/audience/${customer.id}`} className="font-medium hover:text-accent">
-                        {customerDisplayName(customer)}
-                      </Link>
-                      <div className="text-xs text-muted">{customer.email}</div>
-                    </td>
-                    <td className="px-5 py-3 font-mono text-xs text-accent">{customer.externalId}</td>
-                    <td className="px-5 py-3">{customer.country ?? "—"}</td>
-                    <td className="px-5 py-3">
-                      <Badge>{customer._count.events}</Badge>
-                    </td>
-                    <td className="px-5 py-3 text-muted">
-                      {customer.lastSeenAt
-                        ? formatDistanceToNow(customer.lastSeenAt, { addSuffix: true })
-                        : "—"}
-                    </td>
+            <div>
+              <div className="flex items-center justify-between border-b border-border px-5 py-3 text-sm text-muted">
+                <span>
+                  {records.length.toLocaleString()} record{records.length === 1 ? "" : "s"}
+                  {truncated ? ` (showing the latest ${RESULT_LIMIT.toLocaleString()} per source)` : ""}
+                </span>
+              </div>
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-muted">
+                  <tr className="border-b border-border">
+                    <th className="px-5 py-3 font-medium">Record</th>
+                    <th className="px-5 py-3 font-medium">Phone</th>
+                    <th className="px-5 py-3 font-medium">External ID</th>
+                    <th className="px-5 py-3 font-medium">Source</th>
+                    <th className="px-5 py-3 font-medium">Added</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {records.map((record) => (
+                    <tr key={record.key} className="border-b border-border last:border-0">
+                      <td className="px-5 py-3">
+                        {record.href ? (
+                          <Link href={record.href} className="font-medium hover:text-accent">
+                            {record.name}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">{record.name}</span>
+                        )}
+                        <div className="text-xs text-muted">{record.email || "—"}</div>
+                      </td>
+                      <td className="px-5 py-3">{record.phone || "—"}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-accent">
+                        {record.externalId || "—"}
+                      </td>
+                      <td className="px-5 py-3">
+                        <Badge tone={record.source === "Profile" ? "accent" : "neutral"}>
+                          {record.source}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3 text-muted">
+                        {formatDistanceToNow(record.addedAt, { addSuffix: true })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       </div>
