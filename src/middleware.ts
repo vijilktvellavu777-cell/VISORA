@@ -4,6 +4,7 @@ import { sessionCookieName, verifySessionToken } from "@/lib/web-session";
 
 function isPublicPath(pathname: string) {
   if (pathname === "/login") return true;
+  if (pathname === "/tutobell" || pathname.startsWith("/tutobell/")) return true;
   if (pathname.startsWith("/api/")) return true;
   if (pathname.startsWith("/_next")) return true;
   if (pathname === "/visora.js" || pathname === "/visora-sw.js") return true;
