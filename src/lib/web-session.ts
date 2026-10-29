@@ -58,15 +58,3 @@ export async function verifySessionToken(token: string | undefined | null) {
   if (expected !== signature) return null;
   return username;
 }
-
-export function getLoginCredentials() {
-  return {
-    username: process.env.VISORA_LOGIN_USERNAME ?? "admin",
-    password: process.env.VISORA_LOGIN_PASSWORD ?? "visora",
-  };
-}
-
-export function credentialsMatch(username: string, password: string) {
-  const expected = getLoginCredentials();
-  return username === expected.username && password === expected.password;
-}
