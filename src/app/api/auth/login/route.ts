@@ -7,6 +7,7 @@ import {
   sessionMaxAgeSeconds,
 } from "@/lib/web-session";
 import { authenticateAccount } from "@/lib/login-service";
+import { ensureDefaultWorkspaceAccount } from "@/lib/ensure-default-account";
 import { isValidLoginIdentifier } from "@/lib/login-identifier";
 import { errorToResponse } from "@/lib/http";
 
@@ -29,6 +30,12 @@ export async function POST(request: NextRequest) {
       { error: "Enter a valid email address or username." },
       { status: 400 },
     );
+  }
+
+  try {
+    await ensureDefaultWorkspaceAccount();
+  } catch (error) {
+    console.error("[auth/login] ensureDefaultWorkspaceAccount failed", error);
   }
 
   const account = await authenticateAccount(identifier, body.password);
