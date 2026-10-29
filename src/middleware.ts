@@ -3,7 +3,7 @@ import { corsPreflightResponse, withCors } from "@/lib/api-cors";
 import { sessionCookieName, verifySessionToken } from "@/lib/web-session";
 
 function isPublicPath(pathname: string) {
-  if (pathname === "/login") return true;
+  if (pathname === "/login" || pathname.startsWith("/login/")) return true;
   if (pathname === "/tutobell" || pathname.startsWith("/tutobell/")) return true;
   if (pathname.startsWith("/api/")) return true;
   if (pathname.startsWith("/_next")) return true;
@@ -25,8 +25,8 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get(sessionCookieName())?.value;
   const username = await verifySessionToken(session);
 
-  if (pathname === "/login") {
-    if (username) {
+  if (pathname === "/login" || pathname.startsWith("/login/")) {
+    if (username && pathname !== "/login/reset") {
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();

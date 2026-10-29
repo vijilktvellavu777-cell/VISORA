@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   createSessionToken,
-  credentialsMatch,
   sessionCookieName,
   sessionCookieOptions,
   sessionMaxAgeSeconds,
 } from "@/lib/web-session";
+import { authenticateAccount } from "@/lib/login-service";
+import { isValidLoginIdentifier } from "@/lib/login-identifier";
 import { errorToResponse } from "@/lib/http";
 
 const schema = z.object({
@@ -22,11 +23,20 @@ export async function POST(request: NextRequest) {
     return errorToResponse(error);
   }
 
-  if (!credentialsMatch(body.username.trim(), body.password)) {
+  const identifier = body.username.trim();
+  if (!isValidLoginIdentifier(identifier)) {
+    return NextResponse.json(
+      { error: "Enter a valid email address or username." },
+      { status: 400 },
+    );
+  }
+
+  const account = await authenticateAccount(identifier, body.password);
+  if (!account) {
     return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
   }
 
-  const token = await createSessionToken(body.username.trim());
+  const token = await createSessionToken(account.username);
   const response = NextResponse.json({ ok: true });
   response.cookies.set(sessionCookieName(), token, sessionCookieOptions(sessionMaxAgeSeconds()));
   return response;
