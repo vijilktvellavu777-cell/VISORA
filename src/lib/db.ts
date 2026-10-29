@@ -1,8 +1,17 @@
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:./prisma/dev.db";
+const defaultDatabasePath = path.join(process.cwd(), "prisma", "dev.db");
+
+function resolveDatabaseUrl() {
+  const configured = process.env.DATABASE_URL?.trim();
+  if (!configured || configured === "file:./dev.db") {
+    return `file:${defaultDatabasePath}`;
+  }
+  return configured;
 }
+
+process.env.DATABASE_URL = resolveDatabaseUrl();
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
