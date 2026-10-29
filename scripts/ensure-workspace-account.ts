@@ -11,6 +11,12 @@ function defaultAccountConfig() {
   return { username, email, password };
 }
 
+function shouldSyncDefaultPassword() {
+  if (process.env.VISORA_LOGIN_SYNC_PASSWORD === "false") return false;
+  if (process.env.VISORA_LOGIN_SYNC_PASSWORD === "true") return true;
+  return process.env.NODE_ENV !== "production";
+}
+
 async function main() {
   let workspace = await prisma.workspace.findFirst({ where: { slug: "default" } });
   if (!workspace) {
@@ -18,9 +24,6 @@ async function main() {
       data: { name: "VISORA", slug: "default" },
     });
   }
-
-  const existing = await prisma.account.findFirst({ where: { workspaceId: workspace.id } });
-  if (existing) return;
 
   const { username, email, password } = defaultAccountConfig();
   const validation = validatePassword(password);
@@ -30,17 +33,34 @@ async function main() {
     );
   }
 
-  await prisma.account.create({
-    data: {
-      workspaceId: workspace.id,
-      username,
-      email,
-      passwordHash: await hashPassword(password),
-      emailVerifiedAt: new Date(),
-    },
-  });
+  const passwordHash = await hashPassword(password);
+  const existing = await prisma.account.findUnique({ where: { username } });
 
-  console.log(`Created default login account: ${username} (${email})`);
+  if (!existing) {
+    await prisma.account.create({
+      data: {
+        workspaceId: workspace.id,
+        username,
+        email,
+        passwordHash,
+        emailVerifiedAt: new Date(),
+      },
+    });
+    console.log(`Created default login account: ${username} (${email})`);
+    return;
+  }
+
+  if (shouldSyncDefaultPassword()) {
+    await prisma.account.update({
+      where: { id: existing.id },
+      data: {
+        email,
+        passwordHash,
+        emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
+      },
+    });
+    console.log(`Synced default login password for ${username} (${email})`);
+  }
 }
 
 main()
